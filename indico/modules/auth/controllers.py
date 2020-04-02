@@ -1,24 +1,16 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from flask import flash, jsonify, redirect, render_template, request, session
 from itsdangerous import BadData, BadSignature
 from markupsafe import Markup
+from webargs import fields
 from werkzeug.exceptions import BadRequest, Forbidden, NotFound
 
 from indico.core import signals
@@ -38,6 +30,7 @@ from indico.modules.users import User
 from indico.modules.users.controllers import RHUserBase
 from indico.util.i18n import _
 from indico.util.signing import secure_serializer
+from indico.web.args import use_kwargs
 from indico.web.flask.templating import get_template_module
 from indico.web.flask.util import url_for
 from indico.web.forms.base import FormDefaults, IndicoForm
@@ -258,8 +251,8 @@ class RHRegister(RH):
         # Check for pending users if we have verified emails
         pending = None
         if not handler.must_verify_email:
-            pending = User.find_first(~User.is_deleted, User.is_pending,
-                                      User.all_emails.contains(db.func.any(list(handler.get_all_emails(form)))))
+            pending = User.query.filter(~User.is_deleted, User.is_pending,
+                                        User.all_emails.in_(list(handler.get_all_emails(form)))).first()
         if form.validate_on_submit():
             if handler.must_verify_email:
                 return self._send_confirmation(form.email.data)
@@ -303,7 +296,7 @@ class RHRegister(RH):
     def _create_registration_request(self, form, handler):
         registration_data = self._prepare_registration_data(form, handler)
         email = registration_data['email']
-        req = RegistrationRequest.find_first(email=email) or RegistrationRequest(email=email)
+        req = RegistrationRequest.query.filter_by(email=email).first() or RegistrationRequest(email=email)
         req.comment = form.comment.data
         req.populate_from_dict(registration_data)
         db.session.add(req)
@@ -373,7 +366,10 @@ class RHRemoveAccount(RHUserBase):
         if self.user.local_identity == self.identity:
             raise BadRequest("The main local identity can't be removed")
         self.user.identities.remove(self.identity)
-        provider_title = multipass.identity_providers[self.identity.provider].title
+        try:
+            provider_title = multipass.identity_providers[self.identity.provider].title
+        except KeyError:
+            provider_title = self.identity.provider.title()
         flash(_("{provider} ({identifier}) successfully removed from your accounts"
               .format(provider=provider_title, identifier=self.identity.identifier)), 'success')
         return redirect(url_for('.accounts'))
@@ -598,12 +594,13 @@ class RHResetPassword(RH):
 
 
 class RHAdminImpersonate(RHAdminBase):
-    def _process_args(self):
+    @use_kwargs({
+        'undo': fields.Bool(missing=False),
+        'user_id': fields.Int(missing=None)
+    })
+    def _process_args(self, undo, user_id):
         RHAdminBase._process_args(self)
-        if request.form.get('undo') == '1':
-            self.user = None
-        else:
-            self.user = User.get_one(int(request.form['user_id']), is_deleted=False)
+        self.user = None if undo else User.get_one(user_id, is_deleted=False)
 
     def _check_access(self):
         if self.user:
@@ -613,5 +610,7 @@ class RHAdminImpersonate(RHAdminBase):
         if self.user:
             impersonate_user(self.user)
         else:
+            # no user? it means it's an undo
             undo_impersonate_user()
+
         return jsonify()

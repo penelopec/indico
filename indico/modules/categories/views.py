@@ -1,29 +1,19 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from markupsafe import escape
 
-from indico.legacy.webinterface.wcomponents import render_header
 from indico.modules.admin.views import WPAdmin
 from indico.util.i18n import _
 from indico.util.mathjax import MathjaxMixin
 from indico.web.breadcrumbs import render_breadcrumbs
-from indico.web.views import WPDecorated, WPJinjaMixin
+from indico.web.views import WPDecorated, WPJinjaMixin, render_header
 
 
 class WPManageUpcomingEvents(WPAdmin):
@@ -47,21 +37,21 @@ class WPCategory(MathjaxMixin, WPJinjaMixin, WPDecorated):
         WPDecorated.__init__(self, rh, **kwargs)
         self._mathjax = kwargs.pop('mathjax', False)
 
-    def _getHeader(self):
+    def _get_header(self):
         return render_header(category=self.category, protected_object=self.category,
                              local_tz=self.category.display_tzinfo.zone)
 
-    def _getBody(self, params):
-        return self._getPageContent(params)
+    def _get_body(self, params):
+        return self._get_page_content(params)
 
-    def _getHeadContent(self):
-        head_content = WPDecorated._getHeadContent(self)
+    def _get_head_content(self):
+        head_content = WPDecorated._get_head_content(self)
         if self.atom_feed_url:
             title = self.atom_feed_title or _("Indico Atom feed")
             head_content += ('<link rel="alternate" type="application/atom+xml" title="{}" href="{}">'
                              .format(escape(title), self.atom_feed_url))
         if self._mathjax:
-            head_content += MathjaxMixin._getHeadContent(self)
+            head_content += MathjaxMixin._get_head_content(self)
         return head_content
 
     def _get_breadcrumbs(self):
@@ -86,7 +76,7 @@ class WPCategoryManagement(WPCategory):
         kwargs['active_menu_item'] = active_menu_item
         WPCategory.__init__(self, rh, category, **kwargs)
 
-    def _getHeader(self):
+    def _get_header(self):
         return render_header(category=self.category, protected_object=self.category,
                              local_tz=self.category.timezone, force_local_tz=True)
 

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import absolute_import, unicode_literals
 
@@ -64,6 +55,7 @@ DEFAULTS = {
     'LOCAL_IDENTITIES': True,
     'LOCAL_MODERATION': False,
     'LOCAL_REGISTRATION': True,
+    'LOCAL_GROUPS': True,
     'LOGGING_CONFIG_FILE': 'logging.yaml',
     'LOGO_URL': None,
     'LOG_DIR': '/opt/indico/log',
@@ -101,7 +93,7 @@ DEFAULTS = {
     'TEMP_DIR': '/opt/indico/tmp',
     'USE_PROXY': False,
     'WORKER_NAME': socket.getfqdn(),
-    'XELATEX_PATH': 'xelatex',
+    'XELATEX_PATH': None,
 }
 
 # Default values for settings that cannot be set in the config file
@@ -263,6 +255,10 @@ class IndicoConfig(object):
     @property
     def IMAGES_BASE_URL(self):
         return 'static/images' if g.get('static_site') else url_parse('{}/images'.format(self.BASE_URL)).path
+
+    @property
+    def LATEX_ENABLED(self):
+        return bool(self.XELATEX_PATH)
 
     def __getattr__(self, name):
         try:

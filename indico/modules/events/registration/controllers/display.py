@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -34,8 +25,8 @@ from indico.modules.events.registration.models.invitations import InvitationStat
 from indico.modules.events.registration.models.items import PersonalDataType
 from indico.modules.events.registration.models.registrations import Registration, RegistrationState
 from indico.modules.events.registration.util import (check_registration_email, create_registration, generate_ticket,
-                                                     get_event_regforms, get_event_section_data, get_title_uuid,
-                                                     make_registration_form)
+                                                     get_event_regforms_registrations, get_event_section_data,
+                                                     get_title_uuid, make_registration_form)
 from indico.modules.events.registration.views import (WPDisplayRegistrationFormConference,
                                                       WPDisplayRegistrationFormSimpleEvent,
                                                       WPDisplayRegistrationParticipantList)
@@ -80,14 +71,11 @@ class RHRegistrationFormList(RHRegistrationFormDisplayBase):
     """List of all registration forms in the event"""
 
     def _process(self):
-        all_regforms = get_event_regforms(self.event, session.user)
-        scheduled_and_registered_regforms = [regform[0] for regform in all_regforms
-                                             if regform[0].is_scheduled or regform[1]]
-        user_registrations = [regform[0].id for regform in all_regforms if regform[1]]
-        if len(scheduled_and_registered_regforms) == 1:
-            return redirect(url_for('.display_regform', scheduled_and_registered_regforms[0]))
+        displayed_regforms, user_registrations = get_event_regforms_registrations(self.event, session.user)
+        if len(displayed_regforms) == 1:
+            return redirect(url_for('.display_regform', displayed_regforms[0]))
         return self.view_class.render_template('display/regform_list.html', self.event,
-                                               regforms=scheduled_and_registered_regforms,
+                                               regforms=displayed_regforms,
                                                user_registrations=user_registrations)
 
 
@@ -118,7 +106,7 @@ class RHParticipantList(RHRegistrationFormDisplayBase):
         headers = [PersonalDataType[column_name].get_title() for column_name in column_names]
 
         query = (Registration.query.with_parent(self.event)
-                 .filter(Registration.state.in_([RegistrationState.complete, RegistrationState.unpaid]),
+                 .filter(Registration.is_publishable,
                          RegistrationForm.publish_registrations_enabled,
                          ~RegistrationForm.is_deleted,
                          ~Registration.is_deleted)
@@ -163,7 +151,8 @@ class RHParticipantList(RHRegistrationFormDisplayBase):
                       if column_id in active_fields]
         headers = [active_fields[column_id].title.title() for column_id in column_ids]
         active_registrations = sorted(regform.active_registrations, key=attrgetter('last_name', 'first_name', 'id'))
-        registrations = [_process_registration(reg, column_ids, active_fields) for reg in active_registrations]
+        registrations = [_process_registration(reg, column_ids, active_fields) for reg in active_registrations
+                         if reg.is_publishable]
         return {'headers': headers,
                 'rows': registrations,
                 'title': regform.title,
@@ -263,9 +252,12 @@ class RHRegistrationForm(InvitationMixin, RHRegistrationFormRegistrationBase):
         if self.invitation and self.invitation.state == InvitationState.accepted and self.invitation.registration:
             return redirect(url_for('.display_regform', self.invitation.registration.locator.registrant))
 
+    def _can_register(self):
+        return not self.regform.limit_reached and (self.regform.is_active or self.invitation)
+
     def _process(self):
         form = make_registration_form(self.regform)()
-        if form.validate_on_submit() and not self.regform.limit_reached:
+        if self._can_register() and form.validate_on_submit():
             registration = create_registration(self.regform, form.data, self.invitation)
             return redirect(url_for('.display_regform', registration.locator.registrant))
         elif form.is_submitted():

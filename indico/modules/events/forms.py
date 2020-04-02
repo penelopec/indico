@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -20,6 +11,7 @@ from datetime import time, timedelta
 
 from flask import session
 from wtforms.fields import StringField, TextAreaField
+from wtforms.fields.core import SelectField
 from wtforms.fields.html5 import URLField
 from wtforms.validators import DataRequired, InputRequired, ValidationError
 
@@ -28,11 +20,13 @@ from indico.core.db.sqlalchemy.protection import ProtectionMode
 from indico.modules.categories.fields import CategoryField
 from indico.modules.events.fields import EventPersonLinkListField, IndicoThemeSelectField
 from indico.modules.events.models.events import EventType
+from indico.modules.events.models.labels import EventLabel
 from indico.modules.events.models.references import ReferenceType
 from indico.util.i18n import _
 from indico.web.forms.base import IndicoForm
+from indico.web.forms.colors import get_sui_colors
 from indico.web.forms.fields import (IndicoDateTimeField, IndicoEnumRadioField, IndicoLocationField,
-                                     IndicoTimezoneSelectField, OccurrencesField)
+                                     IndicoTimezoneSelectField, JSONField, OccurrencesField)
 from indico.web.forms.validators import LinkedDateTime
 from indico.web.forms.widgets import CKEditorWidget
 
@@ -60,12 +54,29 @@ class ReferenceTypeForm(IndicoForm):
             raise ValidationError(_("The URL template must contain the placeholder '{value}'."))
 
 
+class EventLabelForm(IndicoForm):
+    title = StringField(_('Title'), [DataRequired()])
+    color = SelectField(_('Color'), [DataRequired()], choices=zip(get_sui_colors(), get_sui_colors()))
+
+    def __init__(self, *args, **kwargs):
+        self.event_label = kwargs.pop('event_label', None)
+        super(EventLabelForm, self).__init__(*args, **kwargs)
+
+    def validate_title(self, field):
+        query = EventLabel.query.filter(db.func.lower(EventLabel.title) == field.data.lower())
+        if self.event_label:
+            query = query.filter(EventLabel.id != self.event_label.id)
+        if query.has_rows():
+            raise ValidationError(_('This title is already in use.'))
+
+
 class EventCreationFormBase(IndicoForm):
     category = CategoryField(_('Category'), [DataRequired()], allow_subcats=False, require_event_creation_rights=True)
     title = StringField(_('Event title'), [DataRequired()])
     timezone = IndicoTimezoneSelectField(_('Timezone'), [DataRequired()])
-    location_data = IndicoLocationField(_('Location'), allow_location_inheritance=False)
+    location_data = IndicoLocationField(_('Location'), allow_location_inheritance=False, edit_address=False)
     protection_mode = IndicoEnumRadioField(_('Protection mode'), enum=ProtectionMode)
+    create_booking = JSONField()
 
     def validate_category(self, field):
         if not field.data.can_create_events(session.user):

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 """
 HTTP API - Handlers
@@ -33,13 +24,12 @@ from werkzeug.exceptions import BadRequest, NotFound
 from indico.core.db import db
 from indico.core.logger import Logger
 from indico.legacy.common.cache import GenericCache
-from indico.legacy.common.fossilize import clearCache, fossilize
 from indico.modules.api import APIMode, api_settings
 from indico.modules.api.models.keys import APIKey
 from indico.modules.oauth import oauth
 from indico.modules.oauth.provider import load_token
+from indico.util.fossilize import clearCache, fossilize
 from indico.util.string import to_unicode
-from indico.web.flask.util import ResponseUtil
 from indico.web.http_api import HTTPAPIHook
 from indico.web.http_api.fossils import IHTTPAPIExportResultFossil
 from indico.web.http_api.metadata.serializer import Serializer
@@ -138,16 +128,20 @@ def handler(prefix, path):
     onlyPublic = get_query_parameter(queryParams, ['op', 'onlypublic'], 'no') == 'yes'
     onlyAuthed = get_query_parameter(queryParams, ['oa', 'onlyauthed'], 'no') == 'yes'
     scope = 'read:legacy_api' if request.method == 'GET' else 'write:legacy_api'
-    try:
-        oauth_valid, oauth_request = oauth.verify_request([scope])
-        if not oauth_valid and oauth_request and oauth_request.error_message != 'Bearer token not found.':
-            raise BadRequest('OAuth error: {}'.format(oauth_request.error_message))
-        elif g.get('received_oauth_token') and oauth_request.error_message == 'Bearer token not found.':
-            raise BadRequest('OAuth error: Invalid token')
-    except ValueError:
-        # XXX: Dirty hack to workaround a bug in flask-oauthlib that causes it
-        #      not to properly urlencode request query strings
-        #      Related issue (https://github.com/lepture/flask-oauthlib/issues/213)
+
+    if not request.headers.get('Authorization', '').lower().startswith('basic '):
+        try:
+            oauth_valid, oauth_request = oauth.verify_request([scope])
+            if not oauth_valid and oauth_request and oauth_request.error_message != 'Bearer token not found.':
+                raise BadRequest('OAuth error: {}'.format(oauth_request.error_message))
+            elif g.get('received_oauth_token') and oauth_request.error_message == 'Bearer token not found.':
+                raise BadRequest('OAuth error: Invalid token')
+        except ValueError:
+            # XXX: Dirty hack to workaround a bug in flask-oauthlib that causes it
+            #      not to properly urlencode request query strings
+            #      Related issue (https://github.com/lepture/flask-oauthlib/issues/213)
+            oauth_valid = False
+    else:
         oauth_valid = False
 
     # Get our handler function and its argument and response type
@@ -162,7 +156,7 @@ def handler(prefix, path):
     ak = error = result = None
     ts = int(time.time())
     typeMap = {}
-    responseUtil = ResponseUtil()
+    status_code = None
     is_response = False
     try:
         used_session = None
@@ -232,12 +226,10 @@ def handler(prefix, path):
             ttl = api_settings.get('cache_ttl')
             if ttl > 0:
                 cache.set(cacheKey, (result, extra, ts, complete, typeMap), ttl)
-    except HTTPAPIError, e:
+    except HTTPAPIError as e:
         error = e
         if e.getCode():
-            responseUtil.status = e.getCode()
-            if responseUtil.status == 405:
-                responseUtil.headers['Allow'] = 'GET' if request.method == 'POST' else 'POST'
+            status_code = e.getCode()
 
     if result is None and error is None:
         # TODO: usage page
@@ -275,8 +267,13 @@ def handler(prefix, path):
 
         try:
             data = serializer(result)
-            serializer.set_headers(responseUtil)
-            return responseUtil.make_response(data)
-        except:
+            response = current_app.make_response(data)
+            content_type = serializer.get_response_content_type()
+            if content_type:
+                response.content_type = content_type
+            if status_code:
+                response.status_code = status_code
+            return response
+        except Exception:
             logger.exception('Serialization error in request %s?%s', path, query)
             raise

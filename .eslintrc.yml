@@ -2,11 +2,21 @@ env:
   browser: true
   jquery: true
   es6: true
+  jest/globals: true
+
+plugins:
+  - react-hooks
+  - prettier
+  - jest
 
 extends:
   - 'indico'
   - 'indico/babel'
   - 'indico/react'
+  - 'indico/react-hooks'
+  - 'indico/prettier'
+  - 'prettier/babel'
+  - 'prettier/react'
 
 settings:
   # we don't use the webpack resolver because it is SLOW (~1s),
@@ -15,28 +25,31 @@ settings:
   import/resolver:
     alias:
       map:
-        - ['indico/modules/rb_new', './indico/modules/rb_new/client/js']
+        - ['indico/modules/core', './indico/modules/core/client/js']
+        - ['indico/modules/rb', './indico/modules/rb/client/js']
+        - ['indico/modules/users', './indico/modules/users/client/js']
+        - ['indico/modules/events/reviewing', './indico/modules/events/client/js/reviewing']
+        - ['indico/modules/events/editing', './indico/modules/events/editing/client/js']
+        - ['indico/modules/events/util', './indico/modules/events/client/js/util']
         - ['indico', './indico/web/client/js']
       extensions: [.js, .jsx, .json]
   react:
-    version: '16.6.0'
+    version: detect
 
 rules:
-  func-style:
-    - warn
-    - declaration
-    - allowArrowFunctions: true
   import/no-unresolved:
     - error
     - ignore: ['^indico-url:']
   new-cap:
     - error
     - capIsNewExceptionPattern: '\$\.(Event|Deferred)$'
-  no-unused-vars:
-    - error
-    - ignoreRestSiblings: true
   prefer-template: warn
-  react/forbid-component-props: off
+  react/jsx-curly-brace-presence:
+    # remove this override once they fixed this rule (probably in the next update)
+    # check e.g. with indico/modules/rb/client/js/components/TimeInformation.jsx
+    # where it should NOT remove the `{', '}` since it's required for proper spacing
+    - error
+    - children: ignore
 
 globals:
   Indico: false

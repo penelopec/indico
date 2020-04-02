@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 import hashlib
 import hmac
@@ -74,13 +65,13 @@ def generate_public_auth_request(apiKey, path, params=None):
         publicRequestsURL = build_indico_request(path, params, key) if key else None
     elif apiMode == APIMode.SIGNED:
         publicRequestsURL = build_indico_request(path, params)
-        authRequestURL = build_indico_request(path, params, key, secret_key, persistent)  if key and secret_key else None
+        authRequestURL = build_indico_request(path, params, key, secret_key, persistent) if key and secret_key else None
     elif apiMode == APIMode.ONLYKEY_SIGNED:
-        publicRequestsURL = build_indico_request(path, params, key)  if key else None
-        authRequestURL = build_indico_request(path, params, key, secret_key, persistent)  if key and secret_key else None
+        publicRequestsURL = build_indico_request(path, params, key) if key else None
+        authRequestURL = build_indico_request(path, params, key, secret_key, persistent) if key and secret_key else None
     elif apiMode == APIMode.ALL_SIGNED:
-        authRequestURL = build_indico_request(path, params, key, secret_key, persistent)  if key else None
+        authRequestURL = build_indico_request(path, params, key, secret_key, persistent) if key else None
         params["onlypublic"] = "yes"
-        publicRequestsURL = build_indico_request(path, params, key, secret_key, persistent)  if key else None
+        publicRequestsURL = build_indico_request(path, params, key, secret_key, persistent) if key else None
     return {'publicRequestURL': (config.BASE_URL + publicRequestsURL) if publicRequestsURL else '',
             'authRequestURL': (config.BASE_URL + authRequestURL) if authRequestURL else ''}

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from datetime import datetime
 
@@ -72,7 +63,7 @@ class RoomHook(RoomBookingHookBase):
             raise HTTPAPIError('Invalid detail level: %s' % self._detail, 400)
 
     def export_room(self, user):
-        loc = Location.find_first(name=self._location)
+        loc = Location.query.filter_by(name=self._location, is_deleted=False).first()
         if loc is None:
             return
 
@@ -95,7 +86,7 @@ class RoomNameHook(RoomBookingHookBase):
     # e.g. /export/roomName/CERN/pump.json
     GUEST_ALLOWED = True
     TYPES = ('roomName', )
-    RE = r'(?P<location>[\w\s]+)/(?P<room_name>[\w\s\-]+)'
+    RE = r'(?P<location>[\w\s]+)/(?P<room_name>[\w\s/\-]+)'
     DEFAULT_DETAIL = 'rooms'
     MAX_RECORDS = {
         'rooms': 500
@@ -112,7 +103,7 @@ class RoomNameHook(RoomBookingHookBase):
         return config.ENABLE_ROOMBOOKING
 
     def export_roomName(self, user):
-        loc = Location.find_first(name=self._location)
+        loc = Location.query.filter_by(name=self._location, is_deleted=False).first()
         if loc is None:
             return
 
@@ -148,7 +139,7 @@ class ReservationHook(RoomBookingHookBase):
         self._locations = self._pathParams['loclist'].split('-')
 
     def export_reservation(self, user):
-        locations = Location.find_all(Location.name.in_(self._locations))
+        locations = Location.query.filter(Location.name.in_(self._locations), ~Location.is_deleted).all()
         if not locations:
             return
 
@@ -204,9 +195,9 @@ class BookRoomHook(HTTPAPIHook):
     def _has_access(self, user):
         if not config.ENABLE_ROOMBOOKING or not rb_check_user_access(user):
             return False
-        if self._room.can_be_booked(user):
+        if self._room.can_book(user):
             return True
-        elif self._room.can_be_prebooked(user):
+        elif self._room.can_prebook(user):
             raise HTTPAPIError('The API only supports direct bookings but this room only allows pre-bookings.')
         return False
 
@@ -362,9 +353,6 @@ def _get_reservation_state_filter(params):
     confirmed = get_query_parameter(params, ['confirmed'])
     archived = get_query_parameter(params, ['arch', 'archived', 'archival'])
     repeating = get_query_parameter(params, ['rec', 'recurring', 'rep', 'repeating'])
-    avc = get_query_parameter(params, ['avc'])
-    avc_support = get_query_parameter(params, ['avcs', 'avcsupport'])
-    startup_support = get_query_parameter(params, ['sts', 'startupsupport'])
     booked_for = get_query_parameter(params, ['bf', 'bookedfor'])
 
     filters = []
@@ -387,12 +375,6 @@ def _get_reservation_state_filter(params):
             filters.append(Reservation.repeat_frequency != 0)
         else:
             filters.append(Reservation.repeat_frequency == 0)
-    if avc is not None:
-        filters.append(Reservation.uses_vc == _yesno(avc))
-    if avc_support is not None:
-        filters.append(Reservation.needs_vc_assistance == _yesno(avc_support))
-    if startup_support is not None:
-        filters.append(Reservation.needs_assistance == _yesno(startup_support))
     if booked_for:
         like_str = '%{}%'.format(booked_for.replace('?', '_').replace('*', '%'))
         filters.append(Reservation.booked_for_name.ilike(like_str))

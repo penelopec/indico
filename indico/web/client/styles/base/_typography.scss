@@ -1,19 +1,9 @@
-/* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
- *
- * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
- */
+// This file is part of Indico.
+// Copyright (C) 2002 - 2020 CERN
+//
+// Indico is free software; you can redistribute it and/or
+// modify it under the terms of the MIT License; see the
+// LICENSE file for more details.
 
 %font-family-body {
     font-family: "Liberation Sans", sans-serif;
@@ -69,31 +59,38 @@ body {
 }
 
 body {
-    @extend %font-family-body;
-    @extend %font-size-body;
     background: #fff;
     padding: 0px;
     margin: 0px;
+}
+
+body > :not(.rb-app-container) {
+    @extend %font-family-body;
+    @extend %font-size-body;
 }
 
 h1, h2, h3, h4, h5, h6, td, dl, ol, blockquote {
     color: $black;
 }
 
-h1 {
+body > :not(.rb-app-container) h1 {
     @extend %font-family-title;
     font-size: 1.7em;
 }
 
-h2, h3, h4 {
+body > :not(.rb-app-container) h1.category-title {
+    font-size: 2em;
+}
+
+body > :not(.rb-app-container) h2, h3, h4 {
     @extend %font-family-title-light;
 }
 
-h2 {
+body > :not(.rb-app-container) h2 {
     font-size: 1.6em;
 }
 
-h3 {
+body > :not(.rb-app-container) h3 {
     font-size: 1.2em;
 }
 
@@ -121,7 +118,7 @@ pre {
     margin-top: 0;
     font-size: 2em;
     font-weight: normal;
-    color: $orange;
+    color: $dark-orange;
 }
 
 .group-title {
@@ -154,8 +151,7 @@ td.groupTitle, td.groupTitleNoBorder, td.groupSubTitle {
 }
 
 .groupTitle > [class*="icon-"],
-.groupTitleNoBorder > [class*="icon-"],
-.groupSubTitle > [class*="icon-"] {
+.groupTitleNoBorder > [class*="icon-"] {
     color: #CCC;
     font-size: 1.2em;
     vertical-align: middle;
@@ -172,66 +168,6 @@ td.groupTitle, td.groupTitleNoBorder, td.groupSubTitle {
 
 .groupTitleNoBorder {
    border-bottom: none;
-}
-
-.groupSubTitle {
-    font-size: 20px;
-}
-
-.groupTitleSmall, .groupTitleSmallNoBackground {
-   font-weight: bold;
-   font-size: 14px;
-   color: #777777;
-   background: #EBEBEB;
-   padding: 3px;
-}
-
-.groupTitleSmallNoBackground {
-   background: none;
-}
-
-
-.greyGroupTitle{
-    font-weight: bold;
-    font-size: 16px;
-    color: #FFFFFF;
-    background: #777777;
-    letter-spacing: 6px;
-    padding: 3px;
-    background: #EBEBEB none repeat scroll 0 0;
-    color: gray;
-    text-align:left;
-}
-
-
-.subgroupTitle, .subgroupTitleNoBorder {
-   font-weight: bold;
-   font-size: 18px;
-   color: #888888;
-   padding: 3px;
-   border-bottom: 2px solid #777777;
-   vertical-align: bottom;
-}
-
-.subgroupTitleNoBorder {
-   border-bottom: none;
-}
-
-
-.displayTitle {
-   font-size: 18px;
-   color: #5294CC;
-   padding: 3px;
-   vertical-align: bottom;
-}
-
-.formTitle {
-   font-weight: bold;
-   font-size: 18px;
-   color: #888888;
-   padding: 3px;
-   border-bottom: 2px solid #777777;
-   vertical-align: bottom;
 }
 
 .quotation {

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from indico.core.signals.event import _signals
 
@@ -52,7 +43,8 @@ the old category is in the `old_parent` kwarg.
 """)
 
 created = _signals.signal('created', """
-Called when a new event is created. The `sender` is the new Event.
+Called when a new event is created. The `sender` is the new Event. The `cloning`
+kwarg indictates whether the event is a clone.
 """)
 
 session_updated = _signals.signal('session-updated', """
@@ -80,4 +72,16 @@ Expected to return `EventLogRenderer` classes.
 
 get_feature_definitions = _signals.signal('get-feature-definitions', """
 Expected to return `EventFeature` subclasses.
+""")
+
+metadata_postprocess = _signals.signal('metadata-postprocess', """
+Called right after a dict-like representation of an event is created,
+so that plugins can add their own fields.
+
+The *sender* is a string parameter specifying the source of the metadata.
+The *event* kwarg contains the event object. The metadata is passed in
+the `data` kwarg.
+
+The signal should return a dict that will be used to update the
+original representation (fields to add or override).
 """)

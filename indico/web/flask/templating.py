@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -183,7 +174,7 @@ def call_template_hook(*name, **kwargs):
     as_list = kwargs.pop('as_list', False)
     values = []
     for is_markup, priority, value in values_from_signal(signals.plugin.template_hook.send(unicode(name), **kwargs),
-                                                         single_value=True):
+                                                         single_value=True, as_list=as_list):
         if value:
             if is_markup:
                 value = Markup(value)
@@ -292,7 +283,7 @@ class EnsureUnicodeExtension(Extension):
         # case we can simply remove the `variable_done` checks.
         # Due to the way Jinja works it is pretty much impossible to apply the filter to arguments
         # passed inside a {% trans foo=..., bar=... %} argument list - we have nothing to detect the
-        # end of an argument as the 'comma' token might be inside a function call. So in that case#
+        # end of an argument as the 'comma' token might be inside a function call. So in that case
         # people simply need to unicodify the strings manually. :(
 
         variable_done = False

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -29,7 +20,6 @@ from sqlalchemy.orm import contains_eager, joinedload
 from sqlalchemy.orm.attributes import get_history, set_committed_value
 from sqlalchemy.orm.exc import NoResultFound
 
-from indico.core import signals
 from indico.util.packaging import get_package_root_path
 
 
@@ -209,7 +199,7 @@ class IndicoModel(Model):
         changed = {}
         for key, value in data.iteritems():
             if keys and key not in keys:
-                return False
+                continue
             if skip and key in skip:
                 continue
             if not hasattr(cls, key):
@@ -232,17 +222,6 @@ class IndicoModel(Model):
             if not hasattr(cls, attr):
                 raise ValueError("{} has no attribute '{}'".format(cls.__name__, attr))
             setattr(self, attr, getattr(obj, attr))
-
-    def __committed__(self, change):
-        """Called after a commit for this object.
-
-        ALWAYS call super if you override this method!
-
-        :param change: The operation that has been committed (delete/insert/update)
-        """
-        if hasattr(g, 'memoize_cache'):
-            del g.memoize_cache
-        signals.model_committed.send(type(self), obj=self, change=change)
 
 
 @listens_for(orm.mapper, 'after_configured', once=True)

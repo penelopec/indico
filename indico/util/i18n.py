@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 import ast
 import re
@@ -133,7 +124,7 @@ gettext_context = make_bound_gettext(_use_context, force_unicode=True)
 ngettext_context = make_bound_ngettext(_use_context, force_unicode=True)
 
 # Just a marker for message extraction
-N_ = lambda text: text
+N_ = lambda text: text  # noqa
 
 
 class NullDomain(Domain):
@@ -232,6 +223,11 @@ def set_best_lang(check_session=True):
         # fall back to server default
         resolved_lang = config.DEFAULT_LOCALE
 
+    # normalize to xx_YY capitalization
+    resolved_lang = re.sub(r'^([a-zA-Z]+)_([a-zA-Z]+)$',
+                           lambda m: '{}_{}'.format(m.group(1).lower(), m.group(2).upper()),
+                           resolved_lang)
+
     # As soon as we looked up a language, cache it during the request.
     # This will be returned when accessing `session.lang` since there's code
     # which reads the language from there and might fail (e.g. by returning
@@ -252,7 +248,7 @@ def get_all_locales():
     if babel.app is None:
         return {}
     else:
-        return {str(t): t.language_name.title() for t in babel.list_translations()}
+        return {str(t): (t.language_name.title(), t.territory_name) for t in babel.list_translations()}
 
 
 def set_session_lang(lang):

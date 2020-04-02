@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -65,6 +56,7 @@ _bp_images.add_url_rule('/images/<int:image_id>-<filename>', 'image_display', RH
 
 _bp_pages = IndicoBlueprint('event_pages', __name__, template_folder='templates',
                             virtual_template_folder='events/layout', url_prefix='/event/<confId>')
+_bp_pages.add_url_rule('/page/<int:page_id>', 'page_display', RHPageDisplay)
 _bp_pages.add_url_rule('/page/<int:page_id>-<slug>', 'page_display', RHPageDisplay)
 
 _compat_bp = IndicoBlueprint('compat_layout', __name__, url_prefix='/event/<event_id>')

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -26,12 +17,14 @@ from indico.modules.events import EventLogKind, EventLogRealm
 from indico.modules.events.management.controllers import RHManageEventBase
 from indico.modules.events.models.roles import EventRole
 from indico.modules.events.roles import logger
-from indico.modules.events.roles.forms import RoleForm
-from indico.modules.events.roles.util import get_role_colors, serialize_role
+from indico.modules.events.roles.forms import EventRoleForm
+from indico.modules.events.roles.util import serialize_event_role
 from indico.modules.events.roles.views import WPEventRoles
 from indico.modules.users import User
+from indico.util.roles import ImportRoleMembersMixin
 from indico.util.user import principal_from_fossil
 from indico.web.flask.templating import get_template_module
+from indico.web.forms.colors import get_role_colors
 from indico.web.util import jsonify_data, jsonify_form
 
 
@@ -62,7 +55,7 @@ class RHAddEventRole(RHManageEventBase):
     """Add a new event role"""
 
     def _process(self):
-        form = RoleForm(event=self.event, color=self._get_color())
+        form = EventRoleForm(event=self.event, color=self._get_color())
         if form.validate_on_submit():
             role = EventRole(event=self.event)
             form.populate_obj(role)
@@ -70,7 +63,7 @@ class RHAddEventRole(RHManageEventBase):
             logger.info('Event role %r created by %r', role, session.user)
             self.event.log(EventLogRealm.management, EventLogKind.positive, 'Roles',
                            'Added role: "{}"'.format(role.name), session.user)
-            return jsonify_data(html=_render_roles(self.event), role=serialize_role(role))
+            return jsonify_data(html=_render_roles(self.event), role=serialize_event_role(role))
         return jsonify_form(form)
 
     def _get_color(self):
@@ -97,7 +90,7 @@ class RHEditEventRole(RHManageEventRole):
     """Edit an event role"""
 
     def _process(self):
-        form = RoleForm(obj=self.role, event=self.event)
+        form = EventRoleForm(obj=self.role, event=self.event)
         if form.validate_on_submit():
             form.populate_obj(self.role)
             db.session.flush()
@@ -153,3 +146,9 @@ class RHAddEventRoleMembers(RHManageEventRole):
                                data={'Name': user.full_name,
                                      'Email': user.email})
         return jsonify_data(html=_render_role(self.role, collapsed=False))
+
+
+class RHEventRoleMembersImportCSV(ImportRoleMembersMixin, RHManageEventRole):
+    """Add users to an event role from CSV"""
+
+    logger = logger

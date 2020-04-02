@@ -6,19 +6,12 @@ Installation guide (development)
 Installing System Packages
 --------------------------
 
-We'll assume you've installed PostgreSQL (and its ``contrib`` package, if on a Linux system) and managed to setup/start
-the server. PostgreSQL 9.6 at least is required.
-
-You can find instructions on how to install it on Fedora/CentOS
-`here <https://wiki.postgresql.org/wiki/YUM_Installation>`_. You can find the same for Debian/Ubuntu
-`here <https://wiki.postgresql.org/wiki/Apt>`_. If you're a macOS user, you will probably want to use Homebrew::
-
-    brew install postgresql
-    brew services start postgresql
-
 Web assets such as JavaScript and SCSS files are compiled using `Webpack <https://webpack.js.org>`_, which
 requires NodeJS to be present. You can find information on how to install NodeJS
 `here <https://nodejs.org/en/download/package-manager/>`_.
+
+Do not use the default NodeJS packages from your Linux distribution as they are usually outdated or come wit
+an outdated npm version.
 
 CentOS/Fedora
 +++++++++++++
@@ -26,8 +19,9 @@ CentOS/Fedora
 .. code-block:: shell
 
     yum install -y gcc redis python-devel python-virtualenv libjpeg-turbo-devel libxslt-devel libxml2-devel \
-        libffi-devel pcre-devel libyaml-devel redhat-rpm-config
-    systemctl start redis.service
+        libffi-devel pcre-devel libyaml-devel redhat-rpm-config \
+        postgresql postgresql-server postgresql-contrib libpq-devel
+    systemctl start redis.service postgresql.service
 
 
 Debian/Ubuntu
@@ -36,7 +30,7 @@ Debian/Ubuntu
 .. code-block:: shell
 
     apt install -y --install-recommends python-dev python-virtualenv libxslt1-dev libxml2-dev libffi-dev libpcre3-dev \
-        libyaml-dev build-essential redis-server
+        libyaml-dev build-essential redis-server postgresql libpq-dev
 
 Then on Debian::
 
@@ -52,8 +46,14 @@ macOS
 
 We recommend that you use `Homebrew <https://brew.sh/>`_::
 
-    brew install python2 redis libjpeg libffi pcre libyaml
+    brew install python2 redis libjpeg libffi pcre libyaml postgresql
+    brew services start postgresql
     pip install virtualenv
+
+Note: Homebrew dropped support for the python2 formula at the end of 2019.
+As an alternative you can install it directly using the latest commit::
+
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/86a44a0a552c673a05f11018459c9f5faae3becc/Formula/python@2.rb
 
 
 Creating the directory structure
@@ -78,14 +78,14 @@ Cloning Indico
 First, let's clone Indico's code base. If you're going to contribute back to the project, it's probably best if you
 clone your own `GitHub fork of the project <https://help.github.com/articles/fork-a-repo/>`_ and set it as the origin::
 
-    git clone --recursive git@github.com:<your-github-username>/indico.git src
+    git clone git@github.com:<your-github-username>/indico.git src
     cd src
     git remote add upstream https://github.com/indico/indico.git
     cd ..
 
 Otherwise, cloning the upstream repository as the origin should be enough::
 
-    git clone --recursive https://github.com/indico/indico.git src
+    git clone https://github.com/indico/indico.git src
 
 If you're going to be changing the standard Indico plugins and/or the documentation, you can also clone those::
 
@@ -268,9 +268,6 @@ Here is an example of a ``nginx.conf`` you can use. It assumes your username is 
 
             root /var/empty;
 
-            location ~ ^/static/assets/(core|(?:plugin|theme)-[^/]+)/(.*)$ {
-                alias /home/jdoe/dev/indico/data/assets/$1/$2;
-            }
 
             location ~ ^/(images|fonts)(.*)/(.+?)(__v[0-9a-f]+)?\.([^.]+)$ {
                 alias /home/jdoe/dev/indico/src/indico/web/static/$1$2/$3.$5;

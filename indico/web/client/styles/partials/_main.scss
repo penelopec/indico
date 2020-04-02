@@ -1,19 +1,9 @@
-/* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
- *
- * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
- */
+// This file is part of Indico.
+// Copyright (C) 2002 - 2020 CERN
+//
+// Indico is free software; you can redistribute it and/or
+// modify it under the terms of the MIT License; see the
+// LICENSE file for more details.
 
 
 @import 'base';
@@ -32,10 +22,6 @@
     border: none;
     margin-bottom: 0;
 
-    border-color: darken($black, 10%);
-    border-style: solid;
-    border-width: 1px 0 1px 0;
-
     > a {
         @include transition(background-color);
 
@@ -44,7 +30,7 @@
         line-height: 3em;
 
         color: white;
-        padding: 0 20px 0 20px;
+        padding: 0 20px;
 
         &:first-child, &.arrow:last-of-type {
             border-radius: 0;
@@ -57,7 +43,7 @@
         &.arrow {
             @include icon-after('icon-arrow-down');
 
-            &:after {
+            &::after {
                 vertical-align: middle;
             }
         }
@@ -89,35 +75,48 @@ div.announcement-bar {
     display: flex;
     align-items: center;
     padding: 0.75em;
-    background-color: lighten($light-yellow, 5%);
-    color: $dark-black;
-    border-bottom: 2px solid $dark-yellow;
     font-size: 1.1em;
     text-align: center;
 
     .icon {
         margin-right: 0.25em;
         font-size: 1.1em;
-        color: $yellow;
     }
 
     .close-button {
         display: flex;
-        color: $dark-yellow;
         font-size: 1.5em;
         cursor: pointer;
     }
-}
 
-div.celery-error-bar {
-    @extend div.announcement-bar;
+    &.warning {
+        background-color: lighten($light-yellow, 5%);
+        color: $dark-black;
 
-    background-color: $red;
-    border-bottom: 2px solid $dark-red;
-    color: $light-red;
+        .icon {
+            color: $yellow;
+        }
 
-    .icon {
-        color: $red;
+        .close-button {
+            color: $dark-yellow;
+        }
+    }
+
+    &.error {
+        background-color: $dark-red;
+        color: $light-red;
+
+        .icon {
+            color: $light-red;
+        }
+
+        .close-button {
+            color: $light-red;
+        }
+    }
+
+    &.weak-hidden {
+        display: none;
     }
 }
 
@@ -163,15 +162,13 @@ div.session-bar {
         margin: 0;
     }
 
-    .i-button {
-        font-weight: normal;
-    }
-
     .icon-shield {
         vertical-align: middle;
     }
 
     .i-button {
+        font-weight: normal;
+
         &.protection-public {
             @extend .i-button.accept;
         }
@@ -191,7 +188,7 @@ div.session-bar {
         right: 0;
         margin-top: 0;
         padding: 0 0 5px 5px;
-        z-index:999;
+        z-index: 999;
     }
 }
 
@@ -214,28 +211,27 @@ div.tz-selector-widget {
 
 div.impersonation-header {
     padding: 0.5em;
-    background-color: #DB610F;
-    color: #ECCCB6;
+    background-color: $dark-black;
+    color: lighten($yellow, 15%);
     font-family: Verdana;
-    font-size: 12px;
+    font-size: 1.1em;
 
     .text {
         display: inline-block;
-        float: left;
 
         .logged-user-name {
-          font-weight: bold;
-          color: #eee;
-          margin: 0.1em;
-          line-height: 1em;
-          max-width: 200px;
+            font-weight: bold;
+            color: lighten($yellow, 30%);
+            margin: 0.1em;
+            line-height: 1em;
+            max-width: 200px;
         }
 
-        &:before {
-          margin-right: 0.4em;
-          font-size: 1.5em;
-          line-height: 1em;
-          vertical-align: middle;
+        &::before {
+            margin-right: 0.4em;
+            font-size: 1.5em;
+            line-height: 1em;
+            vertical-align: middle;
         }
 
     }

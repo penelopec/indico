@@ -1,31 +1,25 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
+import uuid
 from operator import attrgetter
 
 from flask import flash, jsonify, redirect, request, session
 from sqlalchemy.orm import undefer
 from werkzeug.exceptions import BadRequest, Forbidden, NotFound
 
+from indico.core.config import config
 from indico.core.db import db
 from indico.core.db.sqlalchemy.protection import ProtectionMode, render_acl
-from indico.core.permissions import get_principal_permissions
-from indico.legacy.pdfinterface.conference import ContribsToPDF, ContributionBook
+from indico.core.permissions import get_principal_permissions, update_permissions
+from indico.legacy.common.cache import GenericCache
+from indico.legacy.pdfinterface.latex import ContribsToPDF, ContributionBook
 from indico.modules.attachments.controllers.event_package import AttachmentPackageGeneratorMixin
 from indico.modules.events.abstracts.forms import AbstractContentSettingsForm
 from indico.modules.events.abstracts.settings import abstracts_settings
@@ -33,8 +27,9 @@ from indico.modules.events.contributions import contribution_settings, get_contr
 from indico.modules.events.contributions.clone import ContributionCloner
 from indico.modules.events.contributions.controllers.common import ContributionListMixin
 from indico.modules.events.contributions.forms import (ContributionDefaultDurationForm, ContributionDurationForm,
-                                                       ContributionProtectionForm, ContributionStartDateForm,
-                                                       ContributionTypeForm, SubContributionForm)
+                                                       ContributionExportTeXForm, ContributionProtectionForm,
+                                                       ContributionStartDateForm, ContributionTypeForm,
+                                                       SubContributionForm)
 from indico.modules.events.contributions.lists import ContributionListGenerator
 from indico.modules.events.contributions.models.contributions import Contribution
 from indico.modules.events.contributions.models.fields import ContributionField
@@ -45,14 +40,14 @@ from indico.modules.events.contributions.operations import (create_contribution,
                                                             delete_contribution, delete_subcontribution,
                                                             update_contribution, update_subcontribution)
 from indico.modules.events.contributions.util import (contribution_type_row, generate_spreadsheet_from_contributions,
-                                                      import_contributions_from_csv, make_contribution_form)
+                                                      get_boa_export_formats, import_contributions_from_csv,
+                                                      make_contribution_form)
 from indico.modules.events.contributions.views import WPManageContributions
 from indico.modules.events.logs import EventLogKind, EventLogRealm
 from indico.modules.events.management.controllers import RHManageEventBase
 from indico.modules.events.management.controllers.base import RHContributionPersonListMixin
 from indico.modules.events.management.util import flash_if_unregistered
 from indico.modules.events.models.references import ReferenceType
-from indico.modules.events.operations import update_permissions
 from indico.modules.events.sessions import Session
 from indico.modules.events.timetable.forms import ImportContributionsForm
 from indico.modules.events.timetable.operations import update_timetable_entry
@@ -67,6 +62,9 @@ from indico.web.flask.util import send_file, url_for
 from indico.web.forms.base import FormDefaults
 from indico.web.forms.fields.principals import serialize_principal
 from indico.web.util import jsonify_data, jsonify_form, jsonify_template
+
+
+export_list_cache = GenericCache('export-list')
 
 
 def _render_subcontribution_list(contrib):
@@ -124,8 +122,8 @@ class RHManageContributionsActionsBase(RHManageContributionsBase):
 
     def _process_args(self):
         RHManageContributionsBase._process_args(self)
-        ids = {int(x) for x in request.form.getlist('contribution_id')}
-        self.contribs = Contribution.query.with_parent(self.event).filter(Contribution.id.in_(ids)).all()
+        self.contrib_ids = [int(x) for x in request.form.getlist('contribution_id')]
+        self.contribs = Contribution.query.with_parent(self.event).filter(Contribution.id.in_(self.contrib_ids)).all()
 
 
 class RHManageSubContributionsActionsBase(RHManageContributionBase):
@@ -421,6 +419,12 @@ class RHContributionUpdateDuration(RHManageContributionBase):
 class RHManageContributionsExportActionsBase(RHManageContributionsActionsBase):
     ALLOW_LOCKED = True
 
+    def _process_args(self):
+        RHManageContributionsActionsBase._process_args(self)
+        # some PDF export options do not sort the contribution list so we keep
+        # the order in which they were displayed when the user selected them
+        self.contribs.sort(key=lambda c: self.contrib_ids.index(c.id))
+
 
 class RHContributionsMaterialPackage(RHManageContributionsExportActionsBase, AttachmentPackageGeneratorMixin):
     """Generate a ZIP file with materials for a given list of contributions"""
@@ -454,24 +458,54 @@ class RHContributionsExportExcel(RHManageContributionsExportActionsBase):
 
 class RHContributionsExportPDF(RHManageContributionsExportActionsBase):
     def _process(self):
+        if not config.LATEX_ENABLED:
+            raise NotFound
         pdf = ContribsToPDF(self.event, self.contribs)
         return send_file('contributions.pdf', pdf.generate(), 'application/pdf')
 
 
-class RHContributionsExportPDFBook(RHManageContributionsExportActionsBase):
+class RHContributionsExportTeX(RHManageContributionsExportActionsBase):
     def _process(self):
-        pdf = ContributionBook(self.event, session.user, self.contribs, tz=self.event.timezone)
-        return send_file('book-of-abstracts.pdf', pdf.generate(), 'application/pdf')
+        tex = ContribsToPDF(self.event, self.contribs)
+        archive = tex.generate_source_archive()
+        return send_file('contributions-tex.zip', archive, 'application/zip', inline=False)
 
 
-class RHContributionsExportPDFBookSorted(RHManageContributionsExportActionsBase):
+class RHContributionExportTexConfig(RHManageContributionsExportActionsBase):
+    """Configure Export via LaTeX"""
+
+    ALLOW_LOCKED = True
+
     def _process(self):
-        pdf = ContributionBook(self.event, session.user, self.contribs, tz=self.event.timezone,
-                               sort_by='board_number')
-        return send_file('book-of-abstracts.pdf', pdf.generate(), 'application/pdf')
+        form = ContributionExportTeXForm(contribs=self.contribs)
+        form.format.choices = [(k, v[0]) for k, v in get_boa_export_formats().viewitems()]
+        if form.validate_on_submit():
+            data = form.data
+            data.pop('submitted', None)
+            key = unicode(uuid.uuid4())
+            export_list_cache.set(key, data, time=1800)
+            download_url = url_for('.contributions_tex_export_book', self.event, uuid=key)
+            return jsonify_data(flash=False, redirect=download_url, redirect_no_loading=True)
+
+        return jsonify_form(form, submit=_('Export'), disabled_until_change=False)
 
 
-class RHContributionsImportCSV(RHManageContributionsActionsBase):
+class RHContributionsExportTeXBook(RHManageContributionsExportActionsBase):
+    """Handle export contributions via LaTeX"""
+
+    def _process(self):
+        config_params = export_list_cache.get(request.view_args['uuid'])
+        output_format = config_params['format']
+        sort_by = config_params['sort_by']
+        contribs = (Contribution.query.with_parent(self.event)
+                    .filter(Contribution.id.in_(config_params['contribution_ids']))
+                    .all())
+
+        func = get_boa_export_formats()[output_format][1]
+        return func(self.event, contribs, sort_by, ContributionBook)
+
+
+class RHContributionsImportCSV(RHManageContributionsBase):
     """Import contributions from a CSV file"""
 
     def _process(self):
@@ -508,6 +542,26 @@ class RHManageDefaultContributionDuration(RHManageContributionsBase):
             flash(_("Default contribution duration was changed successfully"))
             return jsonify_data()
         return jsonify_form(form)
+
+
+class RHManageContributionPublicationREST(RHManageContributionsBase):
+    """Manage contribution publication setting"""
+
+    def _process_GET(self):
+        published = contribution_settings.get(self.event, 'published')
+        return jsonify(published=published)
+
+    def _process_PUT(self):
+        contribution_settings.set(self.event, 'published', True)
+        self.event.log(EventLogRealm.management, EventLogKind.positive, 'Contributions',
+                       'Contributions published', session.user)
+        return '', 204
+
+    def _process_DELETE(self):
+        contribution_settings.set(self.event, 'published', False)
+        self.event.log(EventLogRealm.management, EventLogKind.negative, 'Contributions',
+                       'Contributions unpublished', session.user)
+        return '', 204
 
 
 class RHManageContributionTypeBase(RHManageContributionsBase):

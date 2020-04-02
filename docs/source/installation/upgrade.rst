@@ -24,6 +24,14 @@ Now switch to the *indico* user and activate the virtualenv:
     su - indico
     source ~/.venv/bin/activate
 
+If you are on CentOS, update your PATH to avoid errors in case the new
+Indico version needs to install an updated version of the PostgreSQL client
+library (psycopg2):
+
+.. code-block:: shell
+
+    export PATH="$PATH:/usr/pgsql-9.6/bin"
+
 You are now ready to install the latest version of Indico:
 
 .. code-block:: shell
@@ -71,6 +79,101 @@ Also start the Celery worker again (once again, as *root*):
 
 
 
+Upgrading from 2.x to 2.2
+-------------------------
+
+.. warning::
+
+    Keep in mind that running Indico from a subdirectory such as ``https://example.com/indico`` is
+    **no longer supported** by the packages we provide on PyPI. Please use a subdomain instead.
+
+When updating to version 2.2 you need to perform some extra steps due to the changes in Indico's
+static asset pipeline.
+
+After installing 2.2, run ``indico setup create-symlinks ~/web`` (still as the *indico* user) to
+create the new symlink.
+
+You can also perform some clean-up:
+
+.. code-block:: shell
+
+    rm /opt/indico/web/htdocs
+    rm -rf /opt/indico/assets
+    sed -i -e '/ASSETS_DIR/d' ~/etc/indico.conf
+
+Now switch back to *root* and update the webserver config as explained below.
+
+
+Apache
+^^^^^^
+
+Open ``/etc/httpd/conf.d/indico.conf`` (CentOS) or ``/etc/apache2/sites-available/indico.conf`` (Debian)
+with an editor and replace this snippet:
+
+.. code-block:: apache
+
+    AliasMatch "^/static/assets/(core|(?:plugin|theme)-[^/]+)/(.*)$" "/opt/indico/assets/$1/$2"
+    AliasMatch "^/(css|images|js|static(?!/plugins|/assets|/themes|/custom))(/.*)$" "/opt/indico/web/htdocs/$1$2"
+    Alias /robots.txt /opt/indico/web/htdocs/robots.txt
+
+with this one:
+
+.. code-block:: apache
+
+    AliasMatch "^/(images|fonts)(.*)/(.+?)(__v[0-9a-f]+)?\.([^.]+)$" "/opt/indico/web/static/$1$2/$3.$5"
+    AliasMatch "^/(css|dist|images|fonts)/(.*)$" "/opt/indico/web/static/$1/$2"
+    Alias /robots.txt /opt/indico/web/static/robots.txt
+
+Reload apache using ``systemctl reload apache2.service``.
+
+
+nginx
+^^^^^
+
+Open ``/etc/nginx/conf.d/indico.conf`` with an editor and replace this snippet:
+
+.. code-block:: nginx
+
+    location ~ ^/static/assets/(core|(?:plugin|theme)-[^/]+)/(.*)$ {
+      alias /opt/indico/assets/$1/$2;
+      access_log off;
+    }
+
+    location ~ ^/(css|images|js|static(?!/plugins|/assets|/themes|/custom))(/.*)$ {
+      alias /opt/indico/web/htdocs/$1$2;
+      access_log off;
+    }
+
+    location /robots.txt {
+      alias /opt/indico/web/htdocs/robots.txt;
+      access_log off;
+    }
+
+with this one:
+
+.. code-block:: nginx
+
+    location ~ ^/(images|fonts)(.*)/(.+?)(__v[0-9a-f]+)?\.([^.]+)$ {
+      alias /opt/indico/web/static/$1$2/$3.$5;
+      access_log off;
+    }
+
+    location ~ ^/(css|dist|images|fonts)/(.*)$ {
+      alias /opt/indico/web/static/$1/$2;
+      access_log off;
+    }
+
+    location /robots.txt {
+      alias /opt/indico/web/static/robots.txt;
+      access_log off;
+    }
+
+Reload nginx using ``systemctl reload nginx.service``.
+
+If you are using customizations using the :data:`CUSTOMIZATION_DIR` setting, see its
+updated documentation as you will have to update those customizations.
+
+
 Upgrading from 1.9.11 to 2.0
 ----------------------------
 
@@ -116,7 +219,7 @@ SanitizationLevel    *removed*
 
 The format of the logging config changed. The old file ``/opt/indico/etc/logging.conf``
 is not used anymore and can be deleted.
-Run ``indico setup create_logging_config /opt/indico/etc/``  to create the new
+Run ``indico setup create-logging-config /opt/indico/etc/``  to create the new
 ``logging.yaml`` which can then be customized if needed.
 
-.. _in the code: https://github.com/indico/indico/blob/master/indico/core/config.py#L40
+.. _in the code: https://github.com/indico/indico/blob/master/indico/core/config.py#L31

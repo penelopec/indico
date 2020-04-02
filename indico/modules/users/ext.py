@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -31,12 +22,17 @@ class ExtraUserPreferences(object):
     def __init__(self, user):
         self.user = user
 
+    @classmethod
+    def is_active(cls, user):
+        """Return whether the preferences are available for the given user."""
+        return True
+
     def load(self):
-        """Returns a dict with the current values for the user"""
+        """Return a dict with the current values for the user."""
         raise NotImplementedError
 
     def save(self, data):
-        """Saves the updated settings"""
+        """Save the updated settings."""
         raise NotImplementedError
 
     # All the following methods are internal and usually do not need
@@ -51,7 +47,7 @@ class ExtraUserPreferences(object):
             defaults[key] = value
 
     def process_form_data(self, data):
-        """Processes and saves submitted data.
+        """Process and save submitted data.
 
         This modifies `data` so the core code doesn't receive any extra
         data it doesn't expect.
@@ -62,7 +58,7 @@ class ExtraUserPreferences(object):
         self.save(local_data)
 
     def extend_form(self, form_class):
-        """Creates a subclass of the form containing the extra field"""
+        """Create a subclass of the form containing the extra field"""
         form_class = type(b'ExtendedUserPreferencesForm', (form_class,), {})
         for name, field in self.fields.iteritems():
             name = self._prefix + name

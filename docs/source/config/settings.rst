@@ -34,6 +34,16 @@ Authentication
 
     Default: ``True``
 
+.. data:: LOCAL_GROUPS
+
+    This setting controls whether local Indico groups are available.
+    If no centralized authentication infrastructure that supports groups
+    (e.g. LDAP) is used, local groups are the only way to define groups in 
+    Indico, but if you do have central groups it may be useful to disable 
+    local ones to have all groups in one central place.
+
+    Default: ``True``
+
 .. data:: LOCAL_REGISTRATION
 
     This setting controls whether people accessing Indico can create a
@@ -227,14 +237,15 @@ Customization
     may break after an Indico update.  Make sure to test all your
     modifications whenever you update Indico!
 
-    To include custom CSS and JavaScript, simply put ``*.scss`` and
-    ``*.js`` files into ``<CUSTOMIZATION_DIR>/scss`` / ``<CUSTOMIZATION_DIR>/js``.
+    To include custom CSS and JavaScript, simply put ``*.css`` and
+    ``*.js`` files into ``<CUSTOMIZATION_DIR>/css`` / ``<CUSTOMIZATION_DIR>/js``.
     If there are multiple files, they will be included in alphabetical
-    order, so prefixing them with a number (e.g. ``00-base.scss``, ``10-events.scss``)
+    order, so prefixing them with a number (e.g. ``00-base.css``, ``10-events.css``)
     is a good idea.
 
-    Static files may be added in ``<CUSTOMIZATION_DIR>/static``.  They can be
-    referenced in templates through the ``assets.custom`` endpoint.
+    Static files may be added in ``<CUSTOMIZATION_DIR>/files``.  They can be
+    referenced in templates through the ``assets.custom`` endpoint.  In CSS/JS,
+    the URL for them needs to be built manually (``/static/custom/files/...``).
 
     For template customizations, see the description of :data:`CUSTOMIZATION_DEBUG`
     as this setting is highly recommended to figure out where exactly to
@@ -487,7 +498,11 @@ LaTeX
     If it is installed in a directory in your ``$PATH``, specifying its
     name without a path is sufficient.
 
-    Default: ``xelatex``
+    If the path is not configured, any functionality that requires LaTeX
+    on the server (such as generating the Book of Abstracts or exporting
+    contributions to PDF) will be disabled.
+
+    Default: ``None``
 
 .. data:: STRICT_LATEX
 
@@ -720,10 +735,10 @@ System
 
 .. data:: PLUGINS
 
-    The list of :doc:`Indico plugins <plugins>` to enable.
+    The list of :ref:`Indico plugins <installation-plugins>` to enable.
 
     A list of all installed plugins can be displayed by the
-    ``indico setup list_plugins`` command; see the guide linked above
+    ``indico setup list-plugins`` command; see the guide linked above
     for details on how to enable plugins.
 
     Default: ``set()``

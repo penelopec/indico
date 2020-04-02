@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from datetime import date, datetime
 
@@ -49,12 +40,12 @@ def test_created_by_user(dummy_blocking, dummy_user, create_user):
 
 
 @pytest.mark.parametrize(('is_admin', 'is_creator', 'expected'), bool_matrix('..', expect=any))
-def test_can_be_modified_deleted(dummy_blocking, create_user, is_admin, is_creator, expected):
+def test_can_edit_delete(dummy_blocking, create_user, is_admin, is_creator, expected):
     user = create_user(123, rb_admin=is_admin)
     if is_creator:
         dummy_blocking.created_by_user = user
-    assert dummy_blocking.can_be_modified(user) == expected
-    assert dummy_blocking.can_be_deleted(user) == expected
+    assert dummy_blocking.can_edit(user) == expected
+    assert dummy_blocking.can_delete(user) == expected
 
 
 @pytest.mark.parametrize(
@@ -62,14 +53,14 @@ def test_can_be_modified_deleted(dummy_blocking, create_user, is_admin, is_creat
     bool_matrix('!00..', expect=True) +         # creator or admin
     bool_matrix(' 00..', expect='all_dynamic')  # room owner
 )
-def test_can_be_overridden(dummy_room, dummy_blocking, create_user,
-                           is_creator, is_admin, has_room, is_room_owner, expected):
+def test_can_override(dummy_room, dummy_blocking, create_user,
+                      is_creator, is_admin, has_room, is_room_owner, expected):
     user = create_user(123, rb_admin=is_admin)
     if is_room_owner:
-        dummy_room.owner = user
+        dummy_room.update_principal(user, full_access=True)
     if is_creator:
         dummy_blocking.created_by_user = user
-    assert dummy_blocking.can_be_overridden(user, dummy_room if has_room else None) == expected
+    assert dummy_blocking.can_override(user, dummy_room if has_room else None) == expected
 
 
 @pytest.mark.parametrize(
@@ -77,14 +68,14 @@ def test_can_be_overridden(dummy_room, dummy_blocking, create_user,
     bool_matrix('1...', expect=True) +
     bool_matrix('0...', expect=False)
 )
-def test_can_be_overridden_explicit_only(dummy_room, dummy_blocking, create_user,
-                                         is_creator, is_admin, has_room, is_room_owner, expected):
+def test_can_override_explicit_only(dummy_room, dummy_blocking, create_user,
+                                    is_creator, is_admin, has_room, is_room_owner, expected):
     user = create_user(123, rb_admin=is_admin)
     if is_room_owner:
-        dummy_room.owner = user
+        dummy_room.update_principal(user, full_access=True)
     if is_creator:
         dummy_blocking.created_by_user = user
-    assert dummy_blocking.can_be_overridden(user, dummy_room if has_room else None, explicit_only=True) == expected
+    assert dummy_blocking.can_override(user, dummy_room if has_room else None, explicit_only=True) == expected
 
 
 @pytest.mark.parametrize(('in_acl', 'expected'), (
@@ -92,17 +83,17 @@ def test_can_be_overridden_explicit_only(dummy_room, dummy_blocking, create_user
     ('group', True),
     (False,   False)
 ))
-def test_can_be_overridden_acl(dummy_blocking, dummy_user, create_user, dummy_group, in_acl, expected):
+def test_can_override_acl(dummy_blocking, dummy_user, create_user, dummy_group, in_acl, expected):
     user = create_user(123, groups={dummy_group})
     dummy_blocking.allowed = {dummy_user}
     if in_acl == 'user':
         dummy_blocking.allowed.add(user)
     elif in_acl == 'group':
         dummy_blocking.allowed.add(dummy_group)
-    assert dummy_blocking.can_be_overridden(user) == expected
+    assert dummy_blocking.can_override(user) == expected
 
 
-def test_can_be_no_user(dummy_blocking):
-    assert not dummy_blocking.can_be_modified(None)
-    assert not dummy_blocking.can_be_deleted(None)
-    assert not dummy_blocking.can_be_overridden(None)
+def test_can_no_user(dummy_blocking):
+    assert not dummy_blocking.can_edit(None)
+    assert not dummy_blocking.can_delete(None)
+    assert not dummy_blocking.can_override(None)

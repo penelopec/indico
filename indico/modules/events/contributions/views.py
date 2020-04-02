@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -26,13 +17,13 @@ class WPManageContributions(MathjaxMixin, WPEventManagement):
     sidemenu_option = 'contributions'
     bundles = ('markdown.js', 'module_events.contributions.js')
 
-    def _getHeadContent(self):
-        return WPEventManagement._getHeadContent(self) + MathjaxMixin._getHeadContent(self)
+    def _get_head_content(self):
+        return WPEventManagement._get_head_content(self) + MathjaxMixin._get_head_content(self)
 
 
 class WPContributionsDisplayBase(WPConferenceDisplayBase):
     template_prefix = 'events/contributions/'
-    bundles = ('markdown.js', 'module_events.contributions.js')
+    bundles = ('markdown.js', 'module_events.contributions.js', 'module_events.contributions.css')
 
 
 class WPMyContributions(WPContributionsDisplayBase):

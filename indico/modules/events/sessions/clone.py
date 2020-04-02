@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -33,12 +24,14 @@ class SessionCloner(EventCloner):
     name = 'sessions'
     friendly_name = _('Sessions')
     requires = {'event_persons'}
+    uses = {'event_roles'}
     is_internal = True
 
     # We do not override `is_available` as we have cloners depending
     # on this internal cloner even if it won't clone anything.
 
     def run(self, new_event, cloners, shared_data):
+        self._event_role_map = shared_data['event_roles']['event_role_map'] if 'event_roles' in cloners else None
         self._person_map = shared_data['event_persons']['person_map']
         self._session_map = {}
         self._session_block_map = {}
@@ -59,7 +52,7 @@ class SessionCloner(EventCloner):
             sess = Session()
             sess.populate_from_attrs(old_sess, attrs)
             sess.blocks = list(self._clone_session_blocks(old_sess.blocks))
-            sess.acl_entries = clone_principals(SessionPrincipal, old_sess.acl_entries)
+            sess.acl_entries = clone_principals(SessionPrincipal, old_sess.acl_entries, self._event_role_map)
             new_event.sessions.append(sess)
             self._session_map[old_sess] = sess
 

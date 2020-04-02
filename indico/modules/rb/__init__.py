@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -21,123 +12,140 @@ from flask import session
 from indico.core import signals
 from indico.core.config import config
 from indico.core.logger import Logger
+from indico.core.permissions import ManagementPermission, check_permissions
 from indico.core.settings import SettingsProxy
-from indico.modules.rb.models.blocking_principals import BlockingPrincipal
-from indico.modules.rb.models.blockings import Blocking
-from indico.modules.rb.models.locations import Location
-from indico.modules.rb.models.reservations import Reservation
+from indico.core.settings.converters import ModelListConverter
+from indico.modules.categories.models.categories import Category
 from indico.modules.rb.models.rooms import Room
-from indico.modules.rb.util import rb_is_admin
 from indico.util.i18n import _
 from indico.web.flask.util import url_for
-from indico.web.menu import SideMenuItem, SideMenuSection, TopMenuItem
+from indico.web.menu import SideMenuItem, TopMenuItem
 
 
 logger = Logger.get('rb')
 
 
 rb_settings = SettingsProxy('roombooking', {
-    'google_maps_api_key': '',
-    'assistance_emails': [],
-    'vc_support_emails': [],
+    'managers_edit_rooms': False,
+    'excluded_categories': [],
     'notification_before_days': 2,
     'notification_before_days_weekly': 5,
     'notification_before_days_monthly': 7,
     'notifications_enabled': True,
+    'end_notification_daily': 1,
+    'end_notification_weekly': 3,
+    'end_notification_monthly': 7,
+    'end_notifications_enabled': True,
     'booking_limit': 365,
-    'tileserver_url': ''
-}, acls={'admin_principals', 'authorized_principals'})
+    'tileserver_url': None,
+    'grace_period': None,
+}, acls={
+    'admin_principals',
+    'authorized_principals'
+}, converters={
+    'excluded_categories': ModelListConverter(Category)
+})
 
 
 @signals.import_tasks.connect
 def _import_tasks(sender, **kwargs):
-    import indico.modules.rb.tasks
+    import indico.modules.rb.tasks  # noqa: F401
+
+
+@signals.users.preferences.connect
+def _get_extra_user_prefs(sender, **kwargs):
+    from indico.modules.rb.user_prefs import RBUserPreferences
+    if config.ENABLE_ROOMBOOKING:
+        return RBUserPreferences
 
 
 @signals.menu.items.connect_via('admin-sidemenu')
 def _extend_admin_menu(sender, **kwargs):
-    if not config.ENABLE_ROOMBOOKING:
-        return
-    if session.user.is_admin:
-        yield SideMenuItem('rb-settings', _("Settings"), url_for('rooms_admin.settings'),
-                           section='roombooking', icon='location')
-        yield SideMenuItem('rb-rooms', _("Rooms"), url_for('rooms_admin.roomBooking-admin'),
-                           section='roombooking', icon='location')
-    else:
-        yield SideMenuItem('rb-rooms', _("Rooms"), url_for('rooms_admin.roomBooking-admin'), 70, icon='location')
+    if config.ENABLE_ROOMBOOKING and session.user.is_admin:
+        url = url_for('rb.roombooking', path='admin')
+        return SideMenuItem('rb', _('Room Booking'), url, 70, icon='location')
 
 
 @signals.menu.items.connect_via('top-menu')
 def _topmenu_items(sender, **kwargs):
     if config.ENABLE_ROOMBOOKING:
-        yield TopMenuItem('rb', _('Room booking'), url_for('rooms.roomBooking'), 80)
+        yield TopMenuItem('room_booking', _('Room booking'), url_for('rb.roombooking'), 80)
 
 
-@signals.menu.sections.connect_via('admin-sidemenu')
-def _sidemenu_sections(sender, **kwargs):
-    yield SideMenuSection('roombooking', _("Room Booking"), 70, icon='location')
+@signals.menu.items.connect_via('event-management-sidemenu')
+def _sidemenu_items(sender, event, **kwargs):
+    if config.ENABLE_ROOMBOOKING and event.can_manage(session.user):
+        yield SideMenuItem('room_booking', _('Room Booking'), url_for('rb.event_booking_list', event), 50,
+                           icon='location')
 
 
 @signals.users.merged.connect
 def _merge_users(target, source, **kwargs):
+    from indico.modules.rb.models.blocking_principals import BlockingPrincipal
+    from indico.modules.rb.models.blockings import Blocking
+    from indico.modules.rb.models.principals import RoomPrincipal
+    from indico.modules.rb.models.reservations import Reservation
+    Blocking.query.filter_by(created_by_id=source.id).update({Blocking.created_by_id: target.id})
     BlockingPrincipal.merge_users(target, source, 'blocking')
-    Blocking.find(created_by_id=source.id).update({Blocking.created_by_id: target.id})
-    Reservation.find(created_by_id=source.id).update({Reservation.created_by_id: target.id})
-    Reservation.find(booked_for_id=source.id).update({Reservation.booked_for_id: target.id})
-    Room.find(owner_id=source.id).update({Room.owner_id: target.id})
+    Reservation.query.filter_by(created_by_id=source.id).update({Reservation.created_by_id: target.id})
+    Reservation.query.filter_by(booked_for_id=source.id).update({Reservation.booked_for_id: target.id})
+    Room.query.filter_by(owner_id=source.id).update({Room.owner_id: target.id})
+    RoomPrincipal.merge_users(target, source, 'room')
     rb_settings.acls.merge_users(target, source)
 
 
 @signals.event.deleted.connect
 def _event_deleted(event, user, **kwargs):
-    reservations = (Reservation.query.with_parent(event)
-                    .filter(~Reservation.is_cancelled,
-                            ~Reservation.is_rejected)
-                    .all())
-    for resv in reservations:
-        resv.cancel(user or session.user, 'Associated event was deleted')
+    from indico.modules.rb.models.reservations import Reservation
+    reservation_links = (event.all_room_reservation_links
+                         .join(Reservation)
+                         .filter(~Reservation.is_rejected, ~Reservation.is_cancelled)
+                         .all())
+    for link in reservation_links:
+        link.reservation.cancel(user or session.user, 'Associated event was deleted')
 
 
-@signals.menu.sections.connect_via('rb-sidemenu')
-def _sidemenu_sections(sender, **kwargs):
-    user_has_rooms = session.user is not None and Room.user_owns_rooms(session.user)
-
-    yield SideMenuSection('search', _("Search"), 40, icon='search', active=True)
-    if user_has_rooms:
-        yield SideMenuSection('my_rooms', _("My Rooms"), 30, icon='user')
-    yield SideMenuSection('blocking', _("Room Blocking"), 20, icon='lock')
+class BookPermission(ManagementPermission):
+    name = 'book'
+    friendly_name = _('Book')
+    description = _('Allows booking the room')
+    user_selectable = True
+    color = 'green'
 
 
-@signals.menu.items.connect_via('rb-sidemenu')
-def _sidemenu_items(sender, **kwargs):
-    user_is_admin = session.user is not None and rb_is_admin(session.user)
-    user_has_rooms = session.user is not None and Room.user_owns_rooms(session.user)
-    map_available = Location.default_location is not None and Location.default_location.is_map_available
+class PrebookPermission(ManagementPermission):
+    name = 'prebook'
+    friendly_name = _('Prebook')
+    description = _('Allows prebooking the room')
+    user_selectable = True
+    default = True
+    color = 'orange'
 
-    yield SideMenuItem('book_room', _('Book a Room'), url_for('rooms.book'), 80, icon='checkmark')
-    if map_available:
-        yield SideMenuItem('map', _('Map of Rooms'), url_for('rooms.roomBooking-mapOfRooms'), 70, icon='location')
-    yield SideMenuItem('calendar', _('Calendar'), url_for('rooms.calendar'), 60, icon='calendar')
-    yield SideMenuItem('my_bookings', _('My Bookings'), url_for('rooms.my_bookings'), 50, icon='time')
-    yield SideMenuItem('search_bookings', _('Search bookings'), url_for('rooms.roomBooking-search4Bookings'),
-                       section='search')
-    yield SideMenuItem('search_rooms', _('Search rooms'), url_for('rooms.search_rooms'),
-                       section='search')
-    if user_has_rooms:
-        yield SideMenuItem('bookings_in_my_rooms', _('Bookings in my rooms'), url_for('rooms.bookings_my_rooms'),
-                           section='my_rooms')
-        yield SideMenuItem('prebookings_in_my_rooms', _('Pre-bookings in my rooms'),
-                           url_for('rooms.pending_bookings_my_rooms'),
-                           section='my_rooms')
-        yield SideMenuItem('room_list', _('Room list'), url_for('rooms.search_my_rooms'),
-                           section='my_rooms')
-    yield SideMenuItem('my_blockings', _('My Blockings'),
-                       url_for('rooms.blocking_list', only_mine=True, timeframe='recent'),
-                       section='blocking')
-    if user_has_rooms:
-        yield SideMenuItem('blockings_my_rooms', _('Blockings for my rooms'), url_for('rooms.blocking_my_rooms'),
-                           section='blocking')
-    yield SideMenuItem('blocking_create', _('Block rooms'), url_for('rooms.create_blocking'), section='blocking')
-    if user_is_admin:
-        yield SideMenuItem('admin', _('Administration'), url_for('rooms_admin.roomBooking-admin'), 10,
-                           icon='user-chairperson')
+
+class OverridePermission(ManagementPermission):
+    name = 'override'
+    friendly_name = _('Override')
+    description = _('Allows overriding restrictions when booking the room')
+    user_selectable = True
+    color = 'pink'
+
+
+class ModeratePermission(ManagementPermission):
+    name = 'moderate'
+    friendly_name = _('Moderate')
+    description = _('Allows moderating bookings (approving/rejecting/editing)')
+    user_selectable = True
+    color = 'purple'
+
+
+@signals.acl.get_management_permissions.connect_via(Room)
+def _get_management_permissions(sender, **kwargs):
+    yield BookPermission
+    yield PrebookPermission
+    yield OverridePermission
+    yield ModeratePermission
+
+
+@signals.app_created.connect
+def _check_permissions(app, **kwargs):
+    check_permissions(Room)

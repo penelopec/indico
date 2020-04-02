@@ -1,26 +1,19 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from datetime import time
+from itertools import groupby
 
 from flask import request, session
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from wtforms.fields import BooleanField, HiddenField, IntegerField, SelectField, StringField, TextAreaField
+from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired, InputRequired, NumberRange, Optional, ValidationError
 from wtforms.widgets import Select
 
@@ -30,21 +23,23 @@ from indico.modules.events.abstracts.fields import (AbstractField, AbstractPerso
                                                     TrackRoleField)
 from indico.modules.events.abstracts.models.abstracts import EditTrackMode
 from indico.modules.events.abstracts.models.reviews import AbstractAction, AbstractCommentVisibility
-from indico.modules.events.abstracts.settings import BOACorrespondingAuthorType, BOASortField, abstracts_settings
+from indico.modules.events.abstracts.settings import (BOACorrespondingAuthorType, BOALinkFormat, BOASortField,
+                                                      abstracts_settings)
 from indico.modules.events.contributions.models.persons import AuthorType
 from indico.modules.events.contributions.models.types import ContributionType
 from indico.modules.events.sessions.models.sessions import Session
 from indico.modules.events.tracks.models.tracks import Track
+from indico.modules.users.util import get_user_by_email
 from indico.util.i18n import _
 from indico.util.placeholders import render_placeholder_info
 from indico.web.forms.base import FormDefaults, IndicoForm, generated_data
 from indico.web.forms.fields import (EditableFileField, EmailListField, HiddenEnumField, HiddenFieldList,
                                      IndicoDateTimeField, IndicoEnumSelectField, IndicoMarkdownField,
                                      IndicoQuerySelectMultipleCheckboxField, IndicoQuerySelectMultipleField,
-                                     PrincipalListField)
+                                     IndicoRadioField, PrincipalField, PrincipalListField)
 from indico.web.forms.util import inject_validators
 from indico.web.forms.validators import HiddenUnless, LinkedDateTime, SoftLength, UsedIf, WordCount
-from indico.web.forms.widgets import SwitchWidget
+from indico.web.forms.widgets import JinjaWidget, SwitchWidget
 
 
 def make_review_form(event):
@@ -97,11 +92,15 @@ class BOASettingsForm(IndicoForm):
     """Settings form for the 'Book of Abstracts'"""
 
     extra_text = IndicoMarkdownField(_('Additional text'), editor=True, mathjax=True)
+    extra_text_end = IndicoMarkdownField(_('Additional text at end'), editor=True, mathjax=True)
     sort_by = IndicoEnumSelectField(_('Sort by'), [DataRequired()], enum=BOASortField, sorted=True)
     corresponding_author = IndicoEnumSelectField(_('Corresponding author'), [DataRequired()],
                                                  enum=BOACorrespondingAuthorType, sorted=True)
     show_abstract_ids = BooleanField(_('Show abstract IDs'), widget=SwitchWidget(),
                                      description=_("Show abstract IDs in the table of contents."))
+    min_lines_per_abstract = IntegerField(_("Minimum lines per abstract"),
+                                          description=_("Minimum lines to reserve per abstract."))
+    link_format = IndicoEnumSelectField(_('Link formatting'), [DataRequired()], enum=BOALinkFormat, sorted=True)
 
 
 class AbstractSubmissionSettingsForm(IndicoForm):
@@ -116,6 +115,8 @@ class AbstractSubmissionSettingsForm(IndicoForm):
                                          description=_("Make the selection of a contribution type mandatory"))
     allow_attachments = BooleanField(_('Allow attachments'), widget=SwitchWidget(),
                                      description=_("Allow files to be attached to the abstract"))
+    copy_attachments = BooleanField(_('Copy attachments'), [HiddenUnless('allow_attachments')], widget=SwitchWidget(),
+                                    description=_("Copy attachments to the contribution when accepting an abstract"))
     allow_speakers = BooleanField(_('Allow speakers'), widget=SwitchWidget(),
                                   description=_("Allow the selection of the abstract speakers"))
     speakers_required = BooleanField(_('Require a speaker'), [HiddenUnless('allow_speakers')], widget=SwitchWidget(),
@@ -199,7 +200,8 @@ class AbstractJudgmentFormBase(IndicoForm):
               'merge_persons', 'judgment_comment', 'send_notifications')
 
     accepted_track = QuerySelectField(_("Track"), [HiddenUnless('judgment', AbstractAction.accept)],
-                                      get_label='title', allow_blank=True, blank_text=_("Choose a track..."),
+                                      get_label=lambda obj: obj.title_with_group,
+                                      allow_blank=True, blank_text=_("Choose a track..."),
                                       description=_("The abstract will be accepted in this track"))
     accepted_contrib_type = QuerySelectField(_("Contribution type"), [HiddenUnless('judgment', AbstractAction.accept)],
                                              get_label=lambda x: x.name.title(), allow_blank=True,
@@ -445,6 +447,7 @@ class CreateEmailTemplateForm(EditEmailTemplateRuleForm):
         ('submit', _('Submit')),
         ('accept', _('Accept')),
         ('reject', _('Reject')),
+        ('invite', _('Invited')),
         ('merge', _('Merge'))
     ], description=_("The default template that will be used as a basis for this notification. "
                      "You can customize it later."))
@@ -455,18 +458,21 @@ class AbstractForm(IndicoForm):
     description = IndicoMarkdownField(_('Content'), editor=True, mathjax=True)
     submitted_contrib_type = QuerySelectField(_("Contribution type"), get_label='name', allow_blank=True,
                                               blank_text=_("No type selected"))
-    person_links = AbstractPersonLinkListField(_("Authors"), [DataRequired()], default_author_type=AuthorType.primary)
+    person_links = AbstractPersonLinkListField(_("Authors"), default_author_type=AuthorType.primary)
     submission_comment = TextAreaField(_("Comments"))
     attachments = EditableFileField(_('Attachments'), multiple_files=True, lightweight=True)
 
     def __init__(self, *args, **kwargs):
         self.event = kwargs.pop('event')
         self.abstract = kwargs.pop('abstract', None)
+        is_invited = kwargs.pop('invited', False)
         management = kwargs.pop('management', False)
         description_settings = abstracts_settings.get(self.event, 'description_settings')
-        description_validators = self._get_description_validators(description_settings)
+        description_validators = self._get_description_validators(description_settings, invited=is_invited)
         if description_validators:
             inject_validators(self, 'description', description_validators)
+        if not is_invited:
+            inject_validators(self, 'person_links', [DataRequired()])
         if abstracts_settings.get(self.event, 'contrib_type_required'):
             inject_validators(self, 'submitted_contrib_type', [DataRequired()])
         super(AbstractForm, self).__init__(*args, **kwargs)
@@ -486,12 +492,16 @@ class AbstractForm(IndicoForm):
             del self.attachments
         if not description_settings['is_active']:
             del self.description
-        self.person_links.require_speaker_author = abstracts_settings.get(self.event, 'speakers_required')
-        self.person_links.allow_speakers = abstracts_settings.get(self.event, 'allow_speakers')
+        if not is_invited:
+            self.person_links.require_speaker_author = abstracts_settings.get(self.event, 'speakers_required')
+            self.person_links.allow_speakers = abstracts_settings.get(self.event, 'allow_speakers')
+            self.person_links.disable_user_search = session.user is None
+        else:
+            self.person_links.require_primary_author = False
 
-    def _get_description_validators(self, description_settings):
+    def _get_description_validators(self, description_settings, invited=False):
         validators = []
-        if description_settings['is_required']:
+        if description_settings['is_required'] and not invited:
             validators.append(DataRequired())
         if description_settings['max_length']:
             validators.append(SoftLength(max=description_settings['max_length']))
@@ -526,8 +536,27 @@ class _SingleChoiceQuerySelectMultipleField(IndicoQuerySelectMultipleField):
         super(_SingleChoiceQuerySelectMultipleField, self).process_formdata(valuelist)
 
 
+class _SingleChoiceQuerySelectMultipleFieldGrouped(_SingleChoiceQuerySelectMultipleField):
+    widget = JinjaWidget('events/abstracts/forms/select_grouped_widget.html')
+
+    def __init__(self, *args, **kwargs):
+        self.get_group = kwargs.pop('get_group', lambda x: x)
+        super(_SingleChoiceQuerySelectMultipleFieldGrouped, self).__init__(*args, **kwargs)
+
+    def get_grouped_choices(self):
+        return groupby(list(self.iter_choices()), key=lambda x: x[3:])  # group by (group, group label)
+
+    def iter_choices(self):
+        yield ('__None', self.blank_text, self.data is None, None, None)
+        for pk, obj in self._get_object_list():
+            yield (pk, self.get_label(obj), obj in self.data, self.get_group(obj),
+                   self.get_label(self.get_group(obj)) if self.get_group(obj) else None)
+
+
 class SingleTrackMixin(object):
-    submitted_for_tracks = _SingleChoiceQuerySelectMultipleField(_("Track"), get_label='title', collection_class=set)
+    submitted_for_tracks = _SingleChoiceQuerySelectMultipleFieldGrouped(_("Track"), get_label='title',
+                                                                        collection_class=set,
+                                                                        get_group=lambda obj: obj.track_group)
 
     def __init__(self, *args, **kwargs):
         event = kwargs['event']
@@ -541,8 +570,26 @@ class SingleTrackMixin(object):
         self.submitted_for_tracks.query = Track.query.with_parent(event).order_by(Track.position)
 
 
+class _MultiChoiceQuerySelectMultipleFieldGrouped(IndicoQuerySelectMultipleField):
+    widget = JinjaWidget('events/abstracts/forms/checkbox_group_grouped_widget.html')
+
+    def __init__(self, *args, **kwargs):
+        self.get_group = kwargs.pop('get_group', lambda x: x)
+        super(_MultiChoiceQuerySelectMultipleFieldGrouped, self).__init__(*args, **kwargs)
+
+    def get_grouped_choices(self):
+        return groupby(list(self.iter_choices()), key=lambda x: x[3:])  # group by (group, group label)
+
+    def iter_choices(self):
+        for pk, obj in self._get_object_list():
+            yield (pk, self.get_label(obj), obj in self.data, self.get_group(obj),
+                   self.get_label(self.get_group(obj)) if self.get_group(obj) else None)
+
+
 class MultiTrackMixin(object):
-    submitted_for_tracks = IndicoQuerySelectMultipleCheckboxField(_("Tracks"), get_label='title', collection_class=set)
+    submitted_for_tracks = _MultiChoiceQuerySelectMultipleFieldGrouped(_("Tracks"), get_label='title',
+                                                                       collection_class=set,
+                                                                       get_group=lambda obj: obj.track_group)
 
     def __init__(self, *args, **kwargs):
         event = kwargs['event']
@@ -556,6 +603,35 @@ class MultiTrackMixin(object):
 
 class SendNotificationsMixin(object):
     send_notifications = BooleanField(_("Send email notifications"), default=True)
+
+
+class InvitedAbstractMixin(object):
+    users_with_no_account = IndicoRadioField(_('Type of user'), [DataRequired()], default='existing',
+                                             choices=(('existing', _('Existing user')),
+                                                      ('new', _('New user'))))
+    submitter = PrincipalField(_('Submitter'),
+                               [HiddenUnless('users_with_no_account', 'existing'), DataRequired()], allow_external=True,
+                               description=_('The person invited to submit the abstract'))
+    first_name = StringField(_('First name'), [HiddenUnless('users_with_no_account', 'new'), DataRequired()])
+    last_name = StringField(_('Family name'), [HiddenUnless('users_with_no_account', 'new'), DataRequired()])
+    email = EmailField(_('Email address'), [HiddenUnless('users_with_no_account', 'new'), DataRequired()],
+                       filters=[lambda x: x.lower() if x else x])
+
+    def __init__(self, *args, **kwargs):
+        self.event = kwargs['event']
+        super(InvitedAbstractMixin, self).__init__(*args, **kwargs)
+
+    def validate_email(self, field):
+        if get_user_by_email(field.data):
+            raise ValidationError(_('There is already a user with this email address'))
+
+    def validate(self):
+        from indico.modules.events.abstracts.util import can_create_invited_abstracts
+        if not can_create_invited_abstracts(self.event):
+            raise ValidationError(_('You have to create an "Invited" abstract notification template in order to '
+                                    'be able to create invited abstracts.'))
+        else:
+            return super(InvitedAbstractMixin, self).validate()
 
 
 class AbstractsScheduleForm(IndicoForm):
@@ -593,7 +669,9 @@ class AbstractCommentForm(IndicoForm):
 
 
 class AbstractReviewedForTracksForm(IndicoForm):
-    reviewed_for_tracks = IndicoQuerySelectMultipleCheckboxField(_("Tracks"), get_label='title', collection_class=set)
+    reviewed_for_tracks = _MultiChoiceQuerySelectMultipleFieldGrouped(_("Tracks"), get_label='title',
+                                                                      collection_class=set,
+                                                                      get_group=lambda obj: obj.track_group)
 
     def __init__(self, *args, **kwargs):
         event = kwargs.pop('event')

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -23,7 +14,7 @@ from indico.core.db.sqlalchemy.util.models import get_simple_column_attrs
 from indico.modules.events.cloning import EventCloner
 from indico.modules.events.models.events import EventType
 from indico.modules.events.timetable.models.breaks import Break
-from indico.modules.events.timetable.models.entries import TimetableEntry
+from indico.modules.events.timetable.models.entries import TimetableEntry, TimetableEntryType
 from indico.util.i18n import _
 
 
@@ -58,10 +49,15 @@ class TimetableCloner(EventCloner):
         break_strategy = defaultload('break_')
         break_strategy.joinedload('own_venue')
         break_strategy.joinedload('own_room').lazyload('*')
+        entry_key_order = db.case({
+            TimetableEntryType.SESSION_BLOCK: db.func.concat('s', TimetableEntry.id),
+            TimetableEntryType.CONTRIBUTION: db.func.concat('c', TimetableEntry.id),
+            TimetableEntryType.BREAK: db.func.concat('b', TimetableEntry.id),
+        }, value=TimetableEntry.type)
         query = (self.old_event.timetable_entries
                  .options(joinedload('parent').lazyload('*'),
                           break_strategy)
-                 .order_by(TimetableEntry.parent_id.is_(None).desc()))
+                 .order_by(TimetableEntry.parent_id.is_(None).desc(), entry_key_order))
         # iterate over all timetable entries; start with top-level
         # ones so we can build a mapping that can be used once we
         # reach nested entries

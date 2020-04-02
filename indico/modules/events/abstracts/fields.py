@@ -1,22 +1,13 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
-from collections import defaultdict
+from operator import attrgetter
 
 from flask import request, session
 from sqlalchemy.orm import joinedload
@@ -24,11 +15,14 @@ from wtforms.ext.sqlalchemy.fields import QuerySelectField
 
 from indico.core.db import db
 from indico.core.db.sqlalchemy.util.session import no_autoflush
+from indico.core.permissions import get_permissions_info
+from indico.modules.categories.util import serialize_category_role
 from indico.modules.events.abstracts.models.abstracts import Abstract
 from indico.modules.events.abstracts.models.persons import AbstractPersonLink
 from indico.modules.events.abstracts.notifications import ContributionTypeCondition, StateCondition, TrackCondition
 from indico.modules.events.contributions.models.persons import AuthorType
 from indico.modules.events.fields import PersonLinkListFieldBase
+from indico.modules.events.roles.util import serialize_event_role
 from indico.modules.events.tracks.models.tracks import Track
 from indico.modules.events.util import serialize_person_link
 from indico.modules.users.models.users import User
@@ -118,6 +112,7 @@ class AbstractPersonLinkListField(PersonLinkListFieldBase):
         self.default_is_speaker = False
         self.require_primary_author = True
         self.sort_by_last_name = True
+        self.disable_user_search = kwargs.pop('disable_user_search', False)
         super(AbstractPersonLinkListField, self).__init__(*args, **kwargs)
 
     def _convert_data(self, data):
@@ -209,44 +204,19 @@ class TrackRoleField(JSONField):
     widget = JinjaWidget('events/abstracts/forms/track_role_widget.html')
 
     @property
-    def users(self):
-        return {user_id: _serialize_user(user) for user_id, user in _get_users_in_roles(self.data)}
+    def permissions_info(self):
+        permissions, tree, default = get_permissions_info(Track)
+        return {'permissions': permissions, 'tree': tree['_full_access']['children'], 'default': default}
 
     @property
-    def role_data(self):
-        conveners = set()
-        reviewers = set()
+    def event_roles(self):
+        return [serialize_event_role(role, legacy=False) for role in sorted(self.event.roles, key=attrgetter('code'))]
 
-        # Handle global reviewers/conveners
-        role_data = self.data.pop('*')
-        global_conveners = _get_users(role_data['convener'])
-        global_reviewers = _get_users(role_data['reviewer'])
-        conveners |= global_conveners
-        reviewers |= global_reviewers
-
-        track_dict = {track.id: track for track in Track.query.with_parent(self.event).filter(Track.id.in_(self.data))}
-        user_dict = dict(_get_users_in_roles(self.data))
-
-        track_roles = {}
-        # Update track-specific reviewers/conveners
-        for track_id, roles in self.data.viewitems():
-            track = track_dict[int(track_id)]
-            track_roles[track] = defaultdict(set)
-            for role_id, user_ids in roles.viewitems():
-                users = {user_dict[user_id] for user_id in user_ids}
-                track_roles[track][role_id] = users
-                if role_id == 'convener':
-                    conveners |= users
-                elif role_id == 'reviewer':
-                    reviewers |= users
-
-        return {
-            'track_roles': track_roles,
-            'global_conveners': global_conveners,
-            'global_reviewers': global_reviewers,
-            'all_conveners': conveners,
-            'all_reviewers': reviewers
-        }
+    @property
+    def category_roles(self):
+        from indico.modules.categories.models.roles import CategoryRole
+        category_roles = CategoryRole.get_category_roles(self.event.category)
+        return [serialize_category_role(role) for role in category_roles]
 
     def _value(self):
         return super(TrackRoleField, self)._value() if self.data else '[]'

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -37,9 +28,10 @@ class PrincipalType(int, IndicoEnum):
     email = 4
     network = 5
     event_role = 6
+    category_role = 7
 
 
-def _make_check(type_, allow_emails, allow_networks, allow_event_roles, *cols):
+def _make_check(type_, allow_emails, allow_networks, allow_event_roles, allow_category_roles, *cols):
     all_cols = {'user_id', 'local_group_id', 'mp_group_provider', 'mp_group_name'}
     if allow_emails:
         all_cols.add('email')
@@ -47,6 +39,8 @@ def _make_check(type_, allow_emails, allow_networks, allow_event_roles, *cols):
         all_cols.add('ip_network_group_id')
     if allow_event_roles:
         all_cols.add('event_role_id')
+    if allow_category_roles:
+        all_cols.add('category_role_id')
     required_cols = all_cols & set(cols)
     forbidden_cols = all_cols - required_cols
     criteria = ['{} IS NULL'.format(col) for col in sorted(forbidden_cols)]
@@ -61,7 +55,8 @@ def serialize_email_principal(email):
         '_type': 'Email',
         'email': email.email,
         'id': email.name,
-        'identifier': 'Email:{}'.format(email.email)
+        'name': email.name,
+        'identifier': email.identifier
     }
 
 
@@ -78,6 +73,10 @@ class IEmailPrincipalFossil(IFossil):
         pass
     getEmail.produce = lambda x: x.email
 
+    def getName(self):
+        pass
+    getName.produce = lambda x: x.name
+
 
 class EmailPrincipal(Fossilizable):
     """Wrapper for email principals
@@ -90,6 +89,7 @@ class EmailPrincipal(Fossilizable):
     is_group = False
     is_single_person = True
     is_event_role = False
+    is_category_role = False
     principal_order = 0
     fossilizes(IEmailPrincipalFossil)
 
@@ -107,7 +107,11 @@ class EmailPrincipal(Fossilizable):
     @property
     def user(self):
         from indico.modules.users import User
-        return User.find_first(~User.is_deleted, User.all_emails.contains(self.email))
+        return User.query.filter(~User.is_deleted, User.all_emails == self.email).first()
+
+    @property
+    def identifier(self):
+        return 'Email:{}'.format(self.email)
 
     def __eq__(self, other):
         return isinstance(other, EmailPrincipal) and self.email == other.email
@@ -147,6 +151,8 @@ class PrincipalMixin(object):
     allow_networks = False
     #: Whether it should be allowed to add an event role.
     allow_event_roles = False
+    #: Whether it should be allowed to add a category role
+    allow_category_roles = False
 
     @strict_classproperty
     @classmethod
@@ -165,23 +171,25 @@ class PrincipalMixin(object):
                                         unique=True, postgresql_where=db.text('type = {}'.format(PrincipalType.email))))
         indexes = [db.Index(None, 'mp_group_provider', 'mp_group_name')]
         checks = [_make_check(PrincipalType.user, cls.allow_emails, cls.allow_networks, cls.allow_event_roles,
-                              'user_id'),
+                              cls.allow_category_roles, 'user_id'),
                   _make_check(PrincipalType.local_group, cls.allow_emails, cls.allow_networks, cls.allow_event_roles,
-                              'local_group_id'),
+                              cls.allow_category_roles, 'local_group_id'),
                   _make_check(PrincipalType.multipass_group, cls.allow_emails, cls.allow_networks,
-                              cls.allow_event_roles, 'mp_group_provider', 'mp_group_name')]
+                              cls.allow_event_roles, cls.allow_category_roles, 'mp_group_provider', 'mp_group_name')]
         if cls.allow_emails:
             checks.append(_make_check(PrincipalType.email, cls.allow_emails, cls.allow_networks, cls.allow_event_roles,
-                                      'email'))
+                                      cls.allow_category_roles, 'email'))
             checks.append(db.CheckConstraint('email IS NULL OR email = lower(email)', 'lowercase_email'))
         if cls.allow_networks:
             checks.append(_make_check(PrincipalType.network, cls.allow_emails, cls.allow_networks,
-                                      cls.allow_event_roles, 'ip_network_group_id'))
+                                      cls.allow_event_roles, cls.allow_category_roles, 'ip_network_group_id'))
         if cls.allow_event_roles:
             checks.append(_make_check(PrincipalType.event_role, cls.allow_emails, cls.allow_networks,
-                                      cls.allow_event_roles, 'event_role_id'))
+                                      cls.allow_event_roles, cls.allow_category_roles, 'event_role_id'))
+        if cls.allow_category_roles:
+            checks.append(_make_check(PrincipalType.category_role, cls.allow_emails, cls.allow_networks,
+                                      cls.allow_event_roles, cls.allow_category_roles, 'category_role_id'))
         return tuple(uniques + indexes + checks)
-
 
     @declared_attr
     def type(cls):
@@ -192,6 +200,8 @@ class PrincipalMixin(object):
             exclude_values.add(PrincipalType.network)
         if not cls.allow_event_roles:
             exclude_values.add(PrincipalType.event_role)
+        if not cls.allow_category_roles:
+            exclude_values.add(PrincipalType.category_role)
         return db.Column(
             PyIntEnum(PrincipalType, exclude_values=(exclude_values or None)),
             nullable=False
@@ -264,6 +274,17 @@ class PrincipalMixin(object):
         )
 
     @declared_attr
+    def category_role_id(cls):
+        if not cls.allow_category_roles:
+            return
+        return db.Column(
+            db.Integer,
+            db.ForeignKey('categories.roles.id'),
+            nullable=True,
+            index=True
+        )
+
+    @declared_attr
     def user(cls):
         assert cls.principal_backref_name
         return db.relationship(
@@ -319,6 +340,21 @@ class PrincipalMixin(object):
             )
         )
 
+    @declared_attr
+    def category_role(cls):
+        if not cls.allow_category_roles:
+            return
+        assert cls.principal_backref_name
+        return db.relationship(
+            'CategoryRole',
+            lazy=False,
+            backref=db.backref(
+                cls.principal_backref_name,
+                cascade='all, delete',
+                lazy='dynamic'
+            )
+        )
+
     @hybrid_property
     def principal(self):
         from indico.modules.groups import GroupProxy
@@ -334,6 +370,8 @@ class PrincipalMixin(object):
             return self.ip_network_group
         elif self.type == PrincipalType.event_role:
             return self.event_role
+        elif self.type == PrincipalType.category_role:
+            return self.category_role
 
     @principal.setter
     def principal(self, value):
@@ -344,6 +382,7 @@ class PrincipalMixin(object):
         self.multipass_group_provider = self.multipass_group_name = None
         self.ip_network_group = None
         self.event_role = None
+        self.category_role = None
         if self.type == PrincipalType.email:
             assert self.allow_emails
             self.email = value.email
@@ -353,6 +392,9 @@ class PrincipalMixin(object):
         elif self.type == PrincipalType.event_role:
             assert self.allow_event_roles
             self.event_role = value
+        elif self.type == PrincipalType.category_role:
+            assert self.allow_category_roles
+            self.category_role = value
         elif self.type == PrincipalType.local_group:
             self.local_group = value.group
         elif self.type == PrincipalType.multipass_group:
@@ -366,6 +408,19 @@ class PrincipalMixin(object):
     @principal.comparator
     def principal(cls):
         return PrincipalComparator(cls)
+
+    def get_emails(self):
+        """Get a set of all unique emails associated with this principal.
+
+        For users, this is just the primary email (or nothing for the system user).
+        For groups it is the primary email address of each group members who have
+        an Indico account.
+        """
+        if self.type == PrincipalType.user and not self.user.is_system:
+            return {self.user.email}
+        elif self.type in (PrincipalType.local_group, PrincipalType.multipass_group):
+            return {x.email for x in self.principal.get_members() if not x.is_system}
+        return set()
 
     def merge_privs(self, other):
         """Merges the privileges of another principal
@@ -549,6 +604,8 @@ class PrincipalComparator(Comparator):
             criteria = [self.cls.ip_network_group_id == other.id]
         elif other.principal_type == PrincipalType.event_role:
             criteria = [self.cls.event_role_id == other.id]
+        elif other.principal_type == PrincipalType.category_role:
+            criteria = [self.cls.category_role_id == other.id]
         elif other.principal_type == PrincipalType.local_group:
             criteria = [self.cls.local_group_id == other.id]
         elif other.principal_type == PrincipalType.multipass_group:
@@ -561,18 +618,27 @@ class PrincipalComparator(Comparator):
         return db.and_(self.cls.type == other.principal_type, *criteria)
 
 
-def clone_principals(cls, principals):
+def clone_principals(cls, principals, event_role_map=None):
     """Clone a list of principals.
 
     :param cls: the principal type to use (a `PrincipalMixin` subclass)
     :param principals: a collection of these principals
+    :param event_role_map: the mapping from old to new event roles.
+                           if omitted, event roles are skipped
     :return: A new set of principals that can be added to an object
     """
     rv = set()
     assert all(isinstance(x, cls) for x in principals)
-    attrs = get_simple_column_attrs(cls) | {'user', 'local_group', 'ip_network_group', 'event_role'}
+    attrs = get_simple_column_attrs(cls) | {'user', 'local_group', 'ip_network_group', 'category_role'}
     for old_principal in principals:
+        event_role = None
+        if old_principal.type == PrincipalType.event_role:
+            if event_role_map is None:
+                continue
+            event_role = event_role_map[old_principal.event_role]
         principal = cls()
         principal.populate_from_dict({attr: getattr(old_principal, attr) for attr in attrs})
+        if event_role:
+            principal.event_role = event_role
         rv.add(principal)
     return rv

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -171,6 +162,11 @@ class Contribution(DescriptionMixin, ProtectionManagersMixin, LocationMixin, Att
     title = db.Column(
         db.String,
         nullable=False
+    )
+    code = db.Column(
+        db.String,
+        nullable=False,
+        default=''
     )
     duration = db.Column(
         db.Interval,
@@ -377,8 +373,10 @@ class Contribution(DescriptionMixin, ProtectionManagersMixin, LocationMixin, Att
     # - _paper_files (PaperFile._contribution)
     # - _paper_revisions (PaperRevision._contribution)
     # - attachment_folders (AttachmentFolder.contribution)
+    # - editables (Editable.contribution)
     # - legacy_mapping (LegacyContributionMapping.contribution)
     # - note (EventNote.contribution)
+    # - room_reservation_links (ReservationLink.contribution)
     # - timetable_entry (TimetableEntry.contribution)
     # - vc_room_associations (VCRoomEventAssociation.linked_contrib)
 

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -26,6 +17,7 @@ from indico.modules.events import Event
 from indico.modules.events.features.base import EventFeature
 from indico.modules.events.layout.util import MenuEntryData
 from indico.modules.events.models.events import EventType
+from indico.modules.events.registration.logging import connect_log_signals
 from indico.modules.events.registration.settings import RegistrationSettingsProxy
 from indico.util.i18n import _, ngettext
 from indico.web.flask.templating import template_hook
@@ -34,6 +26,7 @@ from indico.web.menu import SideMenuItem
 
 
 logger = Logger.get('events.registration')
+connect_log_signals()
 
 registration_settings = RegistrationSettingsProxy('registrations', {
     # Whether to merge display forms on the participant list
@@ -76,16 +69,14 @@ def _inject_regform_announcement(event, **kwargs):
 
 @template_hook('event-header')
 def _inject_event_header(event, **kwargs):
-    from indico.modules.events.registration.util import get_event_regforms
+    from indico.modules.events.registration.util import get_event_regforms_registrations
     if event.has_feature('registration'):
-        all_regforms = get_event_regforms(event, session.user, with_registrations=True)
-        open_and_registered_regforms = [regform for regform, registration in all_regforms
-                                        if regform.is_open or registration]
-        user_registrations = {regform: registration for regform, registration in all_regforms}
+        displayed_regforms, user_registrations = get_event_regforms_registrations(event, session.user,
+                                                                                  include_scheduled=False)
         # A participant could appear more than once in the list in case he register to multiple registration form.
         # This is deemed very unlikely in the case of meetings and lectures and thus not worth the extra complexity.
         return render_template('events/registration/display/event_header.html', event=event,
-                               regforms=open_and_registered_regforms, user_registrations=user_registrations)
+                               regforms=displayed_regforms, user_registrations=user_registrations)
 
 
 @signals.event.sidemenu.connect

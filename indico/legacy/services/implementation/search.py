@@ -1,25 +1,15 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from itertools import chain
 
 from indico.core.db.sqlalchemy.custom.unaccent import unaccent_match
-from indico.legacy.common.fossilize import fossilize
 from indico.legacy.fossils.user import IGroupFossil
 from indico.legacy.services.implementation.base import LoggedOnlyService
 from indico.modules.events.models.events import Event
@@ -27,13 +17,11 @@ from indico.modules.events.models.persons import EventPerson
 from indico.modules.events.util import serialize_event_person
 from indico.modules.groups import GroupProxy
 from indico.modules.users.legacy import search_avatars
+from indico.util.fossilize import fossilize
 from indico.util.string import sanitize_email, to_unicode
 
 
 class SearchBase(LoggedOnlyService):
-    CHECK_HTML = False
-    UNICODE_PARAMS = True
-
     def _process_args(self):
         self._searchExt = self._params.get('search-ext', False)
 

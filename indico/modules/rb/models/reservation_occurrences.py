@@ -1,20 +1,11 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from math import ceil
 
 from dateutil import rrule
@@ -23,21 +14,33 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import defaultload
 from sqlalchemy.sql import cast
 
+from indico.core import signals
 from indico.core.db import db
+from indico.core.db.sqlalchemy import PyIntEnum
 from indico.core.db.sqlalchemy.util.queries import db_dates_overlap
 from indico.core.errors import IndicoError
 from indico.modules.rb.models.reservation_edit_logs import ReservationEditLog
 from indico.modules.rb.models.util import proxy_to_reservation_if_last_valid_occurrence
+from indico.modules.rb.util import rb_is_admin
 from indico.util import date_time
-from indico.util.date_time import format_date, iterdays
+from indico.util.date_time import format_date
 from indico.util.serializer import Serializer
-from indico.util.string import return_ascii
-from indico.util.user import unify_user_args
+from indico.util.string import format_repr, return_ascii
+from indico.util.struct.enum import IndicoEnum
+from indico.web.flask.util import url_for
+
+
+class ReservationOccurrenceState(int, IndicoEnum):
+    # XXX: 1 is omitted on purpose to keep the values in sync with ReservationState
+    valid = 2
+    cancelled = 3
+    rejected = 4
 
 
 class ReservationOccurrence(db.Model, Serializer):
     __tablename__ = 'reservation_occurrences'
-    __table_args__ = {'schema': 'roombooking'}
+    __table_args__ = (db.CheckConstraint("rejection_reason != ''", 'rejection_reason_not_empty'),
+                      {'schema': 'roombooking'})
     __api_public__ = (('start_dt', 'startDT'), ('end_dt', 'endDT'), 'is_cancelled', 'is_rejected')
 
     #: A relationship loading strategy that will avoid loading the
@@ -69,18 +72,14 @@ class ReservationOccurrence(db.Model, Serializer):
         nullable=False,
         default=False
     )
-    is_cancelled = db.Column(
-        db.Boolean,
+    state = db.Column(
+        PyIntEnum(ReservationOccurrenceState),
         nullable=False,
-        default=False
-    )
-    is_rejected = db.Column(
-        db.Boolean,
-        nullable=False,
-        default=False
+        default=ReservationOccurrenceState.valid
     )
     rejection_reason = db.Column(
-        db.String
+        db.String,
+        nullable=True
     )
 
     # relationship backrefs:
@@ -96,22 +95,32 @@ class ReservationOccurrence(db.Model, Serializer):
 
     @hybrid_property
     def is_valid(self):
-        return not self.is_rejected and not self.is_cancelled
+        return self.state == ReservationOccurrenceState.valid
 
-    @is_valid.expression
-    def is_valid(self):
-        return ~self.is_rejected & ~self.is_cancelled
+    @hybrid_property
+    def is_cancelled(self):
+        return self.state == ReservationOccurrenceState.cancelled
+
+    @hybrid_property
+    def is_rejected(self):
+        return self.state == ReservationOccurrenceState.rejected
+
+    @hybrid_property
+    def is_within_cancel_grace_period(self):
+        return self.start_dt >= datetime.now() - timedelta(minutes=10)
+
+    @property
+    def external_cancellation_url(self):
+        return url_for(
+            'rb.booking_cancellation_link',
+            booking_id=self.reservation_id,
+            date=self.start_dt.date(),
+            _external=True,
+        )
 
     @return_ascii
     def __repr__(self):
-        return u'<ReservationOccurrence({0}, {1}, {2}, {3}, {4}, {5})>'.format(
-            self.reservation_id,
-            self.start_dt,
-            self.end_dt,
-            self.is_cancelled,
-            self.is_rejected,
-            self.notification_sent
-        )
+        return format_repr(self, 'reservation_id', 'start_dt', 'end_dt', 'state')
 
     @classmethod
     def create_series_for_reservation(cls, reservation):
@@ -161,6 +170,8 @@ class ReservationOccurrence(db.Model, Serializer):
 
     @staticmethod
     def filter_overlap(occurrences):
+        if not occurrences:
+            raise RuntimeError('Cannot check for overlap with empty occurrence list')
         return or_(db_dates_overlap(ReservationOccurrence, 'start_dt', occ.start_dt, 'end_dt', occ.end_dt)
                    for occ in occurrences)
 
@@ -177,74 +188,29 @@ class ReservationOccurrence(db.Model, Serializer):
                       _join=ReservationOccurrence.reservation)
                 .options(cls.NO_RESERVATION_USER_STRATEGY))
 
-    @classmethod
-    def find_with_filters(cls, filters, user=None):
-        from indico.modules.rb.models.rooms import Room
-        from indico.modules.rb.models.reservations import Reservation
+    def can_reject(self, user, allow_admin=True):
+        if not self.is_valid:
+            return False
+        return self.reservation.can_reject(user, allow_admin=allow_admin)
 
-        q = (ReservationOccurrence
-             .find(Room.is_active,
-                   _join=[ReservationOccurrence.reservation, Room], _eager=ReservationOccurrence.reservation)
-             .options(cls.NO_RESERVATION_USER_STRATEGY))
-
-        if 'start_dt' in filters and 'end_dt' in filters:
-            start_dt = filters['start_dt']
-            end_dt = filters['end_dt']
-            criteria = []
-            # We have to check the time range for EACH DAY
-            for day_start_dt in iterdays(start_dt, end_dt):
-                # Same date, but the end time
-                day_end_dt = datetime.combine(day_start_dt.date(), end_dt.time())
-                criteria.append(db_dates_overlap(ReservationOccurrence, 'start_dt', day_start_dt, 'end_dt', day_end_dt))
-            q = q.filter(or_(*criteria))
-
-        if filters.get('is_only_mine') and user:
-            q = q.filter((Reservation.booked_for_id == user.id) | (Reservation.created_by_id == user.id))
-        if filters.get('room_ids'):
-            q = q.filter(Room.id.in_(filters['room_ids']))
-
-        if filters.get('is_only_confirmed_bookings') and not filters.get('is_only_pending_bookings'):
-            q = q.filter(Reservation.is_accepted)
-        elif not filters.get('is_only_confirmed_bookings') and filters.get('is_only_pending_bookings'):
-            q = q.filter(~Reservation.is_accepted)
-
-        if filters.get('is_rejected') and filters.get('is_cancelled'):
-            q = q.filter(Reservation.is_rejected | ReservationOccurrence.is_rejected
-                         | Reservation.is_cancelled | ReservationOccurrence.is_cancelled)
-        else:
-            if filters.get('is_rejected'):
-                q = q.filter(Reservation.is_rejected | ReservationOccurrence.is_rejected)
-            else:
-                q = q.filter(~Reservation.is_rejected & ~ReservationOccurrence.is_rejected)
-            if filters.get('is_cancelled'):
-                q = q.filter(Reservation.is_cancelled | ReservationOccurrence.is_cancelled)
-            else:
-                q = q.filter(~Reservation.is_cancelled & ~ReservationOccurrence.is_cancelled)
-
-        if filters.get('is_archived'):
-            q = q.filter(Reservation.is_archived)
-
-        if filters.get('uses_vc'):
-            q = q.filter(Reservation.uses_vc)
-        if filters.get('needs_vc_assistance'):
-            q = q.filter(Reservation.needs_vc_assistance)
-        if filters.get('needs_assistance'):
-            q = q.filter(Reservation.needs_assistance)
-
-        if filters.get('booked_for_name'):
-            qs = u'%{}%'.format(filters['booked_for_name'])
-            q = q.filter(Reservation.booked_for_name.ilike(qs))
-        if filters.get('reason'):
-            qs = u'%{}%'.format(filters['reason'])
-            q = q.filter(Reservation.booking_reason.ilike(qs))
-
-        return q.order_by(Room.id)
+    def can_cancel(self, user, allow_admin=True):
+        if user is None:
+            return False
+        if not self.is_valid or self.end_dt < datetime.now():
+            return False
+        booking = self.reservation
+        booked_or_owned_by_user = booking.is_owned_by(user) or booking.is_booked_for(user)
+        if booking.is_rejected or booking.is_cancelled or booking.is_archived:
+            return False
+        if booked_or_owned_by_user and self.is_within_cancel_grace_period:
+            return True
+        return allow_admin and rb_is_admin(user)
 
     @proxy_to_reservation_if_last_valid_occurrence
-    @unify_user_args
     def cancel(self, user, reason=None, silent=False):
-        self.is_cancelled = True
-        self.rejection_reason = reason
+        self.state = ReservationOccurrenceState.cancelled
+        self.rejection_reason = reason or None
+        signals.rb.booking_occurrence_state_changed.send(self)
         if not silent:
             log = [u'Day cancelled: {}'.format(format_date(self.date).decode('utf-8'))]
             if reason:
@@ -254,10 +220,10 @@ class ReservationOccurrence(db.Model, Serializer):
             notify_cancellation(self)
 
     @proxy_to_reservation_if_last_valid_occurrence
-    @unify_user_args
     def reject(self, user, reason, silent=False):
-        self.is_rejected = True
-        self.rejection_reason = reason
+        self.state = ReservationOccurrenceState.rejected
+        self.rejection_reason = reason or None
+        signals.rb.booking_occurrence_state_changed.send(self)
         if not silent:
             log = [u'Day rejected: {}'.format(format_date(self.date).decode('utf-8')),
                    u'Reason: {}'.format(reason)]

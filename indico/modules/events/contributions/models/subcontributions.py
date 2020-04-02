@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -75,6 +66,11 @@ class SubContribution(DescriptionMixin, AttachedItemsMixin, AttachedNotesMixin, 
     title = db.Column(
         db.String,
         nullable=False
+    )
+    code = db.Column(
+        db.String,
+        nullable=False,
+        default=''
     )
     duration = db.Column(
         db.Interval,
@@ -157,8 +153,8 @@ class SubContribution(DescriptionMixin, AttachedItemsMixin, AttachedNotesMixin, 
     def get_access_list(self):
         return self.contribution.get_access_list()
 
-    def get_manager_list(self, recursive=False):
-        return self.contribution.get_manager_list(recursive=recursive)
+    def get_manager_list(self, recursive=False, include_groups=True):
+        return self.contribution.get_manager_list(recursive=recursive, include_groups=include_groups)
 
     @return_ascii
     def __repr__(self):

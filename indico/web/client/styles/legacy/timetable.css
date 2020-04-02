@@ -1,18 +1,9 @@
 /* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+ * Copyright (C) 2002 - 2020 CERN
  *
  * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
+ * modify it under the terms of the MIT License; see the
+ * LICENSE file for more details.
  */
 
 div.timetableHeader {
@@ -124,10 +115,33 @@ div.ui-draggable-dragging.timetableBlock {
     opacity: 0.5;
 }
 
+div.entry-content {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    overflow: hidden;
+    line-height: normal;
+    padding: 4px;
+}
+
+div.timetableBlockWrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-right: 4px;
+    width: 100%;
+}
+
+div.timetableBlockWrapper > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 div.timetableBlockTitle {
     font-weight: bold;
     font-size: 11px;
-    padding: 4px;
+    order: 1;
 }
 
 a.entry-attachments + div.timetableBlockPresenters {
@@ -136,44 +150,39 @@ a.entry-attachments + div.timetableBlockPresenters {
 
 div.timetableBlockPresenters {
     float: right;
-    margin: 4px;
-    margin-right: 6px;
-    margin-left: 6px;
+    margin-right: 7px;
     font-size: 11px;
     font-style: italic;
+    max-width: 50%;
+    order: 2;
 }
 
 div.timetableBlockTime {
-    position: absolute;
-    bottom: 4px;
-    right: 6px;
+    margin-right: 7px;
     padding-top: 4px;
     font-size: 11px;
+    order: 3;
 }
 
-div.timetableBlockTimeDiscreet{
+div.timetableBlockTimeDiscreet {
     float: left;
-    margin: 4px;
-    margin-right: 6px;
-    margin-left: 6px;
+    margin: 4px 7px;
     font-size: 11px;
 }
 
 div.timetableBlockLocation {
-    position: absolute;
     bottom: 4px;
     left: 4px;
     font-style: italic;
     padding-top: 4px;
     font-size: 11px;
+    order: 2;
 }
 
 div.timetableBlockConvener {
-    position: absolute;
-    left: 4px;
     font-style: italic;
-    padding-top: 4px;
     font-size: 11px;
+    order: 2;
 }
 
 div.timetablePreLoading {

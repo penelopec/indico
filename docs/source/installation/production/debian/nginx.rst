@@ -13,7 +13,7 @@ much more recent versions.
 
 .. code-block:: shell
 
-    apt install -y lsb-release wget
+    apt install -y lsb-release wget gnupg
     echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list
     echo "deb http://nginx.org/packages/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/ $(lsb_release -cs) nginx" > /etc/apt/sources.list.d/nginx.list
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
@@ -82,6 +82,7 @@ most cases.
     processes = 4
     enable-threads = true
     chmod-socket = 770
+    chown-socket = indico:nginx
     socket = /opt/indico/web/uwsgi.sock
     stats = /opt/indico/web/uwsgi-stats.sock
     protocol = uwsgi
@@ -148,11 +149,6 @@ most cases.
         alias /opt/indico/;
       }
 
-      location ~ ^/static/assets/(core|(?:plugin|theme)-[^/]+)/(.*)$ {
-        alias /opt/indico/assets/$1/$2;
-        access_log off;
-      }
-
       location ~ ^/(images|fonts)(.*)/(.+?)(__v[0-9a-f]+)?\.([^.]+)$ {
         alias /opt/indico/web/static/$1$2/$3.$5;
         access_log off;
@@ -164,12 +160,12 @@ most cases.
       }
 
       location /robots.txt {
-        alias /opt/indico/web/htdocs/robots.txt;
+        alias /opt/indico/web/static/robots.txt;
         access_log off;
       }
 
       location / {
-        root  /var/empty/nginx;
+        root /var/empty/nginx;
         include /etc/nginx/uwsgi_params;
         uwsgi_pass unix:/opt/indico/web/uwsgi.sock;
         uwsgi_param UWSGI_SCHEME $scheme;
@@ -304,7 +300,7 @@ Now finish setting up the directory structure and permissions:
 
     mkdir ~/log/nginx
     chmod go-rwx ~/* ~/.[^.]*
-    chmod 710 ~/ ~/archive ~/assets ~/cache ~/log ~/tmp
+    chmod 710 ~/ ~/archive ~/cache ~/log ~/tmp
     chmod 750 ~/web ~/.venv
     chmod g+w ~/log/nginx
     echo -e "\nSTATIC_FILE_METHOD = ('xaccelredirect', {'/opt/indico': '/.xsf/indico'})" >> ~/etc/indico.conf

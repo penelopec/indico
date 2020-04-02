@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from datetime import date
 
@@ -45,7 +36,6 @@ def create_location(db):
 def dummy_location(db, create_location):
     """Gives you a dummy default location"""
     loc = create_location(u'Test')
-    loc.set_default()
     db.session.flush()
     return loc
 
@@ -58,7 +48,6 @@ def create_reservation(db, dummy_room, dummy_user):
         params.setdefault('end_dt', date.today() + relativedelta(hour=17, minute=30))
         params.setdefault('repeat_frequency', RepeatFrequency.NEVER)
         params.setdefault('repeat_interval', int(params['repeat_frequency'] != RepeatFrequency.NEVER))
-        params.setdefault('is_accepted', True)
         params.setdefault('booking_reason', u'Testing')
         params.setdefault('room', dummy_room)
         params.setdefault('booked_for_user', dummy_user)

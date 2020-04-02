@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -45,7 +36,7 @@ class IndicoFlaskGroup(FlaskGroup):
 
     def __init__(self, **extra):
         super(IndicoFlaskGroup, self).__init__(create_app=_create_app, add_default_commands=False,
-                                               add_version_option=False, **extra)
+                                               add_version_option=False, set_debug_flag=False, **extra)
         self._indico_plugin_commands = None
 
     def _load_plugin_commands(self):

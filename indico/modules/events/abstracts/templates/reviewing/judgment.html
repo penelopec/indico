@@ -79,7 +79,7 @@
                     <div class="group-review-summary__summary flexrow f-a-center">
                         {{ _render_abstract_track_reviewing_state_icon(abstract, track) }}
                         <div class="group-review-summary__track f-self-stretch truncate-text">
-                            {{- track.title -}}
+                            {{- track.title_with_group -}}
                         </div>
                         {% set score = abstract.get_track_score(track) %}
                         {% if has_reviews %}
@@ -114,7 +114,9 @@
                                                 <span class="question-index">{{ loop.index }}</span>
                                             </div>
                                             <div class="question-text f-self-stretch">{{ question.title }}</div>
-                                            {{ render_score(score, abstract.event.cfa.rating_range) }}
+                                            {% if score is not none %}
+                                                {{ render_score(score, abstract.event.cfa.rating_range) }}
+                                            {% endif %}
                                         </div>
                                     {% endfor %}
                                 </div>

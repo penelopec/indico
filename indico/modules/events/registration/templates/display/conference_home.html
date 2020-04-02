@@ -4,7 +4,7 @@
             <a class="i-button icon-file-download js-dropdown arrow" data-toggle="dropdown">
                 {% trans %}Get ticket{% endtrans %}
             </a>
-            <ul class="dropdown">
+            <ul class="i-dropdown">
                 {% for registration in registrations_with_tickets -%}
                     {% set regform = registration.registration_form %}
                     <li>
@@ -59,7 +59,7 @@
             <div class="toolbar">
                 {% if is_number_published %}
                     <span class="i-label icon-user" title="{% trans %}Total registrations{% endtrans %}">
-                        {{- single_regform.active_registrations|length }}
+                        {{- single_regform.active_registration_count }}
                         {%- if single_regform.registration_limit %}
                             / {{ single_regform.registration_limit }}
                         {%- endif -%}

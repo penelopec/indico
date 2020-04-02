@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -21,7 +12,7 @@ from flask import flash, request, session
 from indico.core import signals
 from indico.core.logger import Logger
 from indico.modules.events.settings import EventSettingsProxy
-from indico.util.i18n import ngettext
+from indico.util.i18n import _, ngettext
 from indico.web.flask.util import url_for
 from indico.web.menu import SideMenuItem
 
@@ -36,7 +27,7 @@ features_event_settings = EventSettingsProxy('features', {
 def _extend_event_management_menu(sender, event, **kwargs):
     if not event.can_manage(session.user):
         return
-    return SideMenuItem('features', 'Features', url_for('event_features.index', event), section='advanced')
+    return SideMenuItem('features', _('Features'), url_for('event_features.index', event), section='advanced')
 
 
 @signals.app_created.connect
@@ -47,11 +38,11 @@ def _check_feature_definitions(app, **kwargs):
 
 
 @signals.event.created.connect
-def _event_created(event, **kwargs):
+def _event_created(event, cloning, **kwargs):
     from indico.modules.events.features.util import get_feature_definitions, get_enabled_features
     feature_definitions = get_feature_definitions()
     for feature in get_enabled_features(event):
-        feature_definitions[feature].enabled(event)
+        feature_definitions[feature].enabled(event, cloning)
 
 
 @signals.event.type_changed.connect

@@ -1,8 +1,10 @@
 {% from 'message_box.html' import message_box %}
 {% from 'attachments/_management_info_column.html' import render_attachment_info %}
 
-{% macro render_contrib_list(event, total_entries, contribs, sessions, tracks) %}
+{% macro render_contrib_list(event, total_entries, contribs, sessions, tracks, registered_persons) %}
     {% if contribs %}
+        {% set has_codes = contribs|selectattr('code')|any %}
+        {% set has_types = contribs|selectattr('type')|any %}
         <form method="POST">
             <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
             <table class="i-table tablesorter" data-session-items="{{ sessions | tojson | forceescape }}"
@@ -26,9 +28,16 @@
                         <th class="i-table" data-sorter="false">
                             {% trans %}Presenters{% endtrans %}
                         </th>
-                        <th class="i-table type-column">
-                            {% trans %}Type{% endtrans %}
-                        </th>
+                        {% if has_codes %}
+                            <th class="i-table code-column">
+                                {% trans %}Code{% endtrans %}
+                            </th>
+                        {% endif %}
+                        {% if has_types %}
+                            <th class="i-table type-column">
+                                {% trans %}Type{% endtrans %}
+                            </th>
+                        {% endif %}
                         <th class="i-table">
                             {% trans %}Subcontributions{% endtrans %}
                         </th>
@@ -116,19 +125,45 @@
                             <td class="i-table person-row-cell" data-searchable="{{ contrib.speakers|map(attribute='name')|join(', ')|lower }}">
                                 <span class="vertical-aligner">
                                     {% for speaker in contrib.speakers | sort(attribute='display_order_key') -%}
-                                        <div class="person-row icon-user">{{ speaker.display_full_name }}</div>
+                                        {% set speaker_is_registered = speaker.person in registered_persons %}
+                                        <div class="person-row">
+                                            {% set tooltip %}
+                                                {% if speaker_is_registered %}
+                                                    {%- trans %}This speaker registered for the event{% endtrans -%}
+                                                {% else %}
+                                                    {%- trans %}This speaker did not register yet{% endtrans -%}
+                                                {% endif %}
+                                            {% endset %}
+                                            <i class="icon-user js-show-registrations {{ 'exists' if speaker_is_registered }}"
+                                               title="{{ tooltip }}"
+                                               data-qtip-position="bottom"></i>
+                                            {{ speaker.display_full_name }}
+                                        </div>
                                     {%- endfor %}
                                 </span>
                             </td>
-                            <td class="i-table type-column" data-text="{{ contrib.type.name if contrib.type else '' }}">
-                                <span class="vertical-aligner">
-                                    {% if contrib.type -%}
-                                        {{ contrib.type.name }}
-                                    {%- else %}
-                                        {% trans %}n/a{% endtrans %}
-                                    {%- endif %}
-                                </span>
-                            </td>
+                            {% if has_codes %}
+                                <td class="i-table code-column" data-text="{{ contrib.code }}">
+                                    <span class="vertical-aligner">
+                                        {% if contrib.code -%}
+                                            {{ contrib.code }}
+                                        {%- else %}
+                                            {% trans %}n/a{% endtrans %}
+                                        {%- endif %}
+                                    </span>
+                                </td>
+                            {% endif %}
+                            {% if has_types %}
+                                <td class="i-table type-column" data-text="{{ contrib.type.name if contrib.type else '' }}">
+                                    <span class="vertical-aligner">
+                                        {% if contrib.type -%}
+                                            {{ contrib.type.name }}
+                                        {%- else %}
+                                            {% trans %}n/a{% endtrans %}
+                                        {%- endif %}
+                                    </span>
+                                </td>
+                            {% endif %}
                             <td class="i-table" data-text="{{ contrib.subcontribution_count }}">
                                 <a href="#" class="i-label subcontribution-count"
                                    title="{% trans %}Manage subcontributions{% endtrans %}"

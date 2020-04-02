@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import absolute_import, unicode_literals
 
@@ -25,7 +16,7 @@ from indico.core.db.sqlalchemy.principals import PrincipalType, serialize_email_
 from indico.core.permissions import get_permissions_info
 from indico.modules.events import Event
 from indico.modules.events.contributions.models.contributions import Contribution
-from indico.modules.events.roles.util import serialize_role
+from indico.modules.events.roles.util import serialize_event_role
 from indico.modules.events.sessions.models.sessions import Session
 from indico.modules.groups import GroupProxy
 from indico.modules.groups.util import serialize_group
@@ -39,6 +30,7 @@ from indico.web.forms.widgets import JinjaWidget
 
 
 def serialize_principal(principal):
+    from indico.modules.categories.util import serialize_category_role
     if principal.principal_type == PrincipalType.email:
         return serialize_email_principal(principal)
     elif principal.principal_type == PrincipalType.network:
@@ -46,7 +38,9 @@ def serialize_principal(principal):
     elif principal.principal_type == PrincipalType.user:
         return serialize_user(principal)
     elif principal.principal_type == PrincipalType.event_role:
-        return serialize_role(principal)
+        return serialize_event_role(principal)
+    elif principal.principal_type == PrincipalType.category_role:
+        return serialize_category_role(principal)
     elif principal.is_group:
         return serialize_group(principal)
     else:
@@ -123,7 +117,7 @@ class AccessControlListField(PrincipalListField):
 class PrincipalField(PrincipalListField):
     """A field that lets you select an Indico user/group ("principal")"""
 
-    widget = JinjaWidget('forms/principal_widget.html', single_line=True)
+    widget = JinjaWidget('forms/principal_widget.html', single_line=True, single_kwargs=True)
 
     def _get_data(self):
         return [] if self.data is None else [self.data]
@@ -135,12 +129,14 @@ class PrincipalField(PrincipalListField):
 
 
 class PermissionsField(JSONField):
+    from indico.modules.categories.models.categories import Category
     widget = JinjaWidget('forms/permissions_widget.html', single_kwargs=True, acl=True)
 
     type_mapping = {
         'event': Event,
         'session': Session,
-        'contribution': Contribution
+        'contribution': Contribution,
+        'category': Category
     }
 
     def __init__(self, *args, **kwargs):
@@ -153,8 +149,21 @@ class PermissionsField(JSONField):
         return self.get_form().event
 
     @property
-    def roles(self):
-        return [serialize_role(role) for role in sorted(self.event.roles, key=attrgetter('code'))]
+    def category(self):
+        if self.object_type == 'category':
+            return self.get_form().category
+        return self.event.category
+
+    @property
+    def event_roles(self):
+        return [serialize_event_role(role) for role in sorted(self.event.roles, key=attrgetter('code'))]
+
+    @property
+    def category_roles(self):
+        from indico.modules.categories.util import serialize_category_role
+        from indico.modules.categories.models.roles import CategoryRole
+        category_roles = CategoryRole.get_category_roles(self.category)
+        return [serialize_category_role(role, legacy=True) for role in category_roles]
 
     @property
     def permissions_info(self):

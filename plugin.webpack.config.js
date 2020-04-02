@@ -1,19 +1,9 @@
-/* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
- *
- * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
- */
+// This file is part of Indico.
+// Copyright (C) 2002 - 2020 CERN
+//
+// Indico is free software; you can redistribute it and/or
+// modify it under the terms of the MIT License; see the
+// LICENSE file for more details.
 
 /* eslint-disable import/no-commonjs, import/unambiguous, import/newline-after-import */
 /* global module:false */
@@ -28,46 +18,61 @@ const config = require(path.join(process.env.INDICO_PLUGIN_ROOT, 'webpack-build-
 const bundles = require(path.join(process.env.INDICO_PLUGIN_ROOT, 'webpack-bundles'));
 const base = require(path.join(config.build.indicoSourcePath, 'webpack'));
 
-
 const entry = bundles.entry || {};
-if (!_.isEmpty(config.themes)) {
-    Object.assign(entry, base.getThemeEntryPoints(config, './themes/'));
-}
 
+if (!_.isEmpty(config.themes)) {
+  const themeFiles = base.getThemeEntryPoints(config, './themes/');
+  Object.assign(entry, themeFiles);
+}
 
 function generateModuleAliases() {
-    return glob.sync(path.join(config.indico.build.rootPath, 'modules/**/module.json')).map(file => {
-        const mod = {produceBundle: true, partials: {}, ...require(file)};
-        const dirName = path.join(path.dirname(file), 'client/js');
-        const modulePath = path.join('indico/modules', mod.parent || '', mod.name);
-        return {
-            name: modulePath,
-            alias: dirName,
-            onlyModule: false
-        };
-    });
+  return glob.sync(path.join(config.indico.build.rootPath, 'modules/**/module.json')).map(file => {
+    const mod = {produceBundle: true, partials: {}, ...require(file)};
+    const dirName = path.join(path.dirname(file), 'client/js');
+    const modulePath = path.join('indico/modules', mod.parent || '', mod.name);
+    return {
+      name: modulePath,
+      alias: dirName,
+      onlyModule: false,
+    };
+  });
 }
 
-module.exports = (env) => {
-    return merge.strategy({
-        'resolve.alias': 'prepend'
-    })(base.webpackDefaults(env, config, bundles), {
-        entry,
-        externals: {
-            jquery: 'jQuery'
+module.exports = env => {
+  return merge.strategy({
+    'resolve.alias': 'prepend',
+  })(base.webpackDefaults(env, config, bundles), {
+    entry,
+    externals: {
+      jquery: 'jQuery',
+    },
+    module: {
+      rules: [
+        {
+          test: /.*\.(jpe?g|png|gif|svg|woff2?|ttf|eot)$/,
+          use: {
+            loader: 'file-loader',
+          },
         },
-        module: {
-            rules: [
-                {
-                    test: /.*\.(jpe?g|png|gif|svg|woff2?|ttf|eot)$/,
-                    use: {
-                        loader: 'file-loader'
-                    }
-                }
-            ]
+      ],
+    },
+    resolve: {
+      alias: generateModuleAliases(),
+    },
+    output: {
+      jsonpFunction: 'pluginJsonp',
+    },
+    optimization: {
+      splitChunks: {
+        cacheGroups: {
+          common: {
+            name: 'common',
+            // exclude themes/print css from common chunk
+            chunks: chunk => chunk.canBeInitial() && !/\.print$|^themes_/.test(chunk.name),
+            minChunks: 2,
+          },
         },
-        resolve: {
-            alias: generateModuleAliases()
-        }
-    });
+      },
+    },
+  });
 };

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -21,7 +12,6 @@ from operator import attrgetter
 
 from indico.core.db import db
 from indico.core.db.sqlalchemy import PyIntEnum
-from indico.modules.rb.models.blockings import Blocking
 from indico.modules.rb.models.reservation_occurrences import ReservationOccurrence
 from indico.modules.rb.models.reservations import Reservation
 from indico.modules.rb.notifications.blockings import notify_request_response
@@ -77,18 +67,6 @@ class BlockedRoom(db.Model):
     def state_name(self):
         return BlockedRoomState(self.state).title if self.state is not None else None
 
-    @classmethod
-    def find_with_filters(cls, filters):
-        q = cls.find(_eager=BlockedRoom.blocking, _join=BlockedRoom.blocking)
-        if filters.get('room_ids'):
-            q = q.filter(BlockedRoom.room_id.in_(filters['room_ids']))
-        if filters.get('start_date') and filters.get('end_date'):
-            q = q.filter(Blocking.start_date <= filters['end_date'],
-                         Blocking.end_date >= filters['start_date'])
-        if 'state' in filters:
-            q = q.filter(BlockedRoom.state == filters['state'])
-        return q
-
     def reject(self, user=None, reason=None):
         """Reject the room blocking."""
         self.state = BlockedRoomState.rejected
@@ -132,13 +110,13 @@ class BlockedRoom(db.Model):
         reason = 'Conflict with blocking {}: {}'.format(self.blocking.id, self.blocking.reason)
 
         for reservation in reservations:
-            if self.blocking.can_be_overridden(reservation.created_by_user, reservation.room):
+            if self.blocking.can_override(reservation.created_by_user, room=reservation.room):
                 continue
             reservation.reject(self.blocking.created_by_user, reason)
 
         for occurrence in occurrences:
             reservation = occurrence.reservation
-            if self.blocking.can_be_overridden(reservation.created_by_user, reservation.room):
+            if self.blocking.can_override(reservation.created_by_user, room=reservation.room):
                 continue
             occurrence.reject(self.blocking.created_by_user, reason)
 

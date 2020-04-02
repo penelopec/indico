@@ -1,27 +1,19 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from io import BytesIO
 
 from flask import jsonify, request, session
-from werkzeug.exceptions import Forbidden
+from werkzeug.exceptions import Forbidden, NotFound
 
 from indico.legacy.pdfinterface.conference import SimplifiedTimeTablePlain, TimetablePDFFormat, TimeTablePlain
+from indico.modules.events.contributions import contribution_settings
 from indico.modules.events.controllers.base import RHDisplayEventBase
 from indico.modules.events.layout import layout_settings
 from indico.modules.events.timetable.forms import TimetablePDFExportForm
@@ -31,16 +23,25 @@ from indico.modules.events.timetable.util import (get_timetable_offline_pdf_gene
 from indico.modules.events.timetable.views import WPDisplayTimetable
 from indico.modules.events.util import get_theme
 from indico.modules.events.views import WPSimpleEventDisplay
+from indico.util.i18n import _
 from indico.web.flask.util import send_file, url_for
 from indico.web.util import jsonify_data, jsonify_template
 
 
-class RHTimetable(RHDisplayEventBase):
+class RHTimetableProtectionBase(RHDisplayEventBase):
+    def _check_access(self):
+        RHDisplayEventBase._check_access(self)
+        published = contribution_settings.get(self.event, 'published')
+        if not published:
+            raise NotFound(_("The contributions of this event have not been published yet"))
+
+
+class RHTimetable(RHTimetableProtectionBase):
     view_class = WPDisplayTimetable
     view_class_simple = WPSimpleEventDisplay
 
     def _process_args(self):
-        RHDisplayEventBase._process_args(self)
+        RHTimetableProtectionBase._process_args(self)
         self.timetable_layout = request.args.get('layout') or request.args.get('ttLyt')
         self.theme, self.theme_override = get_theme(self.event, request.args.get('view'))
 
@@ -57,15 +58,15 @@ class RHTimetable(RHDisplayEventBase):
             return self.view_class_simple(self, self.event, self.theme, self.theme_override).display()
 
 
-class RHTimetableEntryInfo(RHDisplayEventBase):
+class RHTimetableEntryInfo(RHTimetableProtectionBase):
     """Display timetable entry info balloon."""
 
     def _process_args(self):
-        RHDisplayEventBase._process_args(self)
+        RHTimetableProtectionBase._process_args(self)
         self.entry = self.event.timetable_entries.filter_by(id=request.view_args['entry_id']).first_or_404()
 
     def _check_access(self):
-        RHDisplayEventBase._check_access(self)
+        RHTimetableProtectionBase._check_access(self)
         if not self.entry.can_view(session.user):
             raise Forbidden
 
@@ -74,7 +75,7 @@ class RHTimetableEntryInfo(RHDisplayEventBase):
         return jsonify(html=html)
 
 
-class RHTimetableExportPDF(RHDisplayEventBase):
+class RHTimetableExportPDF(RHTimetableProtectionBase):
     def _process(self):
         form = TimetablePDFExportForm(formdata=request.args, csrf_enabled=False)
         if form.validate_on_submit():
@@ -101,7 +102,7 @@ class RHTimetableExportPDF(RHDisplayEventBase):
                                 back_url=url_for('.timetable', self.event))
 
 
-class RHTimetableExportDefaultPDF(RHDisplayEventBase):
+class RHTimetableExportDefaultPDF(RHTimetableProtectionBase):
     def _process(self):
         pdf = get_timetable_offline_pdf_generator(self.event)
         return send_file('timetable.pdf', BytesIO(pdf.getPDFBin()), 'application/pdf')

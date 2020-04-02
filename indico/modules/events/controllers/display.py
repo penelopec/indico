@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -20,6 +11,7 @@ from io import BytesIO
 
 from flask import jsonify, redirect, request, session
 
+from indico.core import signals
 from indico.legacy.common.output import outputGenerator
 from indico.legacy.common.xmlGen import XMLGen
 from indico.modules.events.controllers.base import RHDisplayEventBase, RHEventBase
@@ -27,6 +19,7 @@ from indico.modules.events.layout.views import WPPage
 from indico.modules.events.models.events import EventType
 from indico.modules.events.util import get_theme, serialize_event_for_ical
 from indico.modules.events.views import WPConferenceDisplay, WPSimpleEventDisplay
+from indico.util.signals import values_from_signal
 from indico.web.flask.util import send_file, url_for
 from indico.web.http_api.metadata import Serializer
 
@@ -34,9 +27,16 @@ from indico.web.http_api.metadata import Serializer
 class RHExportEventICAL(RHDisplayEventBase):
     def _process(self):
         detail_level = request.args.get('detail', 'events')
-        data = {'results': serialize_event_for_ical(self.event, detail_level)}
+        data = serialize_event_for_ical(self.event, detail_level)
+
+        # check whether the plugins want to add/override any data
+        for update in values_from_signal(
+                signals.event.metadata_postprocess.send('ical-export', event=self.event, data=data), as_list=True):
+            data.update(update)
+
+        response = {'results': data}
         serializer = Serializer.create('ics')
-        return send_file('event.ics', BytesIO(serializer(data)), 'text/calendar')
+        return send_file('event.ics', BytesIO(serializer(response)), 'text/calendar')
 
 
 class RHDisplayEvent(RHDisplayEventBase):
@@ -77,8 +77,6 @@ class RHDisplayEvent(RHDisplayEventBase):
 
 
 class RHEventAccessKey(RHEventBase):
-    NOT_SANITIZED_FIELDS = {'access_key'}
-
     def _process(self):
         self.event.set_session_access_key(request.form['access_key'])
         return jsonify(valid=self.event.check_access_key())

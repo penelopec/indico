@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -39,11 +30,11 @@ from indico.modules.categories.legacy import XMLCategorySerializer
 from indico.modules.categories.models.categories import Category
 from indico.modules.categories.serialize import (serialize_categories_ical, serialize_category, serialize_category_atom,
                                                  serialize_category_chain)
-from indico.modules.categories.util import get_category_stats, get_upcoming_events, serialize_event_for_json_ld
+from indico.modules.categories.util import get_category_stats, get_upcoming_events
 from indico.modules.categories.views import WPCategory, WPCategoryCalendar, WPCategoryStatistics
 from indico.modules.events.models.events import Event
 from indico.modules.events.timetable.util import get_category_timetable
-from indico.modules.events.util import get_base_ical_parameters
+from indico.modules.events.util import get_base_ical_parameters, serialize_event_for_json_ld
 from indico.modules.news.util import get_recent_news
 from indico.modules.users import User
 from indico.modules.users.models.favorites import favorite_category_table
@@ -244,9 +235,10 @@ class RHDisplayCategoryEventsBase(RHDisplayCategoryBase):
     _category_query_options = (joinedload('children').load_only('id', 'title', 'protection_mode'),
                                undefer('attachment_count'), undefer('has_events'))
     _event_query_options = (joinedload('person_links'), joinedload('series'), undefer_group('series'),
+                            joinedload('label'),
                             load_only('id', 'category_id', 'created_dt', 'start_dt', 'end_dt', 'timezone',
                                       'protection_mode', 'title', 'type_', 'series_pos', 'series_count',
-                                      'own_address', 'own_venue_id', 'own_venue_name'))
+                                      'own_address', 'own_venue_id', 'own_venue_name', 'label_id', 'label_message'))
 
     def _process_args(self):
         RHDisplayCategoryBase._process_args(self)
@@ -609,6 +601,7 @@ class _EventProxy(object):
         assert date <= event.end_dt
         object.__setattr__(self, '_start_dt', start_dt)
         object.__setattr__(self, '_real_event', event)
+        object.__setattr__(self, '_event_tz_start_date', event.start_dt.astimezone(tzinfo).date())
         object.__setattr__(self, '_timetable_objects', timetable_objects)
 
     def __getattribute__(self, name):
@@ -618,7 +611,10 @@ class _EventProxy(object):
         if name == 'timetable_objects':
             return object.__getattribute__(self, '_timetable_objects')
         if name == 'ongoing':
-            return event.start_dt.date() != self.start_dt.date()
+            # the event is "ongoing" if the dates (in the tz of the category)
+            # of the event and the proxy (calendar entry) don't match
+            event_start_date = object.__getattribute__(self, '_event_tz_start_date')
+            return event_start_date != self.start_dt.date()
         if name == 'first_occurence_start_dt':
             return event.start_dt
         return getattr(event, name)
@@ -640,12 +636,12 @@ class RHCategoryCalendarView(RHDisplayCategoryBase):
         end = tz.localize(dateutil.parser.parse(request.args['end'])).astimezone(utc)
         query = (Event.query
                  .filter(Event.starts_between(start, end),
-                         Event.is_visible_in(self.category),
+                         Event.is_visible_in(self.category.id),
                          ~Event.is_deleted)
                  .options(load_only('id', 'title', 'start_dt', 'end_dt', 'category_id')))
         events = self._get_event_data(query)
         ongoing_events = (Event.query
-                          .filter(Event.is_visible_in(self.category),
+                          .filter(Event.is_visible_in(self.category.id),
                                   Event.start_dt < start,
                                   Event.end_dt > end)
                           .options(load_only('id', 'title', 'start_dt', 'end_dt', 'timezone'))
@@ -686,7 +682,7 @@ class RHCategoryUpcomingEvent(RHDisplayCategoryBase):
 
     def _get_upcoming_event(self):
         query = (Event.query
-                 .filter(Event.is_visible_in(self.category),
+                 .filter(Event.is_visible_in(self.category.id),
                          Event.start_dt > now_utc(),
                          ~Event.is_deleted)
                  .options(subqueryload('acl_entries'))

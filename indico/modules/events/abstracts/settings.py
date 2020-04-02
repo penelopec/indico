@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -26,9 +17,13 @@ from indico.util.struct.enum import RichEnum
 class BOASortField(RichEnum):
     id = 'id'
     abstract_title = 'title'
+    board_number = 'board_number'
+    session_board_number = 'session_board_number'
     session_title = 'session_title'
     speaker = 'speaker'
     schedule = 'schedule'
+    schedule_board_number = 'schedule_board_number'
+    session_schedule_board = 'session_schedule_board'
 
 
 class BOACorrespondingAuthorType(RichEnum):
@@ -37,12 +32,29 @@ class BOACorrespondingAuthorType(RichEnum):
     speakers = 'speakers'
 
 
+class BOALinkFormat(RichEnum):
+    """LaTeX book of abstracts link format setting
+
+    value is a 2-tuple of strings:
+    first is the hyperref option to use
+    second sets additional tex commands
+    """
+
+    frame = ('', '')
+    colorlinks = ('[colorlinks]', '')
+    unstyled = ('[hidelinks]', '')
+
+
 BOASortField.__titles__ = {
     BOASortField.id: _('ID'),
     BOASortField.abstract_title: _('Abstract title'),
+    BOASortField.board_number: _('Board Number'),
+    BOASortField.session_board_number: _('Session title, Board Number'),
     BOASortField.session_title: _('Session title'),
     BOASortField.speaker: _('Presenter'),
-    BOASortField.schedule: _('Schedule')
+    BOASortField.schedule: _('Schedule'),
+    BOASortField.schedule_board_number: _('Schedule, Board Number'),
+    BOASortField.session_schedule_board: _('Session, Schedule, Board Number')
 }
 
 
@@ -52,6 +64,12 @@ BOACorrespondingAuthorType.__titles__ = {
     BOACorrespondingAuthorType.speakers: _('Speakers')
 }
 
+
+BOALinkFormat.__titles__ = {
+    BOALinkFormat.frame: _('Border around links (screen only)'),
+    BOALinkFormat.colorlinks: _('Color links'),
+    BOALinkFormat.unstyled: _('Do not highlight links')
+}
 
 abstracts_settings = EventSettingsProxy('abstracts', {
     'description_settings': {
@@ -68,6 +86,7 @@ abstracts_settings = EventSettingsProxy('abstracts', {
     'allow_multiple_tracks': True,
     'tracks_required': False,
     'allow_attachments': False,
+    'copy_attachments': False,
     'allow_speakers': True,
     'speakers_required': True,
     'contrib_type_required': False,
@@ -94,12 +113,17 @@ abstracts_reviewing_settings = EventSettingsProxy('abstracts_reviewing', {
 
 boa_settings = EventSettingsProxy('abstracts_book', {
     'extra_text': '',
+    'extra_text_end': '',
     'sort_by': BOASortField.id,
     'corresponding_author': BOACorrespondingAuthorType.submitter,
     'show_abstract_ids': False,
-    'cache_path': None
+    'cache_path': None,
+    'cache_path_tex': None,
+    'min_lines_per_abstract': 0,
+    'link_format': BOALinkFormat.frame,
 }, converters={
     'sort_by': EnumConverter(BOASortField),
     'corresponding_author': EnumConverter(BOACorrespondingAuthorType),
-    'announcement_render_mode': EnumConverter(RenderMode)
+    'announcement_render_mode': EnumConverter(RenderMode),
+    'link_format': EnumConverter(BOALinkFormat),
 })

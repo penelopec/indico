@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -22,8 +13,9 @@ import click
 
 from indico.cli.core import cli_group
 from indico.core.db import db
-from indico.modules.events import Event
+from indico.modules.events import Event, EventLogKind, EventLogRealm
 from indico.modules.events.export import export_event, import_event
+from indico.modules.users.models.users import User
 
 
 click.disable_unicode_literals_warning = True
@@ -36,9 +28,13 @@ def cli():
 
 @cli.command()
 @click.argument('event_id', type=int)
-def restore(event_id):
+@click.option('-u', '--user', 'user_id', type=int, default=None, metavar="USER_ID",
+              help="The user which will be shown on the log as having restored the event (default: no user).")
+@click.option('-m', '--message', 'message', metavar="MESSAGE", help="An additional message for the log")
+def restore(event_id, user_id, message):
     """Restores a deleted event."""
     event = Event.get(event_id)
+    user = User.get(user_id) if user_id else None
     if event is None:
         click.secho('This event does not exist', fg='red')
         sys.exit(1)
@@ -46,6 +42,8 @@ def restore(event_id):
         click.secho('This event is not deleted', fg='yellow')
         sys.exit(1)
     event.is_deleted = False
+    text = 'Event restored: {}'.format(message) if message else 'Event restored'
+    event.log(EventLogRealm.event, EventLogKind.positive, 'Event', text, user=user)
     db.session.commit()
     click.secho('Event undeleted: "{}"'.format(event.title), fg='green')
 

@@ -1,51 +1,30 @@
 /* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+ * Copyright (C) 2002 - 2020 CERN
  *
  * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
+ * modify it under the terms of the MIT License; see the
+ * LICENSE file for more details.
  */
 
 /* For the multi-tab control */
-.tabSelected {border-top: gray solid;
-                border-left: gray solid;
-                border-right: gray solid}
-.tab { border: gray solid;
-        background-color: gray }
+.tabSelected {
+    border-top: gray solid;
+    border-left: gray solid;
+    border-right: gray solid
+}
 
-label.disabled{
-    color: gray;
+.tab {
+    border: gray solid;
+    background-color: gray
 }
 
 .subtitle {
-   font-weight: normal;
-   font-size: 16px;
-   color: #777777;
-   padding: 3px;
-   margin-top: 2px;
-   margin-bottom: 2px;
-}
-
-.errorDetailsBox {
-    color: gray;
+    font-weight: normal;
     font-size: 16px;
-    border: 1px solid
-}
-
-.displayField {
-    color: #444;
-    font-size:12px;
-    font-weight: bold;
-    padding: 3px 20px 3px 0;
+    color: #777777;
+    padding: 3px;
+    margin-top: 2px;
+    margin-bottom: 2px;
 }
 
 /* ListWidget, list of users styles */
@@ -91,7 +70,7 @@ td.searchUsersGroupsPanel {
     width: 450px;
     padding-left: 10px;
     padding-top: 10px;
-    padding-right:10px;
+    padding-right: 10px;
 }
 
 td.suggestedUsersPanel {
@@ -100,54 +79,17 @@ td.suggestedUsersPanel {
     border-left: 1px dotted #CCCCCC;
 }
 
-.arrowExpandIcon
-{
+/* TODO: remove when replacing the old search plugin */
+.arrowExpandIcon {
     background: transparent url('static:images/menu_arrow_black.png') scroll no-repeat center center;
     font-weight: normal;
     vertical-align: middle;
-    display:block;
+    display: block;
     width: 20px;
     height: 17px;
     float: right;
     cursor: pointer;
 }
-
-.UIRowButton
-{
-    display: block;
-    float: right;
-    margin-right: 5px;
-}
-
-.UIRowButton2
-{
-    margin-left: 10px;
-    padding-top: 6px;
-}
-
-span.mandatoryField
-{
-    color: #FF0000;
-}
-
-/* Breadcrumb styles */
-
-.path img {
-    padding-right: 5px;
-    padding-left: 7px;
-}
-
-/* Root Page */
-
-.container
-{
-    background: #FFFFFF;
-    margin-bottom: 10px;
-    margin: 15px 80px 30px 60px;
-    /*overflow: visible;*/
-    overflow: hidden;
-}
-
 
 a.active {
     font-weight: bold;
@@ -178,7 +120,7 @@ ul.tabList {
     border-bottom: 1px solid #777777;
 }
 
-ul.tabList li{
+ul.tabList li {
     display: inline;
     position: relative;
     padding-bottom: 1px;
@@ -187,7 +129,7 @@ ul.tabList li{
     font-weight: bold;
 }
 
-.tabSelected  {
+.tabSelected {
     color: #E25300;
     background: #F2F2F2;
     border: 1px solid #777777;
@@ -197,7 +139,7 @@ ul.tabList li{
     margin-right: 1px;
 }
 
-.tabSelected  a, .tabSelected  span {
+.tabSelected a, .tabSelected span {
     padding-top: 3px;
     color: #555555;
     font-size: 12px;
@@ -224,8 +166,6 @@ div.tabScrollArrow {
 
 div.tabGradient {
     background: white url(static:images/tab_bg.png) repeat-x scroll 0 -60px;
-    /*border-left: 1px solid #777777;
-    border-right: 1px solid #777777;*/
     height: 20px;
 }
 
@@ -247,7 +187,7 @@ div.tabBorderGradient {
     cursor: pointer;
 }
 
-.tabUnselected a, .tabUnselected  span {
+.tabUnselected a, .tabUnselected span {
     color: #4c6a83;
     font-weight: normal;
     font-size: 12px;
@@ -262,8 +202,8 @@ div.tabBorderGradient {
     -moz-border-radius: 3px;
     border-radius: 3px;
     margin: 10px 10px 0 0;
-    box-shadow:1px 1px 1px #000;
-    -moz-box-shadow:1px 1px 1px #000;
+    box-shadow: 1px 1px 1px #000;
+    -moz-box-shadow: 1px 1px 1px #000;
     z-index: 1;
 }
 
@@ -293,38 +233,27 @@ div.tabBorderGradient {
     background: #555;
 }
 
-ul.tabList li.hiddenTab
-{
-    display: none;
-}
-
 .popUpLabel {
-   text-align: right;
-   font-size: 13px;
-   font-family: Verdana, Arial;
-   color: #523D04;
-   font-weight: normal;
-   padding-right: 5px;
-   padding-bottom: 3px;
+    text-align: right;
+    font-size: 13px;
+    font-family: Verdana, Arial;
+    color: #523D04;
+    font-weight: normal;
+    padding-right: 5px;
+    padding-bottom: 3px;
 }
 
 .popUpTdContent {
-   font-weight: normal;
-   padding-bottom: 3px;
-   color: black;
+    font-weight: normal;
+    padding-bottom: 3px;
+    color: black;
 }
 
- .popUpButton {
-   margin: 0px;
-   margin-top: 1px;
-   margin-right: 1px;
- }
-
 .tooltip {
-   background-color: #FFFFFF;
-   border: 1px solid #000000;
-   color: #000000;
- }
+    background-color: #FFFFFF;
+    border: 1px solid #000000;
+    color: #000000;
+}
 
 .invalid {
     -moz-appearance: none;
@@ -340,14 +269,14 @@ ul.tabList li.hiddenTab
 }
 
 .tooltipError {
-   max-width: 300px;
-   padding: 5px;
-   border: 1px solid #777;
-   color: #ad1f1f;
-   background: white;
-   -moz-box-shadow: 2px 2px 2px #444;
-   -webkit-box-shadow: 2px 2px 2px #444;
-   box-shadow: 2px 2px 2px #444;
+    max-width: 300px;
+    padding: 5px;
+    border: 1px solid #777;
+    color: #ad1f1f;
+    background: white;
+    -moz-box-shadow: 2px 2px 2px #444;
+    -webkit-box-shadow: 2px 2px 2px #444;
+    box-shadow: 2px 2px 2px #444;
 }
 
 ul.errorList {
@@ -364,13 +293,6 @@ span.errorTitle {
     font-size: medium;
     font-weight: bold;
 }
-
-div.warningExplanation {
-    margin-top: 10px;
-    color: #555;
-    text-align: left;
-}
-
 
 ul.warningLevel0 {
     margin: 0;
@@ -412,84 +334,8 @@ div.exclusivePopup .printLink {
     -moz-border-radius-topright: 3px;
 }
 
-div.balloonPopupCloseButton {
-    position: absolute;
-    cursor: pointer;
-    top: 10px;
-    right: 10px;
-    background-image: url('static:images/popup_close_button.png');
-    width: 15px;
-    height: 15px;
-}
-
-.loadingPopup {
-    background: transparent url('static:images/load_lightblue.gif') scroll no-repeat center center;
-    min-width: 130px;
-    height: 70px;
-}
-.loadingPopup .text {
-    color: #DDD;
-    text-align: center;
-    font-family: Verdana;
-    padding-top: 80px;
-}
-
-.timezonePopup {
-    min-width: 320px;
-    padding: 10px 5px 0;
-}
-
-.timezonePopup .tzHeader {
-    font-size: 20px;
-    color: #444;
-    margin-bottom: 15px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid #AAA;
-}
-
-.timezonePopup select {
-    min-width: 260px;
-    margin: 5px 5px 5px 20px;
-    border: 1px solid #AAA;
-}
-.timezonePopup .tzContainer {
-    padding: 0px 5px;
-}
-
-div.ui-draggable.timetableBlock {
-   /* border: 3px solid #9F883B;*/
-}
-
-div.ui-draggable.timetableBlock:hover {
-    cursor: move;
-}
-
-div.ui-draggable-dragging.timetableBlock {
-    z-index: 9000;
-    opacity: 0.5;
-}
-
 /* Timetable drag n drop,
    droppable styles ends here. */
-
-div.timetableBlockTitle {
-    font-weight: bold;
-    font-size: 11px;
-    padding: 4px;
-}
-
-a.entry-attachments + div.timetableBlockPresenters {
-    margin-right: 24px;
-}
-
-div.timetableBlockPresenters {
-    float: right;
-    margin: 4px;
-    margin-right: 6px;
-    margin-left: 6px;
-    font-size: 11px;
-    font-style: italic;
-}
 
 div.timetableBlockMaterial {
     cursor: pointer;
@@ -501,90 +347,6 @@ div.timetableBlockMaterial {
     background: transparent url(static:images/material_folder.png) scroll no-repeat 3px 3px;
 }
 
-div.timetableBlockMaterial:hover, div.timetableBlockMaterialActive {
-    border: 1px solid #777;
-    margin: 1px;
-    background-color: white;
-}
-
-div.timetableBlockTime {
-    position: absolute;
-    bottom: 4px;
-    right: 6px;
-    padding-top: 4px;
-    font-size: 11px;
-}
-
-div.timetableBlockTimeDiscreet{
-    float: left;
-    margin: 4px;
-    margin-right: 6px;
-    margin-left: 6px;
-    font-size: 11px;
-}
-
-div.timetableBlockLocation {
-    position: absolute;
-    bottom: 4px;
-    left: 4px;
-    font-style: italic;
-    padding-top: 4px;
-    font-size: 11px;
-}
-
-div.timetableBlockConvener {
-    position: absolute;
-    left: 4px;
-    font-style: italic;
-    padding-top: 4px;
-    font-size: 11px;
-}
-
-div.timetableBlockContribs {
-    margin: 4px;
-    border: 1px solid #CCC;
-}
-
-span.sessionRenameEntry, span.sessionRenameValue {
-    color: #888888;
-    font-weight: bold;
-}
-
-div.exclusivePopup {
-    background-color: white;
-    display: block;
-    min-width: 250px;
-    padding: 15px;
-    overflow: hidden;
-}
-
-div.ui-dialog-titlebar {
-    padding: 0.4em 15px !important;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-div.exclusivePopupTopBg {
-    background-color: #F8F8F8;
-    -moz-border-radius: 10px;
-    -webkit-border-radius: 10px;
-}
-
-div.exclusivePopup .printLink {
-    font-size: 13px;
-    position: absolute;
-    bottom: 0px;
-    right: 45px;
-    border: 1px solid #aaa;
-    border-bottom-color: white;
-    background: white;
-
-    -webkit-border-top-right-radius: 3px;
-    -webkit-border-top-left-radius: 3px;
-    -moz-border-radius-topleft: 3px;
-    -moz-border-radius-topright: 3px;
-}
-
 div.balloonPopupCloseButton {
     position: absolute;
     cursor: pointer;
@@ -600,73 +362,12 @@ div.balloonPopupCloseButton {
     min-width: 130px;
     height: 70px;
 }
+
 .loadingPopup .text {
     color: #DDD;
     text-align: center;
     font-family: Verdana;
     padding-top: 80px;
-}
-
-div.timetablePreLoading {
-    background: transparent url('static:images/load_big.gif') scroll no-repeat center center;
-}
-div.timetablePreLoading .text {
-    color: #777;
-    text-align: center;
-    font-family: Verdana;
-    letter-spacing: 2px;
-}
-
-div.timetableLoading {
-    position: absolute;
-    top: 40px;
-    left: 0px;
-    padding: 10px 0 6px 35px;
-    background: transparent url('static:images/loading.gif') scroll no-repeat 10px center;
-    color: #444;
-}
-
-.timetableFilter {
-    width: 100%;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-}
-
-.timetableFilter .content {
-    width: 900px;
-    margin: 0 auto;
-    background: #ECECEC;
-    border: 1px solid #777;
-    border-bottom: none;
-    position: relative;
-}
-
-.timetableFilter .content table {
-    background: white;
-    width: 100%;
-}
-
-.timetableFilter .content td {
-    padding: 13px 30px;
-    white-space: nowrap;
-    background-color: #ECECEC;
-    vertical-align: middle;
-    width: 1px;
-}
-
-.timetableFilter .closeButton {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    background: transparent url('static:images/close_button.png') scroll no-repeat 0 0;
-}
-
-.timetableFilter .closeButton:hover {
-    background-position: 0 -16px;
 }
 
 ul.popupList {
@@ -703,7 +404,7 @@ ul.popupList li a {
     vertical-align: bottom;
     padding: 4px;
     display: block;
-    list-style-type:none;
+    list-style-type: none;
 }
 
 ul.popupList li a.selected {
@@ -718,7 +419,7 @@ ul.popupList li span {
 ul.popupList li a:hover {
     padding: 4px;
     display: block;
-    list-style-type:none;
+    list-style-type: none;
     color: white;
     background: #5FA5D4;
 }
@@ -758,7 +459,8 @@ ul.sectionPopupList li.section .line {
 
 ul.sectionPopupList li.section .name {
     position: absolute;
-    top: 0; right: 0;
+    top: 0;
+    right: 0;
     font-family: Verdana;
     font-size: 12px;
     color: #666;
@@ -806,55 +508,10 @@ div.cssPreview {
     float: right;
 }
 
-ul.nobulletsListInline
-{
-    margin:0px;
-    margin-top: 10px;
-    padding-left: 0px;
-}
-
-ul.nobulletsListInline li
-{
-    margin-left: 10px;
-    height: 25px;
-    overflow: visible;
-    list-style-type: none;
-    display: inline;
-}
-
-div.AspectsListDiv {
-    margin-bottom: 10px;
-    height: 100px;
-    width: 350px;
-    border: 1px solid #CCCCCC;
-    overflow: auto;
-}
-
-div.PeopleListDiv {
-    margin-bottom: 10px;
-    height: 100px;
-    width: 300px;
-    border: 1px solid #CCCCCC;
-    overflow: auto;
-}
-
-div.disabled {
-    background: #DDDDDD;
-}
-
-div.disabled input {
-    color: #AAAAAA;
-    background: #DDDDDD;
-}
-
-div.disabled input[disabled] {
-    background: #DDDDDD;
-}
-
 div.posterEntry {
     border: 1px solid #aaaaaa;
     -moz-border-radius: 3px;
-    -webkit-border-radius:3px;
+    -webkit-border-radius: 3px;
     padding: 5px;
     margin-bottom: 5px;
     overflow: auto;
@@ -865,48 +522,8 @@ div.posterEntry:hover {
     background-color: #ECECEC;
 }
 
-.startEndDate, .support {
-    margin-top: 5px;
-}
-
-.startEndDate td, .support td {
-    color: #000;
-}
-td.startEndDateEntry, td.supportEntry, span.innerWidgetLabel {
-    color: #666;
-    padding-right: 6px;
-}
-
-.support td input {
-    width: 300px;
-}
-
-tr.selectedItem td {
-    color: #000;
-}
-
-.filterTable {
-    border-collapse: collapse;
-}
-
 div.invalid {
     background: white;
-}
-
-.widgetCheckboxOption {
-    margin-top: 5px;
-}
-
-
-.widgetCheckboxOption span {
-    vertical-align: middle;
-    font-size: 12px;
-    color: #555;
-    margin-left: 2px;
-}
-
-.widgetCheckboxOption input {
-    vertical-align: middle;
 }
 
 .headerRoomLayoutTimeTable {
@@ -916,10 +533,6 @@ div.invalid {
     color: black;
     font-weight: bold;
     border-left: 1px solid #E8E8E8;
-}
-
-.titleUpCellTD {
-    width:20%;
 }
 
 .inputDescription {
@@ -944,225 +557,9 @@ body.cke_show_borders {
     height: auto;
 }
 
-.infoTD {
-    padding: 4px 4px 4px 10px;
-}
-
-.infoTR:hover {
-    background-color: #ECECEC;
-}
-
-.infoTable {
-    -moz-border-radius: 5px 5px 5px 5px;
-    border:1px solid #999999;
-}
-
-table.infoTable td.tableHeader {
-    font-size: 13px;
-    font-family: Verdana, Arial;
-    color: #523D04;
-    padding: 7px;
-    border-bottom: 1px groove #A4A4A4;
-    font-weight: bold;
-}
-
-table.infoTable td.content {
-    padding: 7px;
-}
-
-/*
-    Available tags in Notification Templates
-*/
-
-table.legend {
-   border: 1px solid #5294CC;
-   background:#F6F6F6;
-   padding-bottom: 5px;
-   padding-top: 2px;
-   -moz-border-radius: 5px;
-   border-radius: 5px;
-}
-
-table.legend tr.legendTr:hover {
-    background-color: #FFE8B3;
-}
-
-table.legend td.titleTd {
-    padding:5px;
-    color:#5294CC;
-    text-align: left;
-}
-
-table.legend td.legendTd {
-    padding-right: 10px;
-    color:#3054BF;
-    cursor: pointer;
-}
-
-/* End notif templates */
-
-table.infoQuestionsTable td.dataHeader {
-    font-size: 13px;
-    font-family: Verdana, Arial;
-    color: #523D04;
-    padding: 7px;
-    border-bottom: 1px groove #A4A4A4;
-    font-weight: bold;
-}
-
-table.infoQuestionsTable td.content {
-    padding: 7px;
-}
-
-table.infoQuestionsTable td.questionContent {
-    padding: 7px;
-    max-width: 500px;
-    min-width: 370px;
-}
-
-table.infoQuestionsTable td.dataFooter {
-    font-size: 13px;
-    font-family: Verdana, Arial;
-    color: #523D04;
-    padding: 7px;
-    border-top: 1px groove #A4A4A4;
-}
-
-table.infoQuestionsTable td.dataBold {
-    font-size: 13px;
-    font-family: Verdana, Arial;
-    color: #523D04;
-    padding: 7px;
-    font-weight: bold;
-}
-
 .link {
     cursor: pointer;
     color: #045FB4;
-}
-
-.deadLineCell {
-    text-align:left;
-    padding: 7px;
-    width: 170px;
-}
-
-.contributionDataCell {
-    border-bottom: 1px solid #DDDDDD;
-}
-
-.groupTitleSmallPaper {
-   font-weight: bold;
-   font-size: 12px;
-   color: #444444;
-   padding: 3px 0 3px 0;
-   font-style: italic;
-}
-
-.emailFieldTitle {
-    color: #523D04;
-    text-align: right;
-}
-
-.emailFieldContent {
-    color: black;
-    padding-left: 10px;
-}
-
-.titleCellTDSecondLevel {
-   vertical-align: top;
-   text-align: right;
-   padding-right: 15px;
-   width: 15%;
-   color: #666666;
-   padding-left: 40px;
-}
-
-.formError {
-    font-weight: bold;
-    color: #881122;
-    padding-top:10px;
-    text-align:center;
-}
-
-.abstract.selected, .participant.selected {
-    background: #CDEB8B;
-}
-
-.abstract:hover, .participant:hover {
-    background: #FFF6DF;
-}
-
-.abstract.selected:hover, .participant.selected:hover {
-    background: #CDEB8B;
-}
-
-.authorTable {
-    -moz-border-radius: 5px 5px 5px 5px;
-    border-radius: 5px 5px 5px 5px;
-    border: 1px solid gray;
-    margin-bottom: 5px;
-    margin-top: 5px;
-    background-color: white;
-    cursor: move;
-    z-index: 1;
-}
-
-.divNotSelected {
-    background: #ECECEC;
-    -moz-border-radius: 5px 5px 5px 5px;
-    padding: 3px 0px 6px 2px;
-    width: 70%;
-}
-
-.divSelected {
-    background: #CDEB8B;
-    -moz-border-radius: 5px 5px 5px 5px;
-    padding: 3px 0px 6px 2px;
-    width: 70%;
-}
-
-.authorError {
-    font-weight: bold;
-    color: #881122;
-    text-align: left;
-    padding-top: 6px;
-}
-
-.addAuthorTD {
-    width: 20%;
-    text-align:left;
-    padding-top:6px;
-    padding-left: 6px;
-}
-
-.authorText {
-    width: 90%;
-    padding-left: 5px;
-}
-
-.dragndrop-placeholder {
-    background: none repeat scroll 0 0 #FFCC66;
-    height: 1.5em;
-    margin-top: 3px;
-    margin-bottom: 3px;
-}
-.drop-target {
-    background: none repeat scroll 0 0 #FFF7CF;
-    border: 1px dashed #FFAA00 !important;
-    width: 85%;
-}
-
-.sortblock {
-    width:85%;
-}
-
-.sortblock ul {
-    margin-top: 2px;
-    margin-bottom: 10px;
-    padding: 4px;
-    list-style-type: none;
-    width: 100%;
 }
 
 .social_share_tooltip {
@@ -1204,12 +601,12 @@ table.infoQuestionsTable td.dataBold {
     color: #999;
 }
 
-.social_share_tooltip.qtip-dark .qtip-content{
-    background: rgba(40,40,40,0.96);
+.social_share_tooltip.qtip-dark .qtip-content {
+    background: rgba(40, 40, 40, 0.96);
     border-color: #303030;
 }
 
-.social_share_tooltip.qtip-blue .qtip-content{
+.social_share_tooltip.qtip-blue .qtip-content {
     background: #E5F6FE;
     border-color: #ADD9ED;
     color: #5E99BD;
@@ -1236,29 +633,20 @@ table.infoQuestionsTable td.dataBold {
 }
 
 .social_share_tooltip.qtip-dark .social_site {
-    background: rgba(0,0,0,0.15);
+    background: rgba(0, 0, 0, 0.15);
 }
 
 .social_share_tooltip.qtip-blue .social_site {
-    background: rgba(255,255,255,0.6);
+    background: rgba(255, 255, 255, 0.6);
 }
 
 .social_share_tooltip .social_site * {
     vertical-align: middle !important;
 }
 
-div#social a {
-    display: block;
-    overflow: auto;
-}
-
-div#social:hover {
-    opacity: 1;
-}
-
 .placesLeft {
-    color:green;
-    font-style:italic;
+    color: green;
+    font-style: italic;
     padding-left: 5px;
 }
 
@@ -1267,7 +655,7 @@ div#social:hover {
 }
 
 .scrolling {
-    background-color:#FFFFFF;
+    background-color: #FFFFFF;
     box-shadow: 0 12px 6px -6px rgba(0, 0, 0, 0.2);
     position: fixed;
     top: 0;
@@ -1334,8 +722,8 @@ div#social:hover {
 
 .ui-list-menu-level-0 > li {
     background: #ECECEC;
-    background: -webkit-gradient(linear,0% 40%,0% 70%,from(#F5F5F5),to(#F1F1F1));
-    background: -moz-linear-gradient(linear,0% 40%,0% 70%,from(#F5F5F5),to(#F1F1F1));
+    background: -webkit-gradient(linear, 0% 40%, 0% 70%, from(#F5F5F5), to(#F1F1F1));
+    background: -moz-linear-gradient(linear, 0% 40%, 0% 70%, from(#F5F5F5), to(#F1F1F1));
     border: solid 1px #dcdcdc;
     border-radius: 5px;
     -webkit-border-radius: 5px;
@@ -1374,7 +762,7 @@ div#social:hover {
     border-width: 0 0 1px 0 !important;
 }
 
-.ui-list-menu-level-2{
+.ui-list-menu-level-2 {
     width: 100px;
 }
 
@@ -1427,7 +815,7 @@ div#social:hover {
     font-size: 10px;
     padding: 4px;
     opacity: 0.7;
-    box-shadow: 0px 0px 4px rgba(0,0,0,0.3);
+    box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.3);
 }
 
 #dragTip .pointer {
@@ -1451,7 +839,7 @@ div#social:hover {
 
 .icalExportPopup .exportIcalHeader {
     font-weight: bold;
-    font-size :12px;
+    font-size: 12px;
     margin-bottom: 5px;
 }
 
@@ -1483,7 +871,7 @@ div#social:hover {
     margin-top: 5px;
     vertical-align: middle;
     text-align: justify;
-    background: rgba(0,0,0,0.15);
+    background: rgba(0, 0, 0, 0.15);
 
 }
 
@@ -1492,15 +880,6 @@ div#social:hover {
     font-size: 11px;
     text-align: right;
     margin-bottom: 5px;
-}
-
-div#sdlw-actions {
-    padding: 10px 0px 10px 5px;
-}
-
-.savedText {
-    margin-left: 10px;
-    color: #118822;
 }
 
 .settingsWidget {
@@ -1514,7 +893,7 @@ div#sdlw-actions {
 
 .settingsWidget .settingsWidgetSection, .protectionWidget .protectionWidgetSection {
     padding: 10px 0px 0px;
-    text-align:justify;
+    text-align: justify;
 }
 
 .settingsWidget .settingsWidgetHeader {
@@ -1524,10 +903,10 @@ div#sdlw-actions {
 
 .settingsWidget .settingsSeparator {
     border-bottom: 1px solid #DDDDDD;
-    margin-bottom:5px;
+    margin-bottom: 5px;
 }
 
-.protectionWidget{
+.protectionWidget {
     font-size: 12px;
     padding: 0 5px 5px;
     line-height: 17px;
@@ -1541,78 +920,6 @@ div#sdlw-actions {
     margin-bottom: 10px;
     padding-bottom: 3px;
     margin-top: 0;
-}
-
-
-.contributionReviewingStatus {
-    border-radius: 5px;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    padding: 5px;
-    display: inline-block;
-    color: white;
-    font-weight: bold;
-}
-
-.contributionReviewingStatusRejected {
-    background: none repeat scroll 0 0 #B93725;
-}
-
-.contributionReviewingStatusAccepted {
-    background: none repeat scroll 0 0 #9AC33A;
-}
-
-.contributionReviewingStatusPending {
-    background: none repeat scroll 0 0 #A4CCC9;
-}
-
-.contributionReviewingStatusCorrected {
-    background: none repeat scroll 0 0 #D8B81A;
-}
-
-.contributionReviewingStatusNotSubmitted {
-    background: none repeat scroll 0 0 #BCB8A3;
-}
-
-.historyReviewHeader {
-    border-bottom: 1px solid #DDDDDD;
-    color: #444444;
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 5px;
-    margin-top: 0;
-}
-
-.historyReview {
-    border: 1px solid #DDDDDD;
-    border-radius: 10px 10px 10px 10px;
-    margin-bottom: 15px;
-    margin-top: 15px;
-    margin-right: 5px;
-    padding: 10px;
-}
-
-.historyReviewJudgment{
-    display: block;
-    padding: 10px;
-    margin: 5px
-}
-
-.historyReviewJugmentComments {
-    background-color: #EAEAEA;
-    padding: 5px;
-    margin-top: 5px;
-    border-radius: 5px;
-}
-
-div.sdlw-complete {
-    font-style: italic;
-    color: #666666;
-}
-
-span#sdlw-progress {
-    padding-left: 10px;
-    display: inline-block;
 }
 
 .material_tip {
@@ -1656,14 +963,6 @@ ul.material_list ul li {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.visibility_hidden {
-    visibility: hidden;
-    padding: 0;
-    height: 0;
-    margin: 0;
-    border: 0;
 }
 
 .user_list_icon_shield {

@@ -1,19 +1,9 @@
-/* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
- *
- * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
- */
+// This file is part of Indico.
+// Copyright (C) 2002 - 2020 CERN
+//
+// Indico is free software; you can redistribute it and/or
+// modify it under the terms of the MIT License; see the
+// LICENSE file for more details.
 
 @import "base/palette";
 
@@ -75,7 +65,7 @@ i[class^="icon-"]:before {
  *  7. Search for the icon you want to add using the search box
  *  8. Select the icons to add with the selection tool
  *  9. Add the new icons to our set (Click the hamburger icon to the right of our set that
- *     should be displayed as "icomoon" and select "Copy selection to set")
+ *     should be displayed as "icomoon" and select "Move selection here")
  * 10. Clear the search box
  * 11. Remove all icons sets except ours (Click the hamburger icon to the right of the set to remove
  *     and choose "Remove set")
@@ -87,9 +77,10 @@ i[class^="icon-"]:before {
  * 13. Click on the "Generate font" tab at the bottom of the screen
  * 14. Click on "Download" at the bottom right of the screen
  * 15. Copy files:
- *      - icomoon.zip/fonts/icommon.{svg,ttf,woff} to indico/htdocs/static/fonts/icomoon/
- *      - icomoon.zip/selection.json to indico/htdocs/static/fonts/icomoon/
+ *      - icomoon.zip/fonts/icommon.{svg,ttf,woff} to indico/web/static/fonts/icomoon/
+ *      - icomoon.zip/selection.json to indico/web/static/fonts/icomoon/
  *      - Replace the icon definitions between the comments below with the ones found in icomoon.zip/style.css
+          (pay attention to the indentation!)
  */
 
 /* Icomoon's icon definitions */
@@ -536,6 +527,18 @@ i[class^="icon-"]:before {
 }
 .icon-id-badge:before {
     content: "\e907";
+}
+.icon-compass2:before {
+    content: "\e94a";
+}
+.icon-bell:before {
+    content: "\e908";
+}
+.icon-copy1:before {
+    content: "\e909";
+}
+.icon-equalizer:before {
+    content: "\e90a";
 }
 /* End of icomoon's icon definitions */
 

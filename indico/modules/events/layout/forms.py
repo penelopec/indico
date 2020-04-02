@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -24,9 +15,10 @@ from wtforms.validators import DataRequired, Optional, ValidationError
 from indico.core.config import config
 from indico.modules.events.layout import theme_settings
 from indico.modules.events.layout.util import get_css_file_data, get_logo_data, get_plugin_conference_themes
-from indico.util.i18n import _
+from indico.modules.users import NameFormat
+from indico.util.i18n import _, orig_string
 from indico.web.forms.base import IndicoForm
-from indico.web.forms.fields import EditableFileField, FileField
+from indico.web.forms.fields import EditableFileField, FileField, IndicoEnumSelectField
 from indico.web.forms.validators import HiddenUnless, UsedIf
 from indico.web.forms.widgets import CKEditorWidget, ColorPickerWidget, SwitchWidget
 
@@ -47,7 +39,31 @@ def _get_conference_theme_choices():
     return THEMES + sorted(plugin_themes, key=lambda x: x[1].lower())
 
 
-class ConferenceLayoutForm(IndicoForm):
+class LoggedLayoutForm(IndicoForm):
+    @classmethod
+    def build_field_metadata(cls, field):
+        if field.short_name == 'name_format':
+            return {'title': orig_string(field.label.text),
+                    'default': orig_string(field.none)}
+        elif field.short_name == 'theme':
+            choices = {k if k else None: orig_string(v) for k, v in field.choices}
+            return {'title': orig_string(field.label.text),
+                    'type': 'string',
+                    'convert': lambda changes: [choices[x] for x in changes]}
+        elif field.short_name == 'timetable_theme':
+            choices = {k if k else None: v for k, v in field.choices}
+            return {'title': orig_string(field.label.text),
+                    'type': 'string',
+                    'convert': lambda changes: [choices[x] for x in changes]}
+        else:
+            return orig_string(field.label.text)
+
+    @property
+    def log_fields_metadata(self):
+        return {k: self.build_field_metadata(v) for k, v in self._fields.iteritems()}
+
+
+class ConferenceLayoutForm(LoggedLayoutForm):
     is_searchable = BooleanField(_("Enable search"), widget=SwitchWidget(),
                                  description=_("Enable search within the event"))
     show_nav_bar = BooleanField(_("Show navigation bar"), widget=SwitchWidget(),
@@ -55,6 +71,8 @@ class ConferenceLayoutForm(IndicoForm):
     show_banner = BooleanField(_("\"Now happening\""), widget=SwitchWidget(on_label=_("ON"), off_label=_("OFF")),
                                description=_("Show a banner with the current entries from the timetable"))
     show_social_badges = BooleanField(_("Show social badges"), widget=SwitchWidget())
+    name_format = IndicoEnumSelectField(_('Name format'), enum=NameFormat, none=_('Inherit from user preferences'),
+                                        description=_('Format in which names are displayed'))
 
     # Style
     header_text_color = StringField(_("Text colour"), widget=ColorPickerWidget())
@@ -93,7 +111,9 @@ class ConferenceLayoutForm(IndicoForm):
             raise ValidationError(_('Cannot enable custom stylesheet unless there is one.'))
 
 
-class LectureMeetingLayoutForm(IndicoForm):
+class LectureMeetingLayoutForm(LoggedLayoutForm):
+    name_format = IndicoEnumSelectField(_('Name format'), enum=NameFormat, none=_('Inherit from user preferences'),
+                                        description=_('Format in which names are displayed'))
     timetable_theme = SelectField(_('Timetable theme'), [DataRequired()])
 
     def __init__(self, *args, **kwargs):

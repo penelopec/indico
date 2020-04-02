@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -20,20 +11,24 @@ from flask import jsonify, request, session
 from sqlalchemy.orm import joinedload, load_only
 from werkzeug.exceptions import Forbidden, NotFound
 
+from indico.core.config import config
 from indico.core.db import db
-from indico.legacy.pdfinterface.conference import ContribsToPDF, ContribToPDF
+from indico.legacy.pdfinterface.latex import ContribsToPDF, ContribToPDF
 from indico.modules.events.abstracts.util import filter_field_values
+from indico.modules.events.contributions import contribution_settings
 from indico.modules.events.contributions.lists import ContributionDisplayListGenerator
 from indico.modules.events.contributions.models.contributions import Contribution
 from indico.modules.events.contributions.models.persons import AuthorType, ContributionPersonLink
 from indico.modules.events.contributions.models.subcontributions import SubContribution
 from indico.modules.events.contributions.util import (get_contribution_ical_file,
-                                                      get_contributions_with_user_as_submitter)
+                                                      get_contributions_with_user_as_submitter,
+                                                      has_contributions_with_user_as_submitter)
 from indico.modules.events.contributions.views import WPAuthorList, WPContributions, WPMyContributions, WPSpeakerList
 from indico.modules.events.controllers.base import RHDisplayEventBase
 from indico.modules.events.layout.util import is_menu_entry_enabled
 from indico.modules.events.models.persons import EventPerson
 from indico.modules.events.util import get_base_ical_parameters
+from indico.util.i18n import _
 from indico.web.flask.util import jsonify_data, send_file
 from indico.web.rh import RH
 from indico.web.util import jsonify_template
@@ -63,6 +58,10 @@ class RHContributionDisplayBase(RHDisplayEventBase):
         RHDisplayEventBase._check_access(self)
         if not self.contrib.can_access(session.user):
             raise Forbidden
+        published = contribution_settings.get(self.event, 'published')
+        if (not published and not self.event.can_manage(session.user)
+                and not self.contrib.is_user_associated(session.user)):
+            raise NotFound(_("The contributions of this event have not been published yet."))
 
     def _process_args(self):
         RHDisplayEventBase._process_args(self)
@@ -72,6 +71,10 @@ class RHContributionDisplayBase(RHDisplayEventBase):
 class RHDisplayProtectionBase(RHDisplayEventBase):
     def _check_access(self):
         RHDisplayEventBase._check_access(self)
+        published = contribution_settings.get(self.event, 'published')
+        if not published and not has_contributions_with_user_as_submitter(self.event, session.user):
+            raise NotFound(_("The contributions of this event have not been published yet."))
+
         if not is_menu_entry_enabled(self.MENU_ENTRY_NAME, self.event):
             self._forbidden_if_not_admin()
 
@@ -130,6 +133,8 @@ class RHContributionDisplay(RHContributionDisplayBase):
                                                contribution=contrib,
                                                show_author_link=_author_page_active(self.event),
                                                field_values=field_values,
+                                               page_title=contrib.title,
+                                               published=contribution_settings.get(self.event, 'published'),
                                                **ical_params)
 
 
@@ -185,12 +190,16 @@ class RHContributionAuthor(RHContributionDisplayBase):
 
 class RHContributionExportToPDF(RHContributionDisplayBase):
     def _process(self):
+        if not config.LATEX_ENABLED:
+            raise NotFound
         pdf = ContribToPDF(self.contrib)
         return send_file('contribution.pdf', pdf.generate(), 'application/pdf')
 
 
 class RHContributionsExportToPDF(RHContributionList):
     def _process(self):
+        if not config.LATEX_ENABLED:
+            raise NotFound
         contribs = self.list_generator.get_list_kwargs()['contribs']
         pdf = ContribsToPDF(self.event, contribs)
         return send_file('contributions.pdf', pdf.generate(), 'application/pdf')
@@ -240,6 +249,10 @@ class RHSubcontributionDisplay(RHDisplayEventBase):
         RHDisplayEventBase._check_access(self)
         if not self.subcontrib.can_access(session.user):
             raise Forbidden
+        published = contribution_settings.get(self.event, 'published')
+        if (not published and not self.event.can_manage(session.user)
+                and not self.contrib.is_user_associated(session.user)):
+            raise NotFound(_("The contributions of this event have not been published yet."))
 
     def _process_args(self):
         RHDisplayEventBase._process_args(self)

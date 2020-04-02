@@ -1,18 +1,15 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
+
+"""
+The ``papers`` module handles the Indico's Paper Reviewing workflow.
+The "inputs" of this module are the conference papers, which will be uploaded
+by the corresponding authors/submitters.
+"""
 
 from __future__ import unicode_literals
 
@@ -36,7 +33,17 @@ def _extend_event_management_menu(sender, event, **kwargs):
     if not event.cfp.is_manager(session.user) or not PapersFeature.is_allowed_for_event(event):
         return
     return SideMenuItem('papers', _('Call for Papers'), url_for('papers.management', event),
-                        section='organization')
+                        section='workflows')
+
+
+@signals.menu.items.connect_via('event-editing-sidemenu')
+def _extend_editing_menu(sender, event, **kwargs):
+    from indico.modules.events.papers.util import has_contributions_with_user_paper_submission_rights
+    if not session.user or not event.has_feature('papers'):
+        return None
+    if (has_contributions_with_user_paper_submission_rights(event, session.user) or
+            event.cfp.is_staff(session.user)):
+        return SideMenuItem('papers', _('Call for Papers'), url_for('papers.call_for_papers', event))
 
 
 @signals.event_management.management_url.connect
@@ -48,6 +55,26 @@ def _get_event_management_url(event, **kwargs):
 @signals.event.get_feature_definitions.connect
 def _get_feature_definitions(sender, **kwargs):
     return PapersFeature
+
+
+@signals.users.merged.connect
+def _merge_users(target, source, **kwargs):
+    from indico.modules.events.papers.models.comments import PaperReviewComment
+    from indico.modules.events.papers.models.competences import PaperCompetence
+    from indico.modules.events.papers.models.reviews import PaperReview
+    from indico.modules.events.papers.models.revisions import PaperRevision
+    PaperReviewComment.query.filter_by(user_id=source.id).update({PaperReviewComment.user_id: target.id})
+    PaperReviewComment.query.filter_by(modified_by_id=source.id).update({PaperReviewComment.modified_by_id: target.id})
+    PaperReview.query.filter_by(user_id=source.id).update({PaperReview.user_id: target.id})
+    PaperRevision.query.filter_by(submitter_id=source.id).update({PaperRevision.submitter_id: target.id})
+    PaperRevision.query.filter_by(judge_id=source.id).update({PaperRevision.judge_id: target.id})
+    PaperCompetence.merge_users(target, source)
+    target.judge_for_contributions |= source.judge_for_contributions
+    source.judge_for_contributions.clear()
+    target.content_reviewer_for_contributions |= source.content_reviewer_for_contributions
+    source.content_reviewer_for_contributions.clear()
+    target.layout_reviewer_for_contributions |= source.layout_reviewer_for_contributions
+    source.layout_reviewer_for_contributions.clear()
 
 
 @signals.acl.get_management_permissions.connect_via(Event)

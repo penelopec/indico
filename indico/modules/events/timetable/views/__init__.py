@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -40,6 +31,7 @@ register_template_hook('week-meeting-body', inject_week_timetable)
 class WPManageTimetable(WPEventManagement):
     template_prefix = 'events/timetable/'
     sidemenu_option = 'timetable'
+    bundles = ('module_events.contributions.js',)
 
     def __init__(self, rh, event_, **kwargs):
         custom_links = dict(values_from_signal(signals.event.timetable_buttons.send(self)))

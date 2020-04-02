@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from collections import OrderedDict
 from datetime import datetime
@@ -27,8 +18,8 @@ from babel.dates import format_timedelta as _format_timedelta
 from babel.dates import get_timezone
 from babel.numbers import format_number as _format_number
 from dateutil.relativedelta import relativedelta as _relativedelta
-from dateutil.rrule import DAILY, FR, MO, SA, SU, TH, TU, WE, rrule
-from flask import has_request_context, request, session
+from dateutil.rrule import DAILY, FR, MO, TH, TU, WE, rrule
+from flask import has_request_context, session
 
 from indico.core.config import config
 from indico.util.i18n import _, get_current_locale, ngettext, parse_locale
@@ -101,7 +92,7 @@ def utc_to_server(dt):
     return dt.astimezone(server_tz)
 
 
-def format_datetime(dt, format='medium', locale=None, timezone=None, server_tz=False, keep_tz=False):
+def format_datetime(dt, format='medium', locale=None, timezone=None, as_unicode=False):
     """
     Basically a wrapper around Babel's own format_datetime
     """
@@ -111,19 +102,16 @@ def format_datetime(dt, format='medium', locale=None, timezone=None, server_tz=F
         inject_unicode = False
     if not locale:
         locale = get_current_locale()
-    if keep_tz:
-        assert timezone is None
-        timezone = dt.tzinfo
-    elif not timezone and dt.tzinfo:
+    if not timezone and dt.tzinfo:
         timezone = session.tzinfo
-    elif server_tz:
-        timezone = config.DEFAULT_TIMEZONE
 
     rv = _format_datetime(dt, format=format, locale=locale, tzinfo=timezone)
+    if as_unicode:
+        return rv
     return inject_unicode_debug(rv, 2).encode('utf-8') if inject_unicode else rv.encode('utf-8')
 
 
-def format_date(d, format='medium', locale=None, timezone=None):
+def format_date(d, format='medium', locale=None, timezone=None, as_unicode=False):
     """
     Basically a wrapper around Babel's own format_date
     """
@@ -137,10 +125,12 @@ def format_date(d, format='medium', locale=None, timezone=None):
         d = d.astimezone(pytz.timezone(timezone) if isinstance(timezone, basestring) else timezone)
 
     rv = _format_date(d, format=format, locale=locale)
+    if as_unicode:
+        return rv
     return inject_unicode_debug(rv, 2).encode('utf-8') if inject_unicode else rv.encode('utf-8')
 
 
-def format_time(t, format='short', locale=None, timezone=None, server_tz=False):
+def format_time(t, format='short', locale=None, timezone=None, server_tz=False, as_unicode=False):
     """
     Basically a wrapper around Babel's own format_time
     """
@@ -157,10 +147,12 @@ def format_time(t, format='short', locale=None, timezone=None, server_tz=False):
     if isinstance(timezone, basestring):
         timezone = get_timezone(timezone)
     rv = _format_time(t, format=format, locale=locale, tzinfo=timezone)
+    if as_unicode:
+        return rv
     return inject_unicode_debug(rv, 2).encode('utf-8') if inject_unicode else rv.encode('utf-8')
 
 
-def format_timedelta(td, format='short', threshold=0.85, locale=None):
+def format_timedelta(td, format='short', threshold=0.85, locale=None, as_unicode=False):
     """
     Basically a wrapper around Babel's own format_timedelta
     """
@@ -168,6 +160,8 @@ def format_timedelta(td, format='short', threshold=0.85, locale=None):
         locale = get_current_locale()
 
     rv = _format_timedelta(td, format=format, locale=locale, threshold=threshold)
+    if as_unicode:
+        return rv
     return inject_unicode_debug(rv, 2).encode('utf-8')
 
 
@@ -225,7 +219,7 @@ def format_human_timedelta(delta, granularity='seconds', narrow=False):
         return u' '.join(parts)
 
 
-def format_human_date(dt, format='medium', locale=None):
+def format_human_date(dt, format='medium', locale=None, as_unicode=False):
     """
     Return the date in a human-like format for yesterday, today and tomorrow.
     Format the date otherwise.
@@ -243,7 +237,7 @@ def format_human_date(dt, format='medium', locale=None):
     elif dt == today + oneday:
         return _("tomorrow")
     else:
-        return format_date(dt, format, locale=locale)
+        return format_date(dt, format, locale=locale, as_unicode=as_unicode)
 
 
 def _format_pretty_datetime(dt, locale, tzinfo, formats):
@@ -362,30 +356,6 @@ def iterdays(start, end, skip_weekends=False, day_whitelist=None, day_blacklist=
         yield day
 
 
-def get_datetime_from_request(prefix='', default=None, source=None):
-    """Retrieves date and time from request data."""
-    if source is None:
-        source = request.values
-
-    if default is None:
-        default = datetime.now()
-
-    date_str = source.get('{}date'.format(prefix), '')
-    time_str = source.get('{}time'.format(prefix), '')
-
-    try:
-        parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except ValueError:
-        parsed_date = default.date()
-
-    try:
-        parsed_time = datetime.strptime(time_str, '%H:%M').time()
-    except ValueError:
-        parsed_time = default.time()
-
-    return datetime.combine(parsed_date, parsed_time)
-
-
 def get_day_start(day, tzinfo=None):
     """Return the earliest datetime for a given day.
 
@@ -416,29 +386,6 @@ def get_day_end(day, tzinfo=None):
         day = day.date()
     end_dt = datetime.combine(day, dt_time(23, 59))
     return tzinfo.localize(end_dt) if tzinfo else end_dt
-
-
-def round_up_to_minutes(dt, precision=15):
-    """
-    Rounds up a date time object to the given precision in minutes.
-
-    :param dt: datetime -- the time to round up
-    :param precision: int -- the precision to round up by in minutes. Negative
-        values for the precision are allowed but will round down instead of up.
-    :returns: datetime -- the time rounded up by the given precision in minutes.
-    """
-    increment = precision * 60
-    secs_in_current_hour = (dt.minute * 60) + dt.second + (dt.microsecond * 1e-6)
-    delta = (secs_in_current_hour // increment) * increment + increment - secs_in_current_hour
-    return dt + timedelta(seconds=delta)
-
-
-def get_month_start(date):
-    return date + relativedelta(day=1)
-
-
-def get_month_end(date):
-    return date + relativedelta(day=1, months=+1, days=-1)
 
 
 def strftime_all_years(dt, fmt):

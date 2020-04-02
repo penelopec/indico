@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -33,7 +24,8 @@ from indico.modules.events.papers.operations import (create_comment, create_pape
 from indico.modules.events.papers.util import (get_contributions_with_paper_submitted_by_user,
                                                get_user_contributions_to_review, get_user_reviewed_contributions,
                                                get_user_submittable_contributions)
-from indico.modules.events.papers.views import WPDisplayCallForPapers, WPDisplayReviewingArea, render_paper_page
+from indico.modules.events.papers.views import (WPDisplayCallForPapers, WPDisplayReviewingArea,
+                                                WPNewDisplayCallForPapers, render_paper_page)
 from indico.util.i18n import _
 from indico.web.flask.templating import get_template_module
 from indico.web.util import _pop_injected_js, jsonify, jsonify_data, jsonify_form, jsonify_template
@@ -74,6 +66,17 @@ class RHPaperTimeline(RHPaperBase):
                 self.event.cfp.is_manager(session.user) or
                 self.paper.can_review(session.user) or
                 self.paper.can_judge(session.user))
+
+
+class RHNewPaperTimeline(RHPaperBase):
+    def _check_paper_protection(self):
+        return (self.contribution.is_user_associated(session.user, check_abstract=True) or
+                self.event.cfp.is_manager(session.user) or
+                self.paper.can_review(session.user) or
+                self.paper.can_judge(session.user))
+
+    def _process(self):
+        return WPNewDisplayCallForPapers.render_template('paper_new.html', self.paper.event, paper=self.paper)
 
 
 class RHDownloadPaperFile(RHPaperBase):

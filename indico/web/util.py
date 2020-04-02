@@ -1,26 +1,19 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime
 
 from flask import g, has_request_context, jsonify, render_template, request, session
+from itsdangerous import Signer
 from markupsafe import Markup
 from werkzeug.exceptions import ImATeapot
+from werkzeug.urls import url_decode, url_encode, url_parse, url_unparse
 
 from indico.util.i18n import _
 from indico.web.flask.templating import get_template_module
@@ -188,3 +181,40 @@ def get_request_info(hide_passwords=True):
 def url_for_index(_external=False, _anchor=None):
     from indico.web.flask.util import url_for
     return url_for('categories.display', _external=_external, _anchor=_anchor)
+
+
+def signed_url_for(user, blueprint, url_params=None, *args, **kwargs):
+    """Get a URL from a blueprint, which is signed using a user's signing secret."""
+    from indico.web.flask.util import url_for
+    _external = kwargs.pop('_external', False)
+    base_url = url_for(blueprint, *args, **(url_params or {}))
+    qs = url_encode(sorted(kwargs.items()))
+    # this is the URL which is to be signed
+    url = '{}?{}'.format(base_url, qs) if qs else base_url
+
+    signer = Signer(user.signing_secret, salt='url-signing')
+    qs = url_encode(dict(kwargs, token=signer.get_signature(url)))
+    full_base_url = url_for(blueprint, *args, _external=_external, **(url_params or {}))
+
+    # this is the final URL including the signature ('token' parameter)
+    return '{}?{}'.format(full_base_url, qs) if qs else base_url
+
+
+def is_signed_url_valid(user, url):
+    """Check whether a signed URL is valid according to the user's signing secret."""
+    parsed = url_parse(url)
+    params = url_decode(parsed.query)
+    try:
+        signature = params.pop('token')
+    except KeyError:
+        return False
+
+    url = url_unparse((
+        '',
+        '',
+        parsed.path,
+        url_encode(sorted(params.items()), sort=True),
+        parsed.fragment
+    ))
+    signer = Signer(user.signing_secret, salt='url-signing')
+    return signer.verify_signature(url, signature)

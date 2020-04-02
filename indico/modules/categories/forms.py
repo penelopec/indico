@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -20,18 +11,21 @@ from functools import partial
 
 from flask import request
 from wtforms.fields import BooleanField, HiddenField, IntegerField, SelectField, StringField
-from wtforms.validators import DataRequired, InputRequired, NumberRange, Optional, ValidationError
+from wtforms.validators import DataRequired, InputRequired, Length, NumberRange, Optional, ValidationError
 
 from indico.modules.categories.models.categories import Category, EventMessageMode
+from indico.modules.categories.models.roles import CategoryRole
 from indico.modules.categories.util import get_image_data, get_visibility_options
 from indico.modules.events import Event
 from indico.modules.events.fields import IndicoThemeSelectField
 from indico.modules.events.models.events import EventType
 from indico.util.i18n import _
 from indico.web.forms.base import IndicoForm
-from indico.web.forms.fields import (AccessControlListField, EditableFileField, EmailListField, HiddenFieldList,
-                                     IndicoEnumSelectField, IndicoMarkdownField, IndicoProtectionField,
-                                     IndicoTimezoneSelectField, MultipleItemsField, PrincipalListField)
+from indico.web.forms.colors import get_role_colors
+from indico.web.forms.fields import (EditableFileField, EmailListField, HiddenFieldList, IndicoEnumSelectField,
+                                     IndicoMarkdownField, IndicoProtectionField, IndicoSinglePalettePickerField,
+                                     IndicoTimezoneSelectField, MultipleItemsField)
+from indico.web.forms.fields.principals import PermissionsField
 from indico.web.forms.widgets import HiddenCheckbox, SwitchWidget
 
 
@@ -84,13 +78,9 @@ class CategoryLogoForm(IndicoForm):
 
 
 class CategoryProtectionForm(IndicoForm):
-    _event_creation_fields = ('event_creation_restricted', 'event_creators', 'event_creation_notification_emails')
-
+    _event_creation_fields = ('event_creation_restricted', 'event_creation_notification_emails')
+    permissions = PermissionsField(_("Permissions"), object_type='category')
     protection_mode = IndicoProtectionField(_('Protection mode'), protected_object=lambda form: form.protected_object)
-    acl = AccessControlListField(_('Access control list'), groups=True, allow_external=True, allow_networks=True,
-                                 default_text=_('Restrict access to this category'),
-                                 description=_('List of users allowed to access the category.'))
-    managers = PrincipalListField(_('Managers'), groups=True)
     own_no_access_contact = StringField(_('No access contact'),
                                         description=_('Contact information shown when someone lacks access to the '
                                                       'category'))
@@ -101,19 +91,17 @@ class CategoryProtectionForm(IndicoForm):
     event_creation_restricted = BooleanField(_('Restricted event creation'), widget=SwitchWidget(),
                                              description=_('Whether the event creation should be restricted '
                                                            'to a list of specific persons'))
-    event_creators = PrincipalListField(_('Event creators'), groups=True, allow_external=True,
-                                        description=_('Users allowed to create events in this category'))
 
     def __init__(self, *args, **kwargs):
-        self.protected_object = category = kwargs.pop('category')
+        self.protected_object = self.category = kwargs.pop('category')
         super(CategoryProtectionForm, self).__init__(*args, **kwargs)
-        self._init_visibility(category)
+        self._init_visibility()
 
-    def _init_visibility(self, category):
-        self.visibility.choices = get_visibility_options(category, allow_invisible=False)
+    def _init_visibility(self):
+        self.visibility.choices = get_visibility_options(self.category, allow_invisible=False)
         # Check if category visibility would be affected by any of the parents
-        real_horizon = category.real_visibility_horizon
-        own_horizon = category.own_visibility_horizon
+        real_horizon = self.category.real_visibility_horizon
+        own_horizon = self.category.own_visibility_horizon
         if real_horizon and real_horizon.is_descendant_of(own_horizon):
             self.visibility.warning = _("This category's visibility is currently limited by that of '{}'.").format(
                 real_horizon.title)
@@ -162,7 +150,9 @@ class UpcomingEventsForm(IndicoForm):
                                           'step': 1, 'coerce': int},
                                          {'id': 'weight', 'caption': _("Weight"), 'required': True, 'type': 'number',
                                           'coerce': float}],
-                                 choices={'type': {'category': _('Category'), 'event': _('Event')}},
+                                 choices={'type': {'category': _('Category'),
+                                                   'category_tree': _('Category & Subcategories'),
+                                                   'event': _('Event')}},
                                  description=_("Specify categories/events shown in the 'upcoming events' list on the "
                                                "home page."))
 
@@ -172,9 +162,31 @@ class UpcomingEventsForm(IndicoForm):
         for entry in field.data:
             if entry['days'] < 0:
                 raise ValidationError(_("'Days' must be a positive integer"))
-            if entry['type'] not in {'category', 'event'}:
+            if entry['type'] not in {'category', 'category_tree', 'event'}:
                 raise ValidationError(_('Invalid type'))
-            if entry['type'] == 'category' and not Category.get(entry['id'], is_deleted=False):
+            if entry['type'] in {'category', 'category_tree'} and not Category.get(entry['id'], is_deleted=False):
                 raise ValidationError(_('Invalid category: {}').format(entry['id']))
             if entry['type'] == 'event' and not Event.get(entry['id'], is_deleted=False):
                 raise ValidationError(_('Invalid event: {}').format(entry['id']))
+
+
+class CategoryRoleForm(IndicoForm):
+    name = StringField(_('Name'), [DataRequired()],
+                       description=_('The full name of the role'))
+    code = StringField(_('Code'), [DataRequired(), Length(max=3)], filters=[lambda x: x.upper() if x else ''],
+                       render_kw={'style': 'width:60px; text-align:center; text-transform:uppercase;'},
+                       description=_('A shortcut (max. 3 characters) for the role'))
+    color = IndicoSinglePalettePickerField(_('Colour'), color_list=get_role_colors(), text_color='ffffff',
+                                           description=_('The colour used when displaying the role'))
+
+    def __init__(self, *args, **kwargs):
+        self.role = kwargs.get('obj')
+        self.category = kwargs.pop('category')
+        super(CategoryRoleForm, self).__init__(*args, **kwargs)
+
+    def validate_code(self, field):
+        query = CategoryRole.query.with_parent(self.category).filter_by(code=field.data)
+        if self.role is not None:
+            query = query.filter(CategoryRole.id != self.role.id)
+        if query.has_rows():
+            raise ValueError(_('A role with this code already exists.'))

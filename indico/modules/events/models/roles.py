@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -30,6 +21,7 @@ class EventRole(db.Model):
 
     is_group = False
     is_event_role = True
+    is_category_role = False
     is_single_person = True
     is_network = False
     principal_order = 2
@@ -82,6 +74,7 @@ class EventRole(db.Model):
     # - in_event_acls (EventPrincipal.event_role)
     # - in_event_settings_acls (EventSettingPrincipal.event_role)
     # - in_session_acls (SessionPrincipal.event_role)
+    # - in_track_acls (TrackPrincipal.event_role)
 
     def __contains__(self, user):
         return user is not None and self in user.event_roles
@@ -95,8 +88,16 @@ class EventRole(db.Model):
         return dict(self.event.locator, role_id=self.id)
 
     @property
+    def identifier(self):
+        return 'EventRole:{}'.format(self.id)
+
+    @property
     def css(self):
         return 'color: #{0} !important; border-color: #{0} !important'.format(self.color)
+
+    @property
+    def style(self):
+        return {'color': '#' + self.color, 'borderColor': '#' + self.color}
 
 
 role_members_table = db.Table(

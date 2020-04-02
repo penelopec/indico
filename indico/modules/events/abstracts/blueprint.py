@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -34,6 +25,8 @@ _bp = IndicoBlueprint('abstracts', __name__, url_prefix='/event/<confId>', templ
 _bp.add_url_rule('/abstracts/', 'call_for_abstracts', display.RHCallForAbstracts)
 _bp.add_url_rule('/abstracts/mine.pdf', 'my_abstracts_pdf', display.RHMyAbstractsExportPDF)
 _bp.add_url_rule('/abstracts/submit', 'submit', display.RHSubmitAbstract, methods=('GET', 'POST'))
+_bp.add_url_rule('/abstracts/submit/<uuid>', 'submit_invited_abstract', display.RHSubmitInvitedAbstract,
+                 methods=('GET', 'POST'))
 
 # Reviewing pages (display area, not related to any specific abstract)
 _bp.add_url_rule('/abstracts/reviewing/', 'display_reviewable_tracks', reviewing.RHDisplayReviewableTracks)
@@ -53,6 +46,7 @@ _bp.add_url_rule('/abstracts/reviewing/<int:track_id>/abstracts.xlsx', 'display_
 # Book of Abstracts
 _bp.add_url_rule('/manage/abstracts/boa', 'manage_boa', boa.RHManageBOA, methods=('GET', 'POST'))
 _bp.add_url_rule('/book-of-abstracts.pdf', 'export_boa', boa.RHExportBOA)
+_bp.add_url_rule('/manage/book-of-abstracts.zip', 'export_boa_tex', boa.RHExportBOATeX)
 
 # Misc
 _bp.add_url_rule('/abstracts/other-list', 'other_abstracts', reviewing.RHListOtherAbstracts, methods=('POST',))

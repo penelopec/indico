@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import absolute_import, unicode_literals
 
@@ -20,15 +11,24 @@ from inspect import getmro
 
 from flask_marshmallow import Marshmallow
 from flask_marshmallow.sqla import SchemaOpts
-from marshmallow import fields
+from marshmallow import fields, post_dump, post_load, pre_load
 from marshmallow_enum import EnumField
 from marshmallow_sqlalchemy import ModelConverter
+from marshmallow_sqlalchemy import ModelSchema as MSQLAModelSchema
 from sqlalchemy.orm import ColumnProperty
+from sqlalchemy.sql.elements import Label
+from webargs.flaskparser import parser as webargs_flask_parser
 
+from indico.core import signals
 from indico.core.db.sqlalchemy import PyIntEnum, UTCDateTime
+from indico.web.args import parser as indico_webargs_flask_parser
 
 
 mm = Marshmallow()
+
+
+def _is_column_property(prop):
+    return hasattr(prop, 'columns') and isinstance(prop.columns[0], Label)
 
 
 class IndicoModelConverter(ModelConverter):
@@ -43,6 +43,12 @@ class IndicoModelConverter(ModelConverter):
         if isinstance(prop, ColumnProperty) and hasattr(prop.columns[0].type, 'marshmallow_get_field_kwargs'):
             kwargs.update(prop.columns[0].type.marshmallow_get_field_kwargs())
         return kwargs
+
+    def _should_exclude_field(self, column, fields=None, exclude=None):
+        if _is_column_property(column):
+            # column_property isn't support and fails later, so we always exclude those
+            return True
+        return super(IndicoModelConverter, self)._should_exclude_field(column, fields=fields, exclude=exclude)
 
     def fields_for_model(self, model, *args, **kwargs):
         # Look up aliases on all classes in the inheritance chain of
@@ -60,6 +66,14 @@ class IndicoModelConverter(ModelConverter):
         # exclude fields we don't care about
         kwargs['fields'] = ()
         fields = super(IndicoModelConverter, self).fields_for_model(model, *args, **kwargs)
+
+        # remove column_property leftovers so they don't break things when using
+        # the schema without restricting the list of fields (it would still include
+        # them even though they are explicitly excluded)
+        for prop in model.__mapper__.iterate_properties:
+            if _is_column_property(prop):
+                del fields[prop.key]
+
         for key, field in fields.items():
             new_key = _get_from_mro('marshmallow_aliases', key)
             if new_key:
@@ -70,14 +84,36 @@ class IndicoModelConverter(ModelConverter):
         return fields
 
 
-class _IndicoSchemaOpts(SchemaOpts):
-    def __init__(self, meta):
-        super(_IndicoSchemaOpts, self).__init__(meta)
+class IndicoSchema(mm.Schema):
+    @post_dump(pass_many=True, pass_original=True)
+    def _call_post_dump_signal(self, data, many, orig, **kwargs):
+        data_list = data if many else [data]
+        orig_list = orig if many else [orig]
+        signals.plugin.schema_post_dump.send(type(self), data=data_list, orig=orig_list, many=many)
+        return data_list if many else data_list[0]
+
+    @pre_load
+    def _call_pre_load_signal(self, data, **kwargs):
+        signals.plugin.schema_pre_load.send(type(self), data=data)
+        return data
+
+    @post_load
+    def _call_post_load_signal(self, data, **kwargs):
+        signals.plugin.schema_post_load.send(type(self), data=data)
+        return data
+
+
+class _IndicoModelSchemaOpts(SchemaOpts):
+    def __init__(self, meta, **kwargs):
+        super(_IndicoModelSchemaOpts, self).__init__(meta, **kwargs)
         self.model_converter = getattr(meta, 'model_converter', IndicoModelConverter)
 
 
-class IndicoModelSchema(mm.ModelSchema):
-    OPTIONS_CLASS = _IndicoSchemaOpts
+class IndicoModelSchema(MSQLAModelSchema, IndicoSchema):
+    OPTIONS_CLASS = _IndicoModelSchemaOpts
 
 
+mm.Schema = IndicoSchema
 mm.ModelSchema = IndicoModelSchema
+webargs_flask_parser.schema_class = IndicoSchema  # just in case someone uses the wrong import
+indico_webargs_flask_parser.schema_class = IndicoSchema

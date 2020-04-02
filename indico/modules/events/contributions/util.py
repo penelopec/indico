@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -23,13 +14,17 @@ from io import BytesIO
 from operator import attrgetter
 
 import dateutil.parser
+from flask import session
 from sqlalchemy.orm import contains_eager, joinedload, load_only, noload
 
+from indico.core.config import config
 from indico.core.db import db
 from indico.core.errors import UserValueError
 from indico.modules.attachments.util import get_attached_items
+from indico.modules.events.abstracts.settings import BOASortField
 from indico.modules.events.contributions.models.contributions import Contribution
-from indico.modules.events.contributions.models.persons import ContributionPersonLink, SubContributionPersonLink
+from indico.modules.events.contributions.models.persons import (AuthorType, ContributionPersonLink,
+                                                                SubContributionPersonLink)
 from indico.modules.events.contributions.models.principals import ContributionPrincipal
 from indico.modules.events.contributions.models.subcontributions import SubContribution
 from indico.modules.events.contributions.operations import create_contribution
@@ -41,7 +36,7 @@ from indico.util.date_time import format_human_timedelta
 from indico.util.i18n import _
 from indico.util.string import to_unicode, validate_email
 from indico.web.flask.templating import get_template_module
-from indico.web.flask.util import url_for
+from indico.web.flask.util import send_file, url_for
 from indico.web.http_api.metadata.serializer import Serializer
 from indico.web.util import jsonify_data
 
@@ -102,13 +97,51 @@ def serialize_contribution_person_link(person_link, is_submitter=None):
     return data
 
 
+def sort_contribs(contribs, sort_by):
+    mapping = {'number': 'friendly_id', 'name': 'title'}
+    if sort_by == BOASortField.schedule:
+        key_func = lambda c: (c.start_dt is None, c.start_dt)
+    elif sort_by == BOASortField.session_title:
+        key_func = lambda c: (c.session is None, c.session.title.lower() if c.session else '')
+    elif sort_by == BOASortField.speaker:
+        def key_func(c):
+            speakers = c.speakers
+            if not c.speakers:
+                return True, None
+            return False, speakers[0].get_full_name(last_name_upper=False, abbrev_first_name=False).lower()
+    elif sort_by == BOASortField.board_number:
+        key_func = attrgetter('board_number')
+    elif sort_by == BOASortField.session_board_number:
+        key_func = lambda c: (c.session is None, c.session.title.lower() if c.session else '', c.board_number)
+    elif sort_by == BOASortField.schedule_board_number:
+        key_func = lambda c: (c.start_dt is None, c.start_dt, c.board_number if c.board_number else '')
+    elif sort_by == BOASortField.session_schedule_board:
+        key_func = lambda c: (c.session is None, c.session.title.lower() if c.session else '',
+                              c.start_dt is None, c.start_dt, c.board_number if c.board_number else '')
+    elif sort_by == BOASortField.id:
+        key_func = attrgetter('friendly_id')
+    elif sort_by == BOASortField.title:
+        key_func = attrgetter('title')
+    elif isinstance(sort_by, (str, unicode)) and sort_by:
+        key_func = attrgetter(mapping.get(sort_by) or sort_by)
+    else:
+        key_func = attrgetter('title')
+    return sorted(contribs, key=key_func)
+
+
 def generate_spreadsheet_from_contributions(contributions):
     """Return a tuple consisting of spreadsheet columns and respective
     contribution values"""
 
+    has_board_number = any(c.board_number for c in contributions)
+    has_authors = any(pl.author_type != AuthorType.none for c in contributions for pl in c.person_links)
     headers = ['Id', 'Title', 'Description', 'Date', 'Duration', 'Type', 'Session', 'Track', 'Presenters', 'Materials']
+    if has_authors:
+        headers += ['Authors', 'Co-Authors']
+    if has_board_number:
+        headers.append('Board number')
     rows = []
-    for c in sorted(contributions, key=attrgetter('friendly_id')):
+    for c in sort_contribs(contributions, sort_by='friendly_id'):
         contrib_data = {'Id': c.friendly_id, 'Title': c.title, 'Description': c.description,
                         'Duration': format_human_timedelta(c.duration),
                         'Date': c.timetable_entry.start_dt if c.timetable_entry else None,
@@ -117,6 +150,13 @@ def generate_spreadsheet_from_contributions(contributions):
                         'Track': c.track.title if c.track else None,
                         'Materials': None,
                         'Presenters': ', '.join(speaker.full_name for speaker in c.speakers)}
+        if has_authors:
+            contrib_data.update({
+                'Authors': ', '.join(author.full_name for author in c.primary_authors),
+                'Co-Authors': ', '.join(author.full_name for author in c.secondary_authors)
+            })
+        if has_board_number:
+            contrib_data['Board number'] = c.board_number
 
         attachments = []
         attached_items = get_attached_items(c)
@@ -277,3 +317,23 @@ def import_contributions_from_csv(event, f):
         contribution.person_links.append(link)
 
     return contributions, all_changes
+
+
+def render_pdf(event, contribs, sort_by, cls):
+    pdf = cls(event, session.user, contribs, tz=event.timezone, sort_by=sort_by)
+    res = pdf.generate()
+    return send_file('book-of-abstracts.pdf', res, 'application/pdf')
+
+
+def render_archive(event, contribs, sort_by, cls):
+    tex = cls(event, session.user, contribs, tz=event.timezone, sort_by=sort_by)
+    archive = tex.generate_source_archive()
+    return send_file('contributions-tex.zip', archive, 'application/zip', inline=False)
+
+
+def get_boa_export_formats():
+    formats = {'PDF': (_('PDF'), render_pdf),
+               'ZIP': (_('TeX archive'), render_archive)}
+    if not config.LATEX_ENABLED:
+        del formats['PDF']
+    return formats

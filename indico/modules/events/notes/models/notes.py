@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -35,7 +26,7 @@ from indico.util.string import render_markdown, return_ascii, text_to_repr
 
 class EventNote(LinkMixin, db.Model):
     __tablename__ = 'notes'
-    allowed_link_types = LinkMixin.allowed_link_types - {LinkType.category}
+    allowed_link_types = LinkMixin.allowed_link_types - {LinkType.category, LinkType.session_block}
     unique_links = True
     events_backref_name = 'all_notes'
     link_backref_name = 'note'

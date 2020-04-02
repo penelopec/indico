@@ -1,24 +1,16 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from flask import render_template, session
 
 from indico.core import signals
+from indico.core.config import config
 from indico.core.logger import Logger
 from indico.core.permissions import ManagementPermission
 from indico.modules.events.abstracts.clone import AbstractSettingsCloner
@@ -26,6 +18,7 @@ from indico.modules.events.abstracts.notifications import ContributionTypeCondit
 from indico.modules.events.features.base import EventFeature
 from indico.modules.events.models.events import Event, EventType
 from indico.modules.events.timetable.models.breaks import Break
+from indico.modules.events.tracks.models.tracks import Track
 from indico.util.i18n import _
 from indico.util.placeholders import Placeholder
 from indico.web.flask.templating import template_hook
@@ -58,7 +51,7 @@ def _extend_event_management_menu(sender, event, **kwargs):
     if not event.can_manage(session.user) or not AbstractsFeature.is_allowed_for_event(event):
         return
     return SideMenuItem('abstracts', _('Call for Abstracts'), url_for('abstracts.management', event),
-                        section='organization')
+                        section='workflows')
 
 
 @signals.event.get_feature_definitions.connect
@@ -105,8 +98,29 @@ class AbstractsFeature(EventFeature):
 
 
 @signals.acl.get_management_permissions.connect_via(Event)
-def _get_management_permissions(sender, **kwargs):
-    return AbstractReviewerPermission
+def _get_event_management_permissions(sender, **kwargs):
+    yield AbstractReviewerPermission
+    yield GlobalReviewPermission
+
+
+@signals.acl.get_management_permissions.connect_via(Track)
+def _get_track_management_permissions(sender, **kwargs):
+    yield ReviewPermission
+
+
+class GlobalReviewPermission(ManagementPermission):
+    name = 'review_all_abstracts'
+    friendly_name = _('Review for all tracks')
+    description = _('Grants abstract reviewing rights to all tracks of the event.')
+
+
+class ReviewPermission(ManagementPermission):
+    name = 'review'
+    friendly_name = _('Review')
+    description = _('Grants track reviewer rights in a track.')
+    user_selectable = True
+    color = 'orange'
+    default = True
 
 
 class AbstractReviewerPermission(ManagementPermission):
@@ -124,10 +138,21 @@ def _get_notification_placeholders(sender, **kwargs):
             yield obj
 
 
+@signals.menu.items.connect_via('event-editing-sidemenu')
+def _extend_editing_menu(sender, event, **kwargs):
+    if event.has_feature('abstracts'):
+        yield SideMenuItem('abstracts', _('Call for Abstracts'), url_for('abstracts.call_for_abstracts', event))
+
+
 @signals.event.sidemenu.connect
 def _extend_event_menu(sender, **kwargs):
     from indico.modules.events.abstracts.util import has_user_tracks
     from indico.modules.events.layout.util import MenuEntryData
+    from indico.modules.events.contributions import contribution_settings
+
+    def _boa_visible(event):
+        return (config.LATEX_ENABLED and event.has_feature('abstracts')
+                and contribution_settings.get(event, 'published'))
 
     def _reviewing_area_visible(event):
         if not session.user or not event.has_feature('abstracts'):
@@ -135,7 +160,7 @@ def _extend_event_menu(sender, **kwargs):
         return has_user_tracks(event, session.user)
 
     yield MenuEntryData(title=_("Book of Abstracts"), name='abstracts_book', endpoint='abstracts.export_boa',
-                        position=9, visible=lambda event: event.has_feature('abstracts'), static_site=True)
+                        position=9, visible=_boa_visible, static_site=True)
     yield MenuEntryData(title=_("Call for Abstracts"), name='call_for_abstracts',
                         endpoint='abstracts.call_for_abstracts', position=2,
                         visible=lambda event: event.has_feature('abstracts'))

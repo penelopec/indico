@@ -1,18 +1,11 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
+
+# flake8: noqa
 
 """
 ``fossilize`` allows us to "serialize" complex python objects into dictionaries
@@ -52,7 +45,7 @@ def addFossil(klazz, fossils):
     :type klass: class object
     :param fossils: a fossil class (or a list of fossil classes)
     """
-    if not type(fossils) is list:
+    if not isinstance(fossils, list):
         fossils = [fossils]
 
     for fossil in fossils:
@@ -168,7 +161,7 @@ class Fossilizable(object):
             else:
                 interface = implementedInterfaces[0]
 
-        elif type(interfaceArg) is dict:
+        elif isinstance(interfaceArg, dict):
 
             className = obj.__class__.__module__ + '.' + \
                         obj.__class__.__name__
@@ -313,7 +306,7 @@ class Fossilizable(object):
                     if callable(attr):
                         try:
                             methodResult = attr()
-                        except:
+                        except Exception:
                             logging.getLogger('indico.fossilize').error("Problem fossilizing '%r' with '%s'",
                                                                         obj, interfaceArg)
                             raise
@@ -355,7 +348,7 @@ class Fossilizable(object):
                     converterArgs['_obj'] = obj
                 try:
                     methodResult = convertFunction(methodResult, **converterArgs)
-                except:
+                except Exception:
                     logging.getLogger('indico.fossilize').error("Problem fossilizing '%r' with '%s' (%s)",
                                                                 obj, interfaceArg, methodName)
                     raise

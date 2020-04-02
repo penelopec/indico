@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -24,28 +15,33 @@ from packaging.version import Version
 from pkg_resources import DistributionNotFound, get_distribution
 from pytz import common_timezones_set
 from webargs import fields
-from webargs.flaskparser import use_kwargs
-from werkzeug.exceptions import NotFound, ServiceUnavailable
+from werkzeug.exceptions import BadRequest, NotFound, ServiceUnavailable
 from werkzeug.urls import url_join, url_parse
 
 import indico
 from indico.core.config import config
+from indico.core.db.sqlalchemy.principals import PrincipalType
 from indico.core.errors import NoReportError, UserValueError
 from indico.core.logger import Logger
 from indico.core.notifications import make_email, send_email
 from indico.core.settings import PrefixSettingsProxy
 from indico.modules.admin import RHAdminBase
 from indico.modules.cephalopod import cephalopod_settings
-from indico.modules.core.forms import ReportErrorForm, SettingsForm
+from indico.modules.core.forms import SettingsForm
 from indico.modules.core.settings import core_settings, social_settings
 from indico.modules.core.views import WPContact, WPSettings
+from indico.modules.legal import legal_settings
+from indico.modules.users.controllers import RHUserBase
 from indico.util.i18n import _, get_all_locales
+from indico.util.marshmallow import PrincipalDict
+from indico.util.string import sanitize_html
+from indico.web.args import use_kwargs
 from indico.web.errors import load_error_data
 from indico.web.flask.templating import get_template_module
 from indico.web.flask.util import url_for
 from indico.web.forms.base import FormDefaults
-from indico.web.rh import RH
-from indico.web.util import jsonify_data, jsonify_form
+from indico.web.rh import RH, RHProtected
+from indico.web.util import signed_url_for
 
 
 class RHContact(RH):
@@ -55,7 +51,7 @@ class RHContact(RH):
         return WPContact.render_template('contact.html')
 
 
-class RHReportErrorBase(RH):
+class RHReportErrorAPI(RH):
     def _process_args(self):
         self.error_data = load_error_data(request.view_args['error_id'])
         if self.error_data is None:
@@ -99,19 +95,8 @@ class RHReportErrorBase(RH):
             # don't bother users if this fails!
             Logger.get('sentry').exception('Could not submit user feedback')
 
-
-class RHReportError(RHReportErrorBase):
-    def _process(self):
-        form = ReportErrorForm(email=(session.user.email if session.user else ''))
-        if form.validate_on_submit():
-            self._save_report(form.email.data, form.comment.data)
-            return jsonify_data(flash=False)
-        return jsonify_form(form)
-
-
-class RHReportErrorAPI(RHReportErrorBase):
     @use_kwargs({
-        'email': fields.Email(),
+        'email': fields.Email(missing=None),
         'comment': fields.String(required=True),
     })
     def _process(self, email, comment):
@@ -223,3 +208,101 @@ class RHVersionCheck(RHAdminBase):
     def _process(self):
         return jsonify(indico=self._check_version('indico', indico.__version__),
                        plugins=self._check_version('indico-plugins'))
+
+
+class PrincipalsMixin(object):
+    def _serialize_principal(self, identifier, principal):
+        if principal.principal_type == PrincipalType.user:
+            return {'identifier': identifier,
+                    'type': 'user',
+                    'user_id': principal.id,
+                    'invalid': principal.is_deleted,
+                    'name': principal.display_full_name,
+                    'detail': ('{} ({})'.format(principal.email, principal.affiliation)
+                               if principal.affiliation else principal.email)}
+        elif principal.principal_type == PrincipalType.local_group:
+            return {'identifier': identifier,
+                    'type': 'local_group',
+                    'invalid': principal.group is None,
+                    'name': principal.name}
+        elif principal.principal_type == PrincipalType.multipass_group:
+            return {'identifier': identifier,
+                    'type': 'multipass_group',
+                    'invalid': principal.group is None,
+                    'name': principal.name,
+                    'detail': principal.provider_title}
+        elif principal.principal_type == PrincipalType.event_role:
+            return {'identifier': identifier,
+                    'type': 'event_role',
+                    'invalid': False,
+                    'name': principal.name,
+                    'meta': {'style': principal.style, 'code': principal.code}}
+        elif principal.principal_type == PrincipalType.category_role:
+            return {'identifier': identifier,
+                    'type': 'category_role',
+                    'invalid': False,
+                    'name': principal.name,
+                    'meta': {'style': principal.style, 'code': principal.code},
+                    'detail': principal.category.title}
+
+    def _process(self):
+        return jsonify({identifier: self._serialize_principal(identifier, principal)
+                        for identifier, principal in self.values.viewitems()})
+
+
+class RHPrincipals(PrincipalsMixin, RHProtected):
+    """Resolve principal identifiers to their actual objects.
+
+    This is intended for PrincipalListField which needs to be able
+    to resolve the identifiers provided to it to something more
+    human-friendly.
+    """
+
+    @use_kwargs({
+        'values': PrincipalDict(allow_groups=True, allow_external_users=True, missing={})
+    })
+    def _process_args(self, values):
+        self.values = values
+
+
+class RHSignURL(RHProtected):
+    def _process(self):
+        endpoint = request.json.get('endpoint')
+        if not endpoint:
+            raise BadRequest
+        # filter out non-standard args
+        url_params = request.json.get('url_params', {})
+        url_params = {k: v for k, v in url_params.viewitems() if not k.startswith('_')}
+        query_params = request.json.get('query_params', {})
+        query_params = {k: v for k, v in query_params.viewitems() if not k.startswith('_')}
+        url = signed_url_for(session.user, endpoint, url_params=url_params, _external=True, **query_params)
+        Logger.get('url_signing').info("%s signed URL for endpoint '%s' (%s)", session.user, endpoint, url)
+        return jsonify(url=url)
+
+
+class RHResetSignatureTokens(RHUserBase):
+    def _process(self):
+        self.user.reset_signing_secret()
+        flash(_('All your token-based links have been invalidated'), 'success')
+        return redirect(url_for('api.user_profile'))
+
+
+class RHConfig(RH):
+    def _process(self):
+        tos_url = legal_settings.get('tos_url')
+        tos_html = sanitize_html(legal_settings.get('tos')) or None
+        privacy_policy_url = legal_settings.get('privacy_policy_url')
+        privacy_policy_html = sanitize_html(legal_settings.get('privacy_policy')) or None
+        if tos_url:
+            tos_html = None
+        if privacy_policy_url:
+            privacy_policy_html = None
+
+        return jsonify(help_url=config.HELP_URL,
+                       contact_email=config.PUBLIC_SUPPORT_EMAIL,
+                       has_tos=bool(tos_url or tos_html),
+                       tos_html=tos_html,
+                       tos_url=tos_url,
+                       has_privacy_policy=bool(privacy_policy_url or privacy_policy_html),
+                       privacy_policy_html=privacy_policy_html,
+                       privacy_policy_url=privacy_policy_url)

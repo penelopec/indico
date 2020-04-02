@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -125,7 +116,7 @@ def wrap_distutils_command(command_class):
 
 def _make_command(cmd_name):
     cmd_class = getattr(frontend, re.sub(r'_(js|react)$', '', cmd_name))
-    cmd = click.command(cmd_name)(wrap_distutils_command(cmd_class))
+    cmd = click.command(cmd_name.replace('_', '-'))(wrap_distutils_command(cmd_class))
     for opt, short_opt, description in cmd_class.user_options:
         long_opt_name = opt.rstrip('=')
         var_name = long_opt_name.replace('-', '_')
@@ -151,8 +142,7 @@ for cmd_name in cmd_list:
 
 @cli.command()
 def extract_messages_react():
-    output = subprocess.check_output(['npx', 'react-jsx-i18n', 'extract', '--ext', 'jsx',
-                                      'indico/web/client/', 'indico/modules/'])
+    output = subprocess.check_output(['npx', 'react-jsx-i18n', 'extract', 'indico/web/client/', 'indico/modules/'])
     with open(MESSAGES_REACT_POT, 'wb') as f:
         f.write(output)
 

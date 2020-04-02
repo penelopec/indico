@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -167,7 +158,7 @@ def get_category_timetable(categ_ids, start_dt, end_dt, detail_level='event', tz
     # specified range of dates (and category set)
     events = _query_events(categ_ids, day_start, day_end)
     if from_categ:
-        events = events.filter(Event.is_visible_in(from_categ))
+        events = events.filter(Event.is_visible_in(from_categ.id))
     for eid, tt_start_dt in events:
         if tt_start_dt:
             items[eid][tt_start_dt.astimezone(tz).date()].append(tt_start_dt)

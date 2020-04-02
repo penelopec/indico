@@ -10,7 +10,7 @@ PostgreSQL is installed from its upstream repos to get a much more recent versio
 
 .. code-block:: shell
 
-    apt install -y lsb-release wget
+    apt install -y lsb-release wget gnupg
     echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
     apt update
@@ -138,10 +138,9 @@ most cases.
         LogLevel error
         ServerSignature Off
 
-        AliasMatch "^/static/assets/(core|(?:plugin|theme)-[^/]+)/(.*)$" "/opt/indico/assets/$1/$2"
         AliasMatch "^/(images|fonts)(.*)/(.+?)(__v[0-9a-f]+)?\.([^.]+)$" "/opt/indico/web/static/$1$2/$3.$5"
         AliasMatch "^/(css|dist|images|fonts)/(.*)$" "/opt/indico/web/static/$1/$2"
-        Alias /robots.txt /opt/indico/web/htdocs/robots.txt
+        Alias /robots.txt /opt/indico/web/static/robots.txt
 
         SetEnv UWSGI_SCHEME https
         ProxyPass / uwsgi://127.0.0.1:8008/
@@ -284,7 +283,7 @@ Now finish setting up the directory structure and permissions:
 
     mkdir ~/log/apache
     chmod go-rwx ~/* ~/.[^.]*
-    chmod 710 ~/ ~/archive ~/assets ~/cache ~/log ~/tmp
+    chmod 710 ~/ ~/archive ~/cache ~/log ~/tmp
     chmod 750 ~/web ~/.venv
     chmod g+w ~/log/apache
     echo -e "\nSTATIC_FILE_METHOD = 'xsendfile'" >> ~/etc/indico.conf

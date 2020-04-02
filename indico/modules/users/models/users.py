@@ -1,25 +1,19 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
+import itertools
 from operator import attrgetter
+from uuid import uuid4
 
-from flask import flash, has_request_context, session
+from flask import flash, g, has_request_context, session
 from flask_multipass import IdentityRetrievalFailed
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.event import listens_for
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -139,7 +133,10 @@ syncable_fields = {
 
 
 def format_display_full_name(user, obj):
-    name_format = user.settings.get('name_format') if user else NameFormat.first_last
+    from indico.modules.events.layout import layout_settings
+    name_format = layout_settings.get(g.rh.event, 'name_format') if 'rh' in g and hasattr(g.rh, 'event') else None
+    if name_format is None:
+        name_format = user.settings.get('name_format') if user else NameFormat.first_last
     upper = name_format in (NameFormat.first_last_upper, NameFormat.f_last_upper, NameFormat.last_f_upper,
                             NameFormat.last_first_upper)
     if name_format in (NameFormat.first_last, NameFormat.first_last_upper):
@@ -161,6 +158,7 @@ class User(PersonMixin, db.Model):
     is_group = False
     is_single_person = True
     is_event_role = False
+    is_category_role = False
     is_network = False
     principal_order = 0
     principal_type = PrincipalType.user
@@ -247,6 +245,12 @@ class User(PersonMixin, db.Model):
         db.Boolean,
         nullable=False,
         default=False
+    )
+    #: a unique secret used to generate signed URLs
+    signing_secret = db.Column(
+        UUID,
+        nullable=False,
+        default=lambda: unicode(uuid4())
     )
 
     _affiliation = db.relationship(
@@ -353,16 +357,19 @@ class User(PersonMixin, db.Model):
     # - _all_settings (UserSetting.user)
     # - abstract_comments (AbstractComment.user)
     # - abstract_email_log_entries (AbstractEmailLogEntry.user)
-    # - abstract_reviewer_for_tracks (Track.abstract_reviewers)
     # - abstract_reviews (AbstractReview.user)
     # - abstracts (Abstract.submitter)
     # - agreements (Agreement.user)
     # - attachment_files (AttachmentFile.user)
     # - attachments (Attachment.user)
     # - blockings (Blocking.created_by_user)
+    # - category_roles (CategoryRole.members)
     # - content_reviewer_for_contributions (Contribution.paper_content_reviewers)
-    # - convener_for_tracks (Track.conveners)
     # - created_events (Event.creator)
+    # - editing_comments (EditingRevisionComment.user)
+    # - editing_revisions (EditingRevision.submitter)
+    # - editor_for_editables (Editable.editor)
+    # - editor_for_revisions (EditingRevision.editor)
     # - event_log_entries (EventLogEntry.user)
     # - event_notes_revisions (EventNoteRevision.user)
     # - event_persons (EventPerson.user)
@@ -370,8 +377,6 @@ class User(PersonMixin, db.Model):
     # - event_roles (EventRole.members)
     # - favorite_of (User.favorite_users)
     # - favorite_rooms (Room.favorite_of)
-    # - global_abstract_reviewer_for_events (Event.global_abstract_reviewers)
-    # - global_convener_for_events (Event.global_conveners)
     # - in_attachment_acls (AttachmentPrincipal.user)
     # - in_attachment_folder_acls (AttachmentFolderPrincipal.user)
     # - in_blocking_acls (BlockingPrincipal.user)
@@ -379,8 +384,10 @@ class User(PersonMixin, db.Model):
     # - in_contribution_acls (ContributionPrincipal.user)
     # - in_event_acls (EventPrincipal.user)
     # - in_event_settings_acls (EventSettingPrincipal.user)
+    # - in_room_acls (RoomPrincipal.user)
     # - in_session_acls (SessionPrincipal.user)
     # - in_settings_acls (SettingPrincipal.user)
+    # - in_track_acls (TrackPrincipal.user)
     # - judge_for_contributions (Contribution.paper_judges)
     # - judged_abstracts (Abstract.judge)
     # - judged_papers (PaperRevision.judge)
@@ -540,6 +547,19 @@ class User(PersonMixin, db.Model):
             if item not in done:
                 yield item
 
+    @property
+    def can_get_all_multipass_groups(self):
+        """Check whether it is possible to get all multipass groups the user is in."""
+        return all(multipass.identity_providers[x.provider].supports_get_identity_groups
+                   for x in self.identities
+                   if x.provider != 'indico' and x.provider in multipass.identity_providers)
+
+    def iter_all_multipass_groups(self):
+        """Iterate over all multipass groups the user is in"""
+        return itertools.chain.from_iterable(multipass.identity_providers[x.provider].get_identity_groups(x.identifier)
+                                             for x in self.identities
+                                             if x.provider != 'indico' and x.provider in multipass.identity_providers)
+
     def get_full_name(self, *args, **kwargs):
         kwargs['_show_empty_names'] = True
         return super(User, self).get_full_name(*args, **kwargs)
@@ -556,6 +576,9 @@ class User(PersonMixin, db.Model):
         db.session.flush()
         secondary.is_primary = True
         db.session.flush()
+
+    def reset_signing_secret(self):
+        self.signing_secret = unicode(uuid4())
 
     def synchronize_data(self, refresh=False):
         """Synchronize the fields of the user from the sync identity.
@@ -590,7 +613,7 @@ class User(PersonMixin, db.Model):
         if not identities:
             return None
         identity = identities[0]
-        if refresh and identity.multipass_data is not None:
+        if refresh and identity.multipass_data is not None and sync_provider.supports_refresh:
             try:
                 identity_info = sync_provider.refresh_identity(identity.identifier, identity.multipass_data)
             except IdentityRetrievalFailed:

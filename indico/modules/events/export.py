@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -398,7 +389,7 @@ class EventImporter(object):
         self.verbose = verbose
         self.force = force
         self.archive = tarfile.open(fileobj=source_file)
-        self.data = yaml.load(self.archive.extractfile('data.yaml'))
+        self.data = yaml.unsafe_load(self.archive.extractfile('data.yaml'))
         self.id_map = {}
         self.user_map = {}
         self.event_id = None
@@ -434,9 +425,9 @@ class EventImporter(object):
                 self.user_map[uuid] = self.system_user_id
                 continue
             user = (User.query
-                    .filter(User.all_emails.contains(db.func.any(userdata['all_emails'])),
+                    .filter(User.all_emails.in_(userdata['all_emails']),
                             ~User.is_deleted)
-                    .one_or_none())
+                    .first())
             if user is None:
                 missing[uuid] = userdata
             else:
@@ -510,7 +501,7 @@ class EventImporter(object):
         # link objects to users by email where possible
         # event principals
         emails = [p.email for p in EventPrincipal.query.with_parent(event).filter_by(type=PrincipalType.email)]
-        for user in User.query.filter(~User.is_deleted, User.all_emails.contains(db.func.any(emails))):
+        for user in User.query.filter(~User.is_deleted, User.all_emails.in_(emails)):
             EventPrincipal.replace_email_with_user(user, 'event')
 
         # session principals
@@ -518,7 +509,7 @@ class EventImporter(object):
                  .filter(SessionPrincipal.session.has(Session.event == event),
                          SessionPrincipal.type == PrincipalType.email))
         emails = [p.email for p in query]
-        for user in User.query.filter(~User.is_deleted, User.all_emails.contains(db.func.any(emails))):
+        for user in User.query.filter(~User.is_deleted, User.all_emails.in_(emails)):
             SessionPrincipal.replace_email_with_user(user, 'session')
 
         # contribution principals
@@ -526,7 +517,7 @@ class EventImporter(object):
                  .filter(ContributionPrincipal.contribution.has(Contribution.event == event),
                          ContributionPrincipal.type == PrincipalType.email))
         emails = [p.email for p in query]
-        for user in User.query.filter(~User.is_deleted, User.all_emails.contains(db.func.any(emails))):
+        for user in User.query.filter(~User.is_deleted, User.all_emails.in_(emails)):
             ContributionPrincipal.replace_email_with_user(user, 'contribution')
 
         # event persons

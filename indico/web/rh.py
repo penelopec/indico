@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import absolute_import, unicode_literals
 
@@ -37,12 +28,12 @@ from indico.core.db import db
 from indico.core.db.sqlalchemy.core import handle_sqlalchemy_database_error
 from indico.core.logger import Logger, sentry_set_tags
 from indico.core.notifications import flush_email_queue, init_email_queue
-from indico.legacy.common import fossilize
-from indico.legacy.common.security import Sanitization
+from indico.util import fossilize
 from indico.util.i18n import _
 from indico.util.locators import get_locator
 from indico.util.signals import values_from_signal
-from indico.web.flask.util import ResponseUtil, create_flat_args, url_for
+from indico.web.flask.util import url_for
+from indico.web.util import is_signed_url_valid
 
 
 HTTP_VERBS = {'GET', 'PATCH', 'POST', 'PUT', 'DELETE'}
@@ -50,11 +41,9 @@ logger = Logger.get('rh')
 
 
 class RH(object):
-    NOT_SANITIZED_FIELDS = frozenset()
     CSRF_ENABLED = True  # require a csrf_token when accessing the RH with anything but GET
     EVENT_FEATURE = None  # require a certain event feature when accessing the RH. See `EventFeature` for details
     DENY_FRAMES = False  # whether to send an X-Frame-Options:DENY header
-    CHECK_HTML = False  # whether to run the legacy HTML sanitizer
 
     #: A dict specifying how the url should be normalized.
     #: `args` is a dictionary mapping view args keys to callables
@@ -88,7 +77,6 @@ class RH(object):
 
     def __init__(self):
         self.commit = True
-        self._responseUtil = ResponseUtil()
 
     # Methods =============================================================
 
@@ -170,7 +158,7 @@ class RH(object):
             return unicode(v) if isinstance(v, (int, long)) else v
 
         provided = {k: _convert(v) for k, v in request.view_args.iteritems() if k not in defaults}
-        new_view_args = {k: _convert(v) for k, v in new_view_args.iteritems()}
+        new_view_args = {k: _convert(v) for k, v in new_view_args.iteritems() if v is not None}
         if new_view_args != provided:
             if request.method in {'GET', 'HEAD'}:
                 endpoint = spec['endpoint'] or request.endpoint
@@ -240,8 +228,6 @@ class RH(object):
 
         self._check_access()
         signals.rh.check_access.send(type(self), rh=self)
-        if self.CHECK_HTML:
-            Sanitization.sanitizationCheck(create_flat_args(), self.NOT_SANITIZED_FIELDS)
 
         signal_rv = values_from_signal(signals.rh.before_process.send(type(self), rh=self),
                                        single_value=True, as_list=True)
@@ -305,9 +291,10 @@ class RH(object):
         logger.debug('Request successful')
 
         if res is None:
-            return self._responseUtil.make_empty()
+            # flask doesn't accept None but we might be returning it in some places...
+            res = ''
 
-        response = self._responseUtil.make_response(res)
+        response = current_app.make_response(res)
         if self.DENY_FRAMES:
             response.headers['X-Frame-Options'] = 'DENY'
         return response
@@ -346,3 +333,21 @@ class RHProtected(RH):
 
     def _check_access(self):
         self._require_user()
+
+
+class RequireUserMixin(object):
+    def _check_access(self):
+        if session.user is None:
+            raise Forbidden
+
+
+class RHTokenProtected(RH):
+    """A request handler which is protected through a signature token parameter."""
+
+    def _process_args(self):
+        self.user = db.m.User.get_one(request.view_args['user_id'])
+
+    def _check_access(self):
+        token = request.args.get('token')
+        if not token or not is_signed_url_valid(self.user, request.full_path):
+            raise Forbidden

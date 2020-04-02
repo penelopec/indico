@@ -1,20 +1,11 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
-from functools import wraps
+from __future__ import unicode_literals
 
 from indico.core.db import db
 from indico.core.db.sqlalchemy.principals import EmailPrincipal
@@ -38,11 +29,15 @@ def iter_acl(acl):
 
 
 def principal_from_fossil(fossil, allow_pending=False, allow_groups=True, allow_missing_groups=False,
-                          allow_emails=False, allow_networks=False, existing_data=None, event=None):
+                          allow_emails=False, allow_networks=False, existing_data=None, event=None, category=None):
     from indico.modules.networks.models.networks import IPNetworkGroup
     from indico.modules.events.models.roles import EventRole
+    from indico.modules.categories.models.roles import CategoryRole
     from indico.modules.groups import GroupProxy
     from indico.modules.users import User
+
+    if event and category is None:
+        category = event.category
 
     if existing_data is None:
         existing_data = set()
@@ -66,7 +61,7 @@ def principal_from_fossil(fossil, allow_pending=False, allow_groups=True, allow_
             # show a user from external results even though the email belongs
             # to an indico account in case some of the search criteria did not
             # match the indico account
-            user = User.find_first(User.all_emails.contains(email), ~User.is_deleted)
+            user = User.query.filter(User.all_emails == email, ~User.is_deleted).first()
             if not user:
                 user = User(first_name=data.get('first_name') or '', last_name=data.get('last_name') or '',
                             email=email,
@@ -97,32 +92,113 @@ def principal_from_fossil(fossil, allow_pending=False, allow_groups=True, allow_
         if group.group is None and not allow_missing_groups:
             raise ValueError('Multipass group does not exist: {}:{}'.format(provider, id_))
         return group
+    elif category and type_ == 'CategoryRole':
+        role = CategoryRole.get_category_role_by_id(category, id_)
+        role_name = fossil.get('name')
+        if role is None:
+            raise ValueError('Category role "{}" is not available in "{}"'.format(role_name, category.title))
+        return role
     elif event and type_ == 'EventRole':
         role = EventRole.get(id_)
         role_name = fossil.get('name')
         if role is None:
-            raise ValueError('Role does not exist: {}:{}'.format(role_name, id_))
+            raise ValueError('Event role "{}" does not exist'.format(role_name))
         if role.event != event:
-            raise ValueError('Role does not belong to provided event: {}:{} - {}'.format(role_name, id_, event))
+            raise ValueError('Event role "{}" does not belong to "{}"'.format(role_name, event.title))
         return role
     else:
         raise ValueError('Unexpected fossil type: {}'.format(type_))
 
 
-def unify_user_args(fn):
-    """Decorator that unifies new/legacy user arguments.
+def principal_from_identifier(identifier, allow_groups=False, allow_external_users=False, allow_event_roles=False,
+                              allow_category_roles=False, event_id=None, soft_fail=False):
+    # XXX: this is currently only used in PrincipalList
+    # if we ever need to support more than just users, groups, event roles and category roles
+    # make sure to add it in here as well
+    from indico.modules.events.models.events import Event
+    from indico.modules.events.models.roles import EventRole
+    from indico.modules.categories.models.roles import CategoryRole
+    from indico.modules.groups import GroupProxy
+    from indico.modules.users import User
 
-    Any argument of the decorated function that contains a
-    :class:`AvatarUserWrapper` will be converted to a :class:`User`.
-    """
-    def _convert(arg):
-        from indico.modules.users.legacy import AvatarUserWrapper
-        return arg.user if isinstance(arg, AvatarUserWrapper) else arg
+    try:
+        type_, data = identifier.split(':', 1)
+    except ValueError:
+        raise ValueError('Invalid data')
+    if type_ == 'User':
+        try:
+            user_id = int(data)
+        except ValueError:
+            raise ValueError('Invalid data')
+        user = User.get(user_id, is_deleted=(None if soft_fail else False))
+        if user is None:
+            raise ValueError('Invalid user: {}'.format(user_id))
+        return user
+    elif type_ == 'ExternalUser':
+        if not allow_external_users:
+            raise ValueError('External users are not allowed')
+        cache = GenericCache('external-user')
+        external_user_data = cache.get(data)
+        if not external_user_data:
+            raise ValueError('Invalid data')
+        user = User.query.filter(User.all_emails == external_user_data['email'], ~User.is_deleted).first()
+        if user:
+            return user
+        # create a pending user. this user isn't sent to the DB unless it gets added
+        # to the sqlalchemy session somehow (e.g. by adding it to an ACL).
+        # like this processing form data does not result in something being stored in
+        # the database, which is good!
+        return User(first_name=external_user_data['first_name'], last_name=external_user_data['last_name'],
+                    email=external_user_data['email'], affiliation=external_user_data['affiliation'],
+                    address=external_user_data['address'], phone=external_user_data['phone'], is_pending=True)
+    elif type_ == 'Group':
+        if not allow_groups:
+            raise ValueError('Groups are not allowed')
+        try:
+            provider, name = data.split(':', 1)
+        except ValueError:
+            raise ValueError('Invalid data')
+        if not provider:
+            # local group
+            try:
+                group_id = int(name)
+            except ValueError:
+                raise ValueError('Invalid data')
+            group = GroupProxy(group_id)
+        else:
+            # multipass group
+            group = GroupProxy(name, provider)
+        if not soft_fail and group.group is None:
+            raise ValueError('Invalid group: {}'.format(data))
+        return group
+    elif type_ == 'EventRole':
+        if not allow_event_roles:
+            raise ValueError('Event roles are not allowed')
+        try:
+            event_role_id = int(data)
+        except ValueError:
+            raise ValueError('Invalid data')
+        event_role = EventRole.get(event_role_id)
+        if event_role is None or event_role.event_id != event_id:
+            raise ValueError('Invalid event role: {}'.format(event_role_id))
+        return event_role
+    elif type_ == 'CategoryRole':
+        if not allow_category_roles:
+            raise ValueError('Category roles are not allowed')
 
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        args = map(_convert, args)
-        kwargs = {k: _convert(v) for k, v in kwargs.iteritems()}
-        return fn(*args, **kwargs)
-
-    return wrapper
+        event = Event.get(event_id)
+        if event is None:
+            raise ValueError('Invalid event id: {}'.format(event_id))
+        try:
+            category_role_id = int(data)
+        except ValueError:
+            raise ValueError('Invalid data')
+        if soft_fail:
+            category_role = CategoryRole.get(category_role_id)
+        else:
+            category_role = CategoryRole.get_category_role_by_id(event.category, category_role_id)
+        if category_role is None:
+            raise ValueError('Invalid category role: {}'.format(category_role_id))
+        return category_role
+    else:
+        raise ValueError('Invalid data')

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 import inspect
 import itertools
@@ -28,7 +19,8 @@ from werkzeug.utils import secure_filename
 
 from indico.core.config import config
 from indico.core.plugins import plugin_engine
-from indico.legacy.pdfinterface.conference import AbstractBook, ContribsToPDF, ContribToPDF, ProgrammeToPDF
+from indico.legacy.pdfinterface.conference import ProgrammeToPDF
+from indico.legacy.pdfinterface.latex import AbstractBook, ContribsToPDF, ContribToPDF
 from indico.legacy.webinterface.pages.static import (WPStaticAuthorList, WPStaticConferenceDisplay,
                                                      WPStaticConferenceProgram, WPStaticContributionDisplay,
                                                      WPStaticContributionList, WPStaticCustomPage,
@@ -129,16 +121,19 @@ class StaticEventCreator(object):
         global_js = generate_global_file().encode('utf-8')
         user_js = generate_user_file().encode('utf-8')
         i18n_js = u"window.TRANSLATIONS = {};".format(generate_i18n_file(session.lang)).encode('utf-8')
+        react_i18n_js = u"window.REACT_TRANSLATIONS = {};".format(
+            generate_i18n_file(session.lang, react=True)).encode('utf-8')
         gen_path = os.path.join(self._content_dir, 'assets')
         self._zip_file.writestr(os.path.join(gen_path, 'js-vars', 'global.js'), global_js)
         self._zip_file.writestr(os.path.join(gen_path, 'js-vars', 'user.js'), user_js)
         self._zip_file.writestr(os.path.join(gen_path, 'i18n', session.lang + '.js'), i18n_js)
+        self._zip_file.writestr(os.path.join(gen_path, 'i18n', session.lang + '-react.js'), react_i18n_js)
 
     def _copy_static_files(self, used_assets):
         # add favicon
         used_assets.add('static/images/indico.ico')
         # assets
-        css_files = {url for url in used_assets if re.match('static/dist/.*\.css$', url)}
+        css_files = {url for url in used_assets if re.match(r'static/dist/.*\.css$', url)}
         for file_path in css_files:
             with open(os.path.join(self._web_dir, file_path)) as f:
                 rewritten_css, used_urls, __ = rewrite_css_urls(self.event, f.read())
@@ -151,7 +146,7 @@ class StaticEventCreator(object):
                             os.path.join(self._web_dir, file_path))
 
     def _copy_plugin_files(self, used_assets):
-        css_files = {url for url in used_assets if re.match('static/plugins/.*\.css$', url)}
+        css_files = {url for url in used_assets if re.match(r'static/plugins/.*\.css$', url)}
         for file_path in css_files:
             plugin_name, path = re.match(r'static/plugins/([^/]+)/(.+.css)', file_path).groups()
             plugin = plugin_engine.get_plugin(plugin_name)
@@ -173,7 +168,7 @@ class StaticEventCreator(object):
         return '/'.join(url.split('/')[2:])
 
     def _copy_customization_files(self, used_assets):
-        css_files = {url for url in used_assets if re.match('static/custom/.*\.css$', url)}
+        css_files = {url for url in used_assets if re.match(r'static/custom/.*\.css$', url)}
         for file_path in css_files:
             with open(os.path.join(config.CUSTOMIZATION_DIR, self._strip_custom_prefix(file_path))) as f:
                 rewritten_css, used_urls, __ = rewrite_css_urls(self.event, f.read())
@@ -200,7 +195,7 @@ class StaticEventCreator(object):
             for sc in contrib.subcontributions:
                 self._add_material(sc, "%s-subcontribution" % sc.friendly_id)
         for session_ in self.event.sessions:
-            if not session.can_access(None):
+            if not session_.can_access(None):
                 continue
             self._add_material(session_, "%s-session" % session_.friendly_id)
 
@@ -272,9 +267,10 @@ class StaticConferenceCreator(StaticEventCreator):
         # Getting conference timetable in PDF
         self._add_pdf(self.event, 'timetable.export_default_pdf',
                       get_timetable_offline_pdf_generator(self.event))
-        # Generate contributions in PDF
-        self._add_pdf(self.event, 'contributions.contribution_list_pdf', ContribsToPDF, event=self.event,
-                      contribs=[c for c in self.event.contributions if c.can_access(None)])
+        if config.LATEX_ENABLED:
+            # Generate contributions in PDF
+            self._add_pdf(self.event, 'contributions.contribution_list_pdf', ContribsToPDF, event=self.event,
+                          contribs=[c for c in self.event.contributions if c.can_access(None)])
 
         # Getting specific pages for contributions
         for contrib in self.event.contributions:
@@ -306,7 +302,7 @@ class StaticConferenceCreator(StaticEventCreator):
             with override_request_endpoint(obj.view_class.endpoint):
                 obj._process_args()
                 self._add_page(obj._process(), obj.view_class.endpoint, self.event)
-        if entry.name == 'abstracts_book':
+        if entry.name == 'abstracts_book' and config.LATEX_ENABLED:
             self._add_pdf(self.event, 'abstracts.export_boa', AbstractBook, event=self.event)
         if entry.name == 'program':
             self._add_pdf(self.event, 'tracks.program_pdf', ProgrammeToPDF, event=self.event)
@@ -339,7 +335,8 @@ class StaticConferenceCreator(StaticEventCreator):
         self._add_from_rh(RHContributionDisplay, WPStaticContributionDisplay,
                           {'confId': self.event.id, 'contrib_id': contrib.id},
                           contrib)
-        self._add_pdf(contrib, 'contributions.export_pdf', ContribToPDF, contrib=contrib)
+        if config.LATEX_ENABLED:
+            self._add_pdf(contrib, 'contributions.export_pdf', ContribToPDF, contrib=contrib)
 
         for author in contrib.primary_authors:
             self._get_author(contrib, author)

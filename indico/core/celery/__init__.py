@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -20,7 +11,7 @@ from datetime import timedelta
 
 from celery.schedules import crontab
 from celery.signals import beat_init, import_modules
-from flask import render_template, session
+from flask import session
 
 import indico
 from indico.core import signals
@@ -58,8 +49,8 @@ def _load_default_modules(app, **kwargs):
 
 @import_modules.connect
 def _import_modules(*args, **kwargs):
-    import indico.core.emails
-    import indico.util.tasks
+    import indico.core.emails  # noqa: F401
+    import indico.util.tasks  # noqa: F401
     signals.import_tasks.send()
 
 
@@ -74,7 +65,7 @@ def _extend_admin_menu(sender, **kwargs):
         return SideMenuItem('celery', _("Tasks"), url_for('celery.index'), 20, icon='time')
 
 
-@template_hook('global-announcement', priority=-100)
+@template_hook('global-announcement', priority=-100, markup=False)
 def _inject_announcement_header(**kwargs):
     if not session.user or not session.user.is_admin or config.DISABLE_CELERY_CHECK:
         return
@@ -82,8 +73,14 @@ def _inject_announcement_header(**kwargs):
     last_ping_version = celery_settings.get('last_ping_version')
     down = not last_ping or (now_utc() - last_ping) > timedelta(hours=1)
     mismatch = last_ping_version and last_ping_version != indico.__version__
-    if down or mismatch:
-        return render_template('celery/warning.html', down=down)
+    if down:
+        text = _("The Celery task scheduler does not seem to be running. This means that email sending and periodic "
+                 "tasks such as event reminders do not work.")
+    elif mismatch:
+        text = _("The Celery task scheduler is running a different Indico version.")
+    else:
+        return
+    return 'error', text, True
 
 
 @celery.periodic_task(name='heartbeat', run_every=crontab(minute='*/30'))

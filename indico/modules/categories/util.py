@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -35,7 +26,6 @@ from indico.modules.events.contributions import Contribution
 from indico.modules.events.contributions.models.subcontributions import SubContribution
 from indico.modules.events.sessions import Session
 from indico.modules.events.timetable.models.entries import TimetableEntry, TimetableEntryType
-from indico.modules.events.util import serialize_event_for_json_ld
 from indico.util.caching import memoize_redis
 from indico.util.date_time import now_utc
 from indico.util.i18n import _, ngettext
@@ -143,12 +133,13 @@ def get_upcoming_events():
                           Event.end_dt.astimezone(tz) > now)
                   .options(load_only('id', 'title', 'start_dt', 'end_dt')))
     queries = []
-    cols = {'category': Event.category_id,
-            'event': Event.id}
+    predicates = {'category': lambda id_: Event.category_id == id_,
+                  'category_tree': lambda id_: Event.category_chain_overlaps(id_) & Event.is_visible_in(id_),
+                  'event': lambda id_: Event.id == id_}
     for entry in data['entries']:
         delta = timedelta(days=entry['days'])
         query = (base_query
-                 .filter(cols[entry['type']] == entry['id'])
+                 .filter(predicates[entry['type']](entry['id']))
                  .filter(db.cast(Event.start_dt.astimezone(tz), db.Date) > (now - delta).date())
                  .with_entities(Event, db.literal(entry['weight']).label('weight')))
         queries.append(query)
@@ -204,3 +195,23 @@ def get_image_data(image_type, category):
         'size': metadata['size'],
         'content_type': metadata['content_type']
     }
+
+
+def serialize_category_role(role, legacy=True):
+    """Serialize role to JSON-like object"""
+    if legacy:
+        return {
+            'id': role.id,
+            'name': role.name,
+            'code': role.code,
+            'color': role.color,
+            'category': role.category.title,
+            'identifier': 'CategoryRole:{}'.format(role.id),
+            '_type': 'CategoryRole'
+        }
+    else:
+        return {
+            'id': role.id,
+            'name': role.name,
+            'identifier': 'CategoryRole:{}'.format(role.id),
+        }

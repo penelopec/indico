@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -130,7 +121,13 @@ def chmod_umask(path, execute=False):
     """
     # XXX: umask cannot be read except when changing it,
     # so we change it and immediately restore it...
-    umask = os.umask(0)
+    # this is not thread safe and in theory prone to a race condition,
+    # the indico home dir is usually set to 710 and thus doesn't allow
+    # 'others' to access it at all. additionally, the temporary 027
+    # umask results in files being created with 640/750 and thus there's
+    # no risk of security issues/bugs in case the race condition actually
+    # happens (which is extremely unlikely anyawy)
+    umask = os.umask(0o027)
     os.umask(umask)
     default = 0o777 if execute else 0o666
     os.chmod(path, default & ~umask)

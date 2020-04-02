@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -49,7 +40,7 @@ user_colors = ['#e06055', '#ff8a65', '#e91e63', '#f06292', '#673ab7', '#ba68c8',
 
 def get_admin_emails():
     """Get the email addresses of all Indico admins"""
-    return {u.email for u in User.find(is_admin=True, is_deleted=False)}
+    return {u.email for u in User.query.filter_by(is_admin=True, is_deleted=False)}
 
 
 def get_related_categories(user, detailed=True):
@@ -106,7 +97,7 @@ def get_suggested_categories(user):
     return res
 
 
-def get_linked_events(user, dt, limit=None):
+def get_linked_events(user, dt, limit=None, load_also=()):
     """Get the linked events and the user's roles in them
 
     :param user: A `User`
@@ -153,7 +144,7 @@ def get_linked_events(user, dt, limit=None):
                      Event.id.in_(links))
              .options(joinedload('series'),
                       load_only('id', 'category_id', 'title', 'start_dt', 'end_dt',
-                                'series_id', 'series_pos', 'series_count'))
+                                'series_id', 'series_pos', 'series_count', *load_also))
              .order_by(Event.start_dt, Event.id))
     if limit is not None:
         query = query.limit(limit)
@@ -185,7 +176,7 @@ def _build_name_search(name_list):
 def build_user_search_query(criteria, exact=False, include_deleted=False, include_pending=False,
                             favorites_first=False):
     unspecified = object()
-    query = User.query.options(db.joinedload(User._all_emails))
+    query = User.query.distinct(User.id).options(db.joinedload(User._all_emails))
 
     if not include_pending:
         query = query.filter(~User.is_pending)
@@ -212,11 +203,13 @@ def build_user_search_query(criteria, exact=False, include_deleted=False, includ
     for k, v in criteria.iteritems():
         query = query.filter(unaccent_match(getattr(User, k), v, exact))
 
+    # wrap as subquery so we can apply order regardless of distinct-by-id
+    query = query.from_self()
+
     if favorites_first:
         query = (query.outerjoin(favorite_user_table, db.and_(favorite_user_table.c.user_id == session.user.id,
                                                               favorite_user_table.c.target_id == User.id))
-                      .order_by(nullslast(favorite_user_table.c.user_id)))
-
+                 .order_by(nullslast(favorite_user_table.c.user_id)))
     query = query.order_by(db.func.lower(db.func.indico.indico_unaccent(User.first_name)),
                            db.func.lower(db.func.indico.indico_unaccent(User.last_name)),
                            User.id)
@@ -252,11 +245,8 @@ def search_users(exact=False, include_deleted=False, include_pending=False, exte
     if not criteria:
         return set()
 
-    query = (build_user_search_query(
-                dict(criteria),
-                exact=exact,
-                include_deleted=include_deleted,
-                include_pending=include_pending)
+    query = (build_user_search_query(dict(criteria), exact=exact, include_deleted=include_deleted,
+                                     include_pending=include_pending)
              .options(db.joinedload(User.identities),
                       db.joinedload(User.merged_into_user)))
 
@@ -301,7 +291,7 @@ def get_user_by_email(email, create_pending=False):
     if not email:
         return None
     if not create_pending:
-        res = User.find_all(~User.is_deleted, User.all_emails.contains(email))
+        res = User.query.filter(~User.is_deleted, User.all_emails == email).all()
     else:
         res = search_users(exact=True, include_pending=True, external=True, email=email)
     if len(res) != 1:
@@ -313,7 +303,7 @@ def get_user_by_email(email, create_pending=False):
         return None
     # Create a new pending user
     data = user_or_identity.data
-    user = User(first_name=data.get('first_name') or '', last_name=data.get('last_name') or '', email=data['email'],
+    user = User(first_name=data.get('first_name') or '', last_name=data.get('last_name') or '', email=email,
                 address=data.get('address', ''), phone=data.get('phone', ''),
                 affiliation=data.get('affiliation', ''), is_pending=True)
     db.session.add(user)
@@ -338,7 +328,7 @@ def merge_users(source, target, force=False):
     primary_source_email = source.email
     logger.info("Target %s initial emails: %s", target, ', '.join(target.all_emails))
     logger.info("Source %s emails to be linked to target %s: %s", source, target, ', '.join(source.all_emails))
-    UserEmail.find(user_id=source.id).update({
+    UserEmail.query.filter_by(user_id=source.id).update({
         UserEmail.user_id: target.id,
         UserEmail.is_primary: False
     })

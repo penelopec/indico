@@ -2,7 +2,7 @@ Changelog
 =========
 
 
-Version 2.2
+Version 2.3
 -----------
 
 *Unreleased*
@@ -10,7 +10,269 @@ Version 2.2
 Major Features
 ^^^^^^^^^^^^^^
 
-- Rewrite the room booking frontend to be more straightforward
+- Add category roles, which are similar to local groups but within the
+  scope of a category and its subcategories. They can be used for assigning
+  permissions in any of these categories and events within such categories.
+
+Improvements
+^^^^^^^^^^^^
+
+- Sort survey list by title (:issue:`3802`)
+- Hide "External IDs" field if none are defined (:issue:`3857`)
+- Add LaTeX source export for book of abstracts (:issue:`4035`,
+  thanks :user:`bpedersen2`)
+- Tracks can now be categorized in track groups (:issue:`4052`)
+- Program codes for sessions, session blocks, contributions and
+  subcontributions can now be auto-generated (:issue:`4026`)
+- Add draft mode for the contribution list of conference events
+  which hides pages like the contribution list and timetable until
+  the event organizers publish the contribution list. (:issue:`4095`)
+- Add ICS export for information in the user dashboard (:issue:`4057`)
+- Allow data syncing with multipass providers which do not support
+  refreshing identity information
+- Show more verbose error when email validation fails during event
+  registration (:issue:`4177`)
+- Add link to external map in room details view (:issue:`4146`)
+- Allow up to 9 digits (instead of 6) before the decimal point in
+  registration fees
+- Add button to booking details modal to copy direct link (:issue:`4230`)
+- Do not require new room manager approval when simply shortening a booking
+  (:issue:`4214`)
+- Make root category description/title customizable using the normal
+  category settings form (:issue:`4231`)
+- Added new :data:`LOCAL_GROUPS` setting that can be used to fully disable
+  local groups (:issue:`4260`)
+- Log bulk event category changes in the event log (:issue:`4241`)
+- Add CLI commands to block and unblock users (:issue:`3845`)
+- Show warning when trying to merge a blocked user (:issue:`3845`)
+- Allow importing event role members from a CSV file (:issue:`4301`)
+- Allow optional comment when accepting a pre-booking (:issue:`4086`)
+- Log event restores in event log (:issue:`4309`)
+- Warn about cancelling/rejecting whole recurring bookings instead of just
+  specific occurrences (:issue:`4092`)
+- Add "quick cancel" link to room booking reminder emails (:issue:`4324`)
+- Add visual information and filtering options for participants'
+  registration status to the contribution list (:issue:`4318`)
+- Add warning when accepting a pre-booking in case there are
+  concurrent bookings (:issue:`4129`)
+- Add event logging to opening/closing registration forms, approval/rejection of
+  registrations, and updates to event layout (:issue:`4360`,
+  thanks :user:`giusedb` & :user:`omegak`)
+- Add category navigation dialog on category display page (:issue:`4282`,
+  thanks :user:`omegak`)
+
+Bugfixes
+^^^^^^^^
+
+- Hide Book of Abstracts menu item if LaTeX is disabled
+- Use a more consistent order when cloning the timetable (:issue:`4227`)
+- Do not show unrelated rooms with similar names when booking room from an
+  event (:issue:`4089`)
+- Stop icons from overlapping in the datetime widget (:issue:`4342`)
+- Fix alignment of materials in events (:issue:`4344`)
+
+Internal Changes
+^^^^^^^^^^^^^^^^
+
+- Make React and SemanticUI usable everywhere (:issue:`3955`)
+- Add ``before-regform`` template hook (:issue:`4171`, thanks :user:`giusedb`)
+- Add ``registrations`` kwarg to the ``event.designer.print_badge_template``
+  signal (:issue:`4297`, thanks :user:`giusedb`)
+
+
+----
+
+Version 2.2.8
+-------------
+
+*Unreleased*
+
+Bugfixes
+^^^^^^^^
+
+- None so far :)
+
+Version 2.2.7
+-------------
+
+*Released on March 23, 2020*
+
+Improvements
+^^^^^^^^^^^^
+
+- Add support for event labels to indicate e.g. postponed or cancelled
+  events (:issue:`3199`)
+
+Bugfixes
+^^^^^^^^
+
+- Allow slashes in roomName export API
+- Show names instead of IDs of local groups in ACLs (:issue:`3700`)
+
+Version 2.2.6
+-------------
+
+*Released on February 27, 2020*
+
+Bugfixes
+^^^^^^^^
+
+- Fix some email fields (error report contact, agreement cc address) being
+  required even though they should be optional
+- Avoid browsers prefilling stored passwords in togglable password fields
+  such as the event access key
+- Make sure that tickets are not attached to emails sent to registrants for whom
+  tickets are blocked (:issue:`4242`)
+- Fix event access key prompt not showing when accessing an attachment link
+  (:issue:`4255`)
+- Include event title in OpenGraph metadata (:issue:`4288`)
+- Fix error when viewing abstract with reviews that have no scores
+- Update requests and pin idna to avoid installing incompatible dependency versions
+  (:issue:`4327`)
+
+Version 2.2.5
+-------------
+
+*Released on December 06, 2019*
+
+Improvements
+^^^^^^^^^^^^
+
+- Sort posters in timetable PDF export by board number (:issue:`4147`, thanks
+  :user:`bpedersen2`)
+- Use lat/lng field order instead of lng/lat when editing rooms (:issue:`4150`,
+  thanks :user:`bpedersen2`)
+- Add additional fields to the contribution csv/xlsx export (authors and board
+  number) (:issue:`4148`, thanks :user:`bpedersen2`)
+
+Bugfixes
+^^^^^^^^
+
+- Update the Pillow library to 6.2.1. This fixes an issue where some malformed images
+  could result in high memory usage or slow processing.
+- Truncate long speaker names in the timetable instead of hiding them (:issue:`4110`)
+- Fix an issue causing errors when using translations for languages with no plural
+  forms (like Chinese).
+- Fix creating rooms without touching the longitude/latitude fields (:issue:`4115`)
+- Fix error in HTTP API when Basic auth headers are present (:issue:`4123`,
+  thanks :user:`uxmaster`)
+- Fix incorrect font size in some room booking dropdowns (:issue:`4156`)
+- Add missing email validation in some places (:issue:`4158`)
+- Reject requests containing NUL bytes in the POST data (:issue:`4159`)
+- Fix truncated timetable PDF when using "Print each session on a separate page" in
+  an event where the last timetable entry of the day is a top-level contribution
+  or break (:issue:`4134`, thanks :user:`bpedersen2`)
+- Only show public contribution fields in PDF exports (:issue:`4165`)
+- Allow single arrival/departure date in accommodation field (:issue:`4164`,
+  thanks :user:`bpedersen2`)
+
+Version 2.2.4
+-------------
+
+*Released on October 16, 2019*
+
+Security fixes
+^^^^^^^^^^^^^^
+
+- Fix more places where LaTeX input was not correctly sanitized. While the biggest
+  security impact (reading local files) has already been mitigated when fixing the
+  initial vulnerability in the previous release, it is still strongly recommended
+  to update.
+
+Version 2.2.3
+-------------
+
+*Released on October 08, 2019*
+
+Security fixes
+^^^^^^^^^^^^^^
+
+- Strip ``@``, ``+``, ``-`` and ``=`` from the beginning of strings when exporting
+  CSV files to avoid `security issues <https://www.owasp.org/index.php/CSV_Injection>`_
+  when opening the CSV file in Excel
+- Use 027 instead of 000 umask when temporarily changing it to get the current umask
+- Fix LaTeX sanitization to prevent malicious users from running unsafe LaTeX commands
+  through specially crafted abstracts or contribution descriptions, which could lead to
+  the disclosure of local file contents
+
+Improvements
+^^^^^^^^^^^^
+
+- Improve room booking interface on small-screen devices (:issue:`4013`)
+- Add user preference for room owners/manager to select if they want to
+  receive notification emails for their rooms (:issue:`4096`, :issue:`4098`)
+- Show family name field first in user search dialog (:issue:`4099`)
+- Make date headers clickable in room booking calendar (:issue:`4099`)
+- Show times in room booking log entries (:issue:`4099`)
+- Support disabling server-side LaTeX altogether and hide anything that
+  requires it (such as contribution PDF export or the Book of Abstracts).
+  **LaTeX is now disabled by default, unless the** :data:`XELATEX_PATH`
+  **is explicitly set in** ``indico.conf``.
+
+
+Bugfixes
+^^^^^^^^
+
+- Remove 30s timeout from dropzone file uploads
+- Fix bug affecting room booking from an event in another timezone (:issue:`4072`)
+- Fix error when commenting on papers (:issue:`4081`)
+- Fix performance issue in conferences with public registration count and a
+  high amount of registrations
+- Fix confirmation prompt when disabling conference menu customizations
+  (:issue:`4085`)
+- Fix incorrect days shown as weekend in room booking for some locales
+- Fix ACL entries referencing event roles from the old event when cloning an
+  event with event roles in the ACL. Run ``indico maint fix-event-role-acls``
+  after updating to fix any affected ACLs (:issue:`4090`)
+- Fix validation issues in coordinates fields when editing rooms (:issue:`4103`)
+
+Version 2.2.2
+-------------
+
+*Released on August 23, 2019*
+
+Bugfixes
+^^^^^^^^
+
+- Remove dependency on ``pyatom``, which has vanished from PyPI
+
+Version 2.2.1
+-------------
+
+*Released on August 16, 2019*
+
+Improvements
+^^^^^^^^^^^^
+
+- Make list of event room bookings sortable (:issue:`4022`)
+- Log when a booking is split during editing (:issue:`4031`)
+- Improve "Book" button in multi-day events (:issue:`4021`)
+
+Bugfixes
+^^^^^^^^
+
+- Add missing slash to the ``template_prefix`` of the ``designer`` module
+- Always use HH:MM time format in book-from-event link
+- Fix timetable theme when set to "indico weeks view" before 2.2 (:issue:`4027`)
+- Avoid flickering of booking edit details tooltip
+- Fix outdated browser check on iOS (:issue:`4033`)
+
+Version 2.2
+-----------
+
+*Released on August 06, 2019*
+
+Major Changes
+^^^^^^^^^^^^^
+
+- ⚠️ **Drop support for Internet Explorer 11 and other outdated or
+  discontinued browser versions.** Indico shows a warning message
+  when accessed using such a browser. The latest list of supported
+  browsers can be found `in the README on GitHub <https://github.com/indico/indico#browser-support>`_,
+  but generally Indico now supports the last two versions of each major
+  browser (determined at release time), plus the current Firefox ESR.
+- Rewrite the room booking frontend to be more straightforward and
+  user-friendly. Check `our blog for details <https://getindico.io/indico/update/release/milestone/2019/02/22/indico-2-2-news.html>`_.
 
 Improvements
 ^^^^^^^^^^^^
@@ -19,14 +281,28 @@ Improvements
   whole browser when there are thousands of log entries
 - Add shortcut to next upcoming event in a category (:issue:`3388`)
 - Make registration period display less confusing (:issue:`3359`)
-- Add setting for the default contribution duration of an event
-  (:issue:`3446`)
 - Add edit button to custom conference pages (:issue:`3284`)
 - Support markdown in survey questions (:issue:`3366`)
 - Improve event list in case of long event titles (:issue:`3607`,
   thanks :user:`nop33`)
-- Do not show border after last item in badge designer toolbar
-  (:issue:`3607`, thanks :user:`nop33`)
+- Include event page title in the page's ``<title>`` (:issue:`3285`,
+  thanks :user:`bpedersen2`)
+- Add option to include subcategories in upcoming events (:issue:`3449`)
+- Allow event managers to override the name format used in the event
+  (:issue:`2455`)
+- Add option to not clone venue/room of an event
+- Show territory/country next to the language name (:issue:`3968`)
+- Add more sorting options to book of abstracts (:issue:`3429`, thanks
+  :user:`bpedersen2`)
+- Add more formatting options to book of abstracts (:issue:`3335`, thanks
+  :user:`bpedersen2`)
+- Improve message when the call for abstracts is scheduled to open but
+  hasn't started yet
+- Make link color handling for LaTeX pdfs configurable (:issue:`3283`,
+  thanks :user:`bpedersen2`)
+- Preserve displayed order in contribution exports that do not apply
+  any specific sorting (:issue:`4005`)
+- Add author list button to list of papers (:issue:`3978`)
 
 Bugfixes
 ^^^^^^^^
@@ -34,6 +310,27 @@ Bugfixes
 - Fix incorrect order of session blocks inside timetable (:issue:`2999`)
 - Add missing email validation to contribution CSV import (:issue:`3568`,
   thanks :user:`Kush22`)
+- Do not show border after last item in badge designer toolbar
+  (:issue:`3607`, thanks :user:`nop33`)
+- Correctly align centered footer links (:issue:`3599`, thanks :user:`nop33`)
+- Fix top/right alignment of session bar in event display view (:issue:`3599`,
+  thanks :user:`nop33`)
+- Fix error when trying to create a user with a mixed-case email
+  address in the admin area
+- Fix event import if a user in the exported data has multiple email
+  addresses and they match different users
+- Fix paper reviewers getting notifications even if their type of reviewing
+  has been disabled (:issue:`3852`)
+- Correctly handle merging users in the paper reviewing module (:issue:`3895`)
+- Show correct number of registrations in management area (:issue:`3935`)
+- Fix sorting book of abstracts by board number (:issue:`3429`, thanks
+  :user:`bpedersen2`)
+- Enforce survey submission limit (:issue:`3256`)
+- Do not show "Mark as paid" button and checkout link while a transaction
+  is pending (:issue:`3361`, thanks :user:`driehle`)
+- Fix 404 error on custom conference pages that do not have any ascii chars
+  in the title (:issue:`3998`)
+- Do not show pending registrants in public participant lists (:issue:`4017`)
 
 Internal Changes
 ^^^^^^^^^^^^^^^^
@@ -45,16 +342,110 @@ Internal Changes
 
 ----
 
+Version 2.1.11
+--------------
+
+*Released on October 16, 2019*
+
+Security fixes
+^^^^^^^^^^^^^^
+
+- Fix more places where LaTeX input was not correctly sanitized. While the biggest
+  security impact (reading local files) has already been mitigated when fixing the
+  initial vulnerability in the previous release, it is still strongly recommended
+  to update.
+
+Version 2.1.10
+--------------
+
+*Released on October 08, 2019*
+
+Security fixes
+^^^^^^^^^^^^^^
+
+- Strip ``@``, ``+``, ``-`` and ``=`` from the beginning of strings when exporting
+  CSV files to avoid `security issues <https://www.owasp.org/index.php/CSV_Injection>`_
+  when opening the CSV file in Excel
+- Use 027 instead of 000 umask when temporarily changing it to get the current umask
+- Fix LaTeX sanitization to prevent malicious users from running unsafe LaTeX commands
+  through specially crafted abstracts or contribution descriptions, which could lead to
+  the disclosure of local file contents
+
+Version 2.1.9
+-------------
+
+*Released on August 26, 2019*
+
+Bugfixes
+^^^^^^^^
+
+- Fix bug in calendar view, due to timezones (:issue:`3903`)
+- Remove dependency on ``pyatom``, which has vanished from PyPI (:issue:`4045`)
+
+Version 2.1.8
+-------------
+
+*Released on March 12, 2019*
+
+Improvements
+^^^^^^^^^^^^
+
+- Add A6 to page size options (:issue:`3793`)
+
+Bugfixes
+^^^^^^^^
+
+- Fix celery/redis dependency issue (:issue:`3809`)
+
+Version 2.1.7
+-------------
+
+*Released on January 24, 2019*
+
+Improvements
+^^^^^^^^^^^^
+
+- Add setting for the default contribution duration of an event
+  (:issue:`3446`)
+- Add option to copy abstract attachments to contributions when
+  accepting them (:issue:`3732`)
+
+Bugfixes
+^^^^^^^^
+
+- Really fix the oauthlib conflict (was still breaking in some cases)
+
+Version 2.1.6
+-------------
+
+*Released on January 15, 2019*
+
+Bugfixes
+^^^^^^^^
+
+- Allow adding external users as speakers/chairpersons (:issue:`3562`)
+- Allow adding external users to event ACLs (:issue:`3562`)
+- Pin requests-oauthlib version to avoid dependency conflict
 
 Version 2.1.5
 -------------
 
-*Unreleased*
+*Released on December 06, 2018*
+
+Improvements
+^^^^^^^^^^^^
+
+- Render the reviewing state of papers in the same way as abstracts
+  (:issue:`3665`)
 
 Bugfixes
 ^^^^^^^^
 
 - Use correct speaker name when exporting contributions to spreadsheets
+- Use friendly IDs in abstract attachment package folder names
+- Fix typo in material package subcontribution folder names
+- Fix check on whether registering for an event is possible
+- Show static text while editing registrations (:issue:`3682`)
 
 Version 2.1.4
 -------------

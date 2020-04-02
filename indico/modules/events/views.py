@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import print_function, unicode_literals
 
@@ -23,7 +14,7 @@ from sqlalchemy.orm import load_only
 from werkzeug.utils import cached_property
 
 from indico.modules.admin.views import WPAdmin
-from indico.modules.core.settings import core_settings, social_settings
+from indico.modules.core.settings import social_settings
 from indico.modules.events import Event
 from indico.modules.events.layout import layout_settings, theme_settings
 from indico.modules.events.layout.util import (build_menu_entry_name, get_css_url, get_menu_entry_by_name,
@@ -93,13 +84,28 @@ def render_event_footer(event, dark=False):
                            google_calendar_params=google_calendar_params)
 
 
-class WPReferenceTypes(WPAdmin):
+class WPEventAdmin(WPAdmin):
     template_prefix = 'events/'
 
 
 class WPEventBase(WPDecorated):
     ALLOW_JSON = False
     bundles = ('module_events.display.js',)
+
+    @property
+    def page_metadata(self):
+        metadata = super(WPEventBase, self).page_metadata
+        return {
+            'og': dict(metadata['og'], **{
+                'title': self.event.title,
+                'type': 'event',
+                'image': (self.event.logo_url if self.event.has_logo else
+                          url_for('assets.image', filename='indico_square.png', _external=True)),
+                'description': self.event.description
+            }),
+            'json_ld': serialize_event_for_json_ld(self.event, full=True),
+            'keywords': self.event.keywords
+        }
 
     def __init__(self, rh, event_, **kwargs):
         assert event_ == kwargs.setdefault('event', event_)
@@ -115,15 +121,12 @@ class WPEventBase(WPDecorated):
                 dates = ' ({} - {})'.format(to_unicode(format_date(start_dt_local, format='long')),
                                             to_unicode(format_date(end_dt_local, format='long')))
         self.title = '{} {}'.format(strip_tags(self.event.title), dates)
+        page_title = kwargs.get('page_title')
+        if page_title:
+            self.title += ': {}'.format(strip_tags(page_title))
 
-    def _getHeader(self):
+    def _get_header(self):
         raise NotImplementedError  # must be overridden by meeting/lecture and conference WPs
-
-    def _getHeadContent(self):
-        site_name = core_settings.get('site_title')
-        meta = render_template('events/meta.html', event=self.event, site_name=site_name,
-                               json_ld=serialize_event_for_json_ld(self.event, full=True))
-        return WPDecorated._getHeadContent(self) + meta
 
 
 class WPSimpleEventDisplayBase(MathjaxMixin, WPEventBase):
@@ -133,11 +136,11 @@ class WPSimpleEventDisplayBase(MathjaxMixin, WPEventBase):
         self.event = event_
         WPEventBase.__init__(self, rh, event_, **kwargs)
 
-    def _getHeader(self):
-        return render_event_header(self.event).encode('utf-8')
+    def _get_header(self):
+        return render_event_header(self.event)
 
-    def _getFooter(self):
-        return render_event_footer(self.event).encode('utf-8')
+    def _get_footer(self):
+        return render_event_footer(self.event)
 
 
 class WPSimpleEventDisplay(WPSimpleEventDisplayBase):
@@ -164,26 +167,26 @@ class WPSimpleEventDisplay(WPSimpleEventDisplayBase):
                       if print_stylesheet else ())
         }
 
-    def _getHeadContent(self):
-        return MathjaxMixin._getHeadContent(self) + WPEventBase._getHeadContent(self)
+    def _get_head_content(self):
+        return MathjaxMixin._get_head_content(self) + WPEventBase._get_head_content(self)
 
     def get_extra_css_files(self):
         custom_url = get_css_url(self.event)
         return [custom_url] if custom_url else []
 
-    def _applyDecoration(self, body):
+    def _apply_decoration(self, body):
         if request.args.get('frame') == 'no' or request.args.get('fr') == 'no' or request.args.get('print') == '1':
             return render_template('events/display/print.html', content=body)
         else:
-            return WPEventBase._applyDecoration(self, body)
+            return WPEventBase._apply_decoration(self, body)
 
-    def _getHeader(self):
-        return render_event_header(self.event, theme=self.theme_id, theme_override=self.theme_override).encode('utf-8')
+    def _get_header(self):
+        return render_event_header(self.event, theme=self.theme_id, theme_override=self.theme_override)
 
-    def _getFooter(self):
-        return render_event_footer(self.event, dark=True).encode('utf-8')
+    def _get_footer(self):
+        return render_event_footer(self.event, dark=True)
 
-    def _getBody(self, params):
+    def _get_body(self, params):
         attached_items = self.event.attached_items
         folders = [folder for folder in attached_items.get('folders', []) if folder.title != 'Internal Page Files']
         files = attached_items.get('files', [])
@@ -223,7 +226,7 @@ class WPConferenceDisplayBase(WPJinjaMixin, MathjaxMixin, WPEventBase):
         assert event_ == kwargs.setdefault('event', event_)
         self.event = event_
         kwargs['conf_layout_params'] = self._get_layout_params()
-        kwargs['page_title'] = self.sidemenu_title
+        kwargs.setdefault('page_title', self.sidemenu_title)
         WPEventBase.__init__(self, rh, event_, **kwargs)
 
     def _get_layout_params(self):
@@ -244,8 +247,8 @@ class WPConferenceDisplayBase(WPJinjaMixin, MathjaxMixin, WPEventBase):
         theme_url = self._kwargs.get('css_url_override', get_css_url(self.event))
         return [theme_url] if theme_url else []
 
-    def _getHeader(self):
-        return render_event_header(self.event, conference_layout=True).encode('utf-8')
+    def _get_header(self):
+        return render_event_header(self.event, conference_layout=True)
 
     @cached_property
     def sidemenu_entry(self):
@@ -264,16 +267,16 @@ class WPConferenceDisplayBase(WPJinjaMixin, MathjaxMixin, WPEventBase):
         entry = self.sidemenu_entry
         return entry.localized_title if entry else ''
 
-    def _getHeadContent(self):
+    def _get_head_content(self):
         return '\n'.join([
-            MathjaxMixin._getHeadContent(self),
-            WPEventBase._getHeadContent(self)
+            MathjaxMixin._get_head_content(self),
+            WPEventBase._get_head_content(self)
         ])
 
-    def _getBody(self, params):
-        return WPJinjaMixin._getPageContent(self, params)
+    def _get_body(self, params):
+        return WPJinjaMixin._get_page_content(self, params)
 
-    def _applyDecoration(self, body):
+    def _apply_decoration(self, body):
         self.logo_url = self.event.logo_url if self.event.has_logo else None
         css_override_form = self._kwargs.get('css_override_form')
         if css_override_form:
@@ -281,21 +284,21 @@ class WPConferenceDisplayBase(WPJinjaMixin, MathjaxMixin, WPEventBase):
                                             event=self.event, form=css_override_form,
                                             download_url=self._kwargs['css_url_override'])
             body = override_html + body
-        return WPEventBase._applyDecoration(self, to_unicode(body))
+        return WPEventBase._apply_decoration(self, to_unicode(body))
 
 
 class WPConferenceDisplay(WPConferenceDisplayBase):
     menu_entry_name = 'overview'
 
-    def _getBody(self, params):
+    def _get_body(self, params):
         return render_template('events/display/conference.html', **self._kwargs)
 
-    def _getFooter(self):
-        return render_event_footer(self.event).encode('utf-8')
+    def _get_footer(self):
+        return render_event_footer(self.event)
 
 
 class WPAccessKey(WPJinjaMixin, WPDecorated):
     template_prefix = 'events/'
 
-    def _getBody(self, params):
-        return self._getPageContent(params)
+    def _get_body(self, params):
+        return self._get_page_content(params)

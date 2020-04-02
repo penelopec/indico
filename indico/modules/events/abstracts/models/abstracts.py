@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import division, unicode_literals
 
@@ -21,6 +12,7 @@ from itertools import chain
 from operator import attrgetter
 
 from sqlalchemy import inspect
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -42,14 +34,16 @@ from indico.util.struct.enum import IndicoEnum, RichIntEnum
 
 
 class AbstractState(RichIntEnum):
-    __titles__ = [None, _("Submitted"), _("Withdrawn"), _("Accepted"), _("Rejected"), _("Merged"), _("Duplicate")]
-    __css_classes__ = [None, '', 'outline dashed', 'success', 'error', 'visited', 'strong']
+    __titles__ = [None, _("Submitted"), _("Withdrawn"), _("Accepted"), _("Rejected"), _("Merged"), _("Duplicate"),
+                  _("Invited")]
+    __css_classes__ = [None, '', 'outline dashed', 'success', 'error', 'visited', 'strong', 'warning']
     submitted = 1
     withdrawn = 2
     accepted = 3
     rejected = 4
     merged = 5
     duplicate = 6
+    invited = 7
 
 
 class AbstractPublicState(RichIntEnum):
@@ -63,6 +57,7 @@ class AbstractPublicState(RichIntEnum):
     rejected = 4
     merged = 5
     duplicate = 6
+    invited = 7
     # special states
     awaiting = -1
     under_review = -2
@@ -112,6 +107,8 @@ class Abstract(ProposalMixin, ProposalRevisionMixin, DescriptionMixin, CustomFie
                                             .format(AbstractState.accepted, AbstractState.rejected,
                                                     AbstractState.merged, AbstractState.duplicate),
                                             name='judgment_dt_if_judged'),
+                         db.CheckConstraint('(state != {}) OR (uuid IS NOT NULL)'.format(AbstractState.invited),
+                                            name='uuid_if_invited'),
                          {'schema': 'event_abstracts'})
 
     possible_render_modes = {RenderMode.markdown}
@@ -138,6 +135,12 @@ class Abstract(ProposalMixin, ProposalRevisionMixin, DescriptionMixin, CustomFie
     id = db.Column(
         db.Integer,
         primary_key=True
+    )
+    uuid = db.Column(
+        UUID,
+        index=True,
+        unique=True,
+        nullable=True
     )
     friendly_id = db.Column(
         db.Integer,
@@ -464,6 +467,10 @@ class Abstract(ProposalMixin, ProposalRevisionMixin, DescriptionMixin, CustomFie
     def locator(self):
         return dict(self.event.locator, abstract_id=self.id)
 
+    @locator.token
+    def locator(self):
+        return dict(self.event.locator, uuid=self.uuid)
+
     @hybrid_property
     def judgment_comment(self):
         return MarkdownText(self._judgment_comment)
@@ -515,9 +522,10 @@ class Abstract(ProposalMixin, ProposalRevisionMixin, DescriptionMixin, CustomFie
             return False
         elif not self.event.can_manage(user, permission='track_convener', explicit_permission=True):
             return False
-        elif self.event in user.global_convener_for_events:
+        elif self.event.can_manage(user, permission='convene_all_abstracts', explicit_permission=True):
             return True
-        elif user.convener_for_tracks & self.reviewed_for_tracks:
+        elif any(track.can_manage(user, permission='convene', explicit_permission=True)
+                 for track in self.reviewed_for_tracks):
             return True
         else:
             return False
@@ -533,9 +541,10 @@ class Abstract(ProposalMixin, ProposalRevisionMixin, DescriptionMixin, CustomFie
             return False
         elif not self.event.can_manage(user, permission='abstract_reviewer', explicit_permission=True):
             return False
-        elif self.event in user.global_abstract_reviewer_for_events:
+        elif self.event.can_manage(user, permission='review_all_abstracts', explicit_permission=True):
             return True
-        elif user.abstract_reviewer_for_tracks & self.reviewed_for_tracks:
+        elif any(track.can_manage(user, permission='review', explicit_permission=True)
+                 for track in self.reviewed_for_tracks):
             return True
         else:
             return False
@@ -560,7 +569,7 @@ class Abstract(ProposalMixin, ProposalRevisionMixin, DescriptionMixin, CustomFie
             return False
         elif is_manager and self.public_state in (AbstractPublicState.under_review, AbstractPublicState.withdrawn):
             return True
-        elif (self.public_state == AbstractPublicState.awaiting and
+        elif (self.public_state in (AbstractPublicState.awaiting, AbstractPublicState.invited) and
                 (is_manager or self.event.cfa.can_edit_abstracts(user))):
             return True
         else:
@@ -612,7 +621,7 @@ class Abstract(ProposalMixin, ProposalRevisionMixin, DescriptionMixin, CustomFie
                  .join(AbstractReviewRating.question)
                  .filter(AbstractReview.abstract == self,
                          AbstractReviewQuestion.field_type == 'rating',
-                         db.func.json_typeof(AbstractReviewRating.value) == 'null',
+                         db.func.jsonb_typeof(AbstractReviewRating.value) == 'null',
                          ~AbstractReviewQuestion.is_deleted,
                          ~AbstractReviewQuestion.no_score)
                  .group_by(AbstractReview.track_id, AbstractReviewQuestion.id))
@@ -623,9 +632,11 @@ class Abstract(ProposalMixin, ProposalRevisionMixin, DescriptionMixin, CustomFie
 
     def get_reviewed_for_groups(self, user, include_reviewed=False):
         already_reviewed = {each.track for each in self.get_reviews(user=user)} if include_reviewed else set()
-        if self.event in user.global_abstract_reviewer_for_events:
+        if self.event.can_manage(user, permission='review_all_abstracts', explicit_permission=True):
             return self.reviewed_for_tracks | already_reviewed
-        return (self.reviewed_for_tracks & user.abstract_reviewer_for_tracks) | already_reviewed
+        reviewer_tracks = {track for track in self.reviewed_for_tracks
+                           if track.can_manage(user, permission='review', explicit_permission=True)}
+        return reviewer_tracks | already_reviewed
 
     def get_track_score(self, track):
         if track not in self.reviewed_for_tracks:

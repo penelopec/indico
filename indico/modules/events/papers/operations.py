@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -31,8 +22,7 @@ from indico.modules.events.papers.models.comments import PaperReviewComment
 from indico.modules.events.papers.models.competences import PaperCompetence
 from indico.modules.events.papers.models.files import PaperFile
 from indico.modules.events.papers.models.review_ratings import PaperReviewRating
-from indico.modules.events.papers.models.reviews import (PaperAction, PaperCommentVisibility, PaperReview,
-                                                         PaperReviewType)
+from indico.modules.events.papers.models.reviews import PaperAction, PaperCommentVisibility, PaperReview
 from indico.modules.events.papers.models.revisions import PaperRevision, PaperRevisionState
 from indico.modules.events.papers.models.templates import PaperTemplate
 from indico.modules.events.papers.notifications import (notify_added_to_reviewing_team, notify_comment,
@@ -339,8 +329,13 @@ def create_comment(paper, text, visibility, user):
                     session.user)
 
 
-def update_comment(comment, text, visibility):
-    changes = comment.populate_from_dict({'text': text, 'visibility': visibility})
+def update_comment(comment, text=None, visibility=None):
+    new_values = {}
+    if text:
+        new_values['text'] = text
+    if visibility is not None:
+        new_values['visibility'] = visibility
+    changes = comment.populate_from_dict(new_values)
     comment.modified_by = session.user
     comment.modified_dt = now_utc()
     db.session.flush()

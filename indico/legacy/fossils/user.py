@@ -1,20 +1,11 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
-from indico.legacy.common.fossilize import IFossil
+from indico.util.fossilize import IFossil
 
 
 class IGroupFossil(IFossil):
@@ -54,7 +45,7 @@ class IAvatarMinimalFossil(IFossil):
 
 class IAvatarFossil(IAvatarMinimalFossil):
 
-    def getEmail( self ):
+    def getEmail(self):
         """ Avatar email """
 
     def getFirstName(self):
@@ -63,19 +54,19 @@ class IAvatarFossil(IAvatarMinimalFossil):
     def getFamilyName(self):
         """ Avatar family name """
 
-    def getTitle( self ):
+    def getTitle(self):
         """ Avatar name title (Mr, Mrs..) """
 
-    def getTelephone( self ):
+    def getTelephone(self):
         """ Avatar telephone """
     getTelephone.name = "phone"
 
-    def getOrganisation( self ):
+    def getOrganisation(self):
         """ Avatar organisation / affiliation """
     getOrganisation.name = "affiliation"
 
     def getFax(self):
         """ Avatar fax """
 
-    def getAddress( self ):
+    def getAddress(self):
         """ Avatar address """

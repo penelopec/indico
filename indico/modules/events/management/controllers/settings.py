@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -20,13 +11,21 @@ from flask import redirect, session
 from werkzeug.exceptions import Forbidden
 
 from indico.core import signals
+from indico.core.config import config
+from indico.core.db import db
+from indico.core.db.sqlalchemy.util.queries import db_dates_overlap
 from indico.modules.events.management.controllers.base import RHManageEventBase
 from indico.modules.events.management.forms import (EventClassificationForm, EventContactInfoForm, EventDataForm,
                                                     EventDatesForm, EventLocationForm, EventPersonsForm)
 from indico.modules.events.management.util import flash_if_unregistered
 from indico.modules.events.management.views import WPEventSettings, render_event_management_header_right
+from indico.modules.events.models.labels import EventLabel
+from indico.modules.events.models.references import ReferenceType
 from indico.modules.events.operations import update_event
 from indico.modules.events.util import track_time_changes
+from indico.modules.rb.models.reservation_occurrences import ReservationOccurrence
+from indico.modules.rb.models.reservations import Reservation
+from indico.modules.rb.models.rooms import Room
 from indico.util.signals import values_from_signal
 from indico.web.flask.templating import get_template_module
 from indico.web.forms.base import FormDefaults
@@ -50,7 +49,30 @@ class RHEventSettings(RHManageEventBase):
         RHManageEventBase._check_access(self)  # mainly to trigger the legacy "event locked" check
 
     def _process(self):
-        return WPEventSettings.render_template('settings.html', self.event, 'settings')
+        show_booking_warning = False
+        if (config.ENABLE_ROOMBOOKING and not self.event.has_ended and self.event.room
+                and not self.event.room_reservation_links):
+            # Check if any of the managers of the event already have a booking that overlaps with the event datetime
+            manager_ids = [p.user.id for p in self.event.acl_entries if p.user]
+            has_overlap = (ReservationOccurrence.query
+                           .filter(ReservationOccurrence.is_valid,
+                                   db.or_(Reservation.booked_for_id.in_(manager_ids),
+                                          Reservation.created_by_id.in_(manager_ids)),
+                                   db_dates_overlap(ReservationOccurrence,
+                                                    'start_dt', self.event.start_dt_local,
+                                                    'end_dt', self.event.end_dt_local),
+                                   Reservation.room_id == self.event.room.id,
+                                   ~Room.is_deleted)
+                           .join(Reservation)
+                           .join(Room)
+                           .has_rows())
+            show_booking_warning = not has_overlap
+        has_reference_types = ReferenceType.query.has_rows()
+        has_event_labels = EventLabel.query.has_rows()
+        return WPEventSettings.render_template('settings.html', self.event, 'settings',
+                                               show_booking_warning=show_booking_warning,
+                                               has_reference_types=has_reference_types,
+                                               has_event_labels=has_event_labels)
 
 
 class RHEditEventDataBase(RHManageEventBase):
@@ -63,7 +85,10 @@ class RHEditEventDataBase(RHManageEventBase):
     def render_settings_box(self):
         tpl = get_template_module('events/management/_settings.html')
         assert self.section_name
-        return tpl.render_event_settings(self.event, section=self.section_name, with_container=False)
+        has_reference_types = ReferenceType.query.has_rows()
+        has_event_labels = EventLabel.query.has_rows()
+        return tpl.render_event_settings(self.event, has_reference_types, has_event_labels,
+                                         section=self.section_name, with_container=False)
 
     def jsonify_success(self):
         return jsonify_data(settings_box=self.render_settings_box(),

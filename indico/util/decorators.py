@@ -1,20 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
-
-from functools import wraps
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 
 class classproperty(property):
@@ -40,7 +29,7 @@ class strict_classproperty(classproperty):
 class cached_classproperty(property):
     def __get__(self, obj, objtype=None):
         # The property name is the function's name
-        name = self.fget.__get__(True).im_func.__name__
+        name = self.fget.__get__(True).__func__.__name__
         # In case of inheritance the attribute might be defined in a superclass
         for mrotype in objtype.__mro__:
             try:
@@ -85,42 +74,3 @@ def cached_writable_property(cache_attr, cache_on_set=True):
                 pass
 
     return _cached_writable_property
-
-
-def smart_decorator(f):
-    """Decorator to make decorators work both with and without arguments.
-
-    This decorator allows you to use a decorator both without arguments::
-
-        @fancy_decorator
-        def function():
-            pass
-
-    And also with arguments::
-
-        @fancy_decorator(123, foo='bar')
-        def function():
-            pass
-
-    The only limitation is that the decorator itself MUST NOT allow a callable object
-    as the first positional argument, unless there is at least one other mandatory argument.
-
-    The decorator decorated with `smart_decorator` obviously needs to have default values for
-    all arguments but the first one::
-
-        @smart_decorator
-        def requires_location(f, some='args', are='here'):
-            @wraps(f)
-            def wrapper(*args, **kwargs):
-                return f(*args, **kwargs)
-
-            return wrapper
-    """
-    @wraps(f)
-    def wrapper(*args, **kw):
-        if len(args) == 1 and not kw and callable(args[0]):
-            return f(args[0])
-        else:
-            return lambda original: f(original, *args, **kw)
-
-    return wrapper

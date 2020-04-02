@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -60,9 +51,16 @@ def user_or_id(f):
     @wraps(f)
     def wrapper(self, user, *args, **kwargs):
         if isinstance(user, db.m.User):
-            user = {'user': user}
+            if user.id is None:
+                # SQLAlchemy 1.3 fails when filtering by a User with no ID, so we
+                # just use a filter that is known to not return any results...
+                user = {'user_id': None}
+            else:
+                user = {'user': user}
         else:
-            user = {'user_id': user.id}
+            # XXX: this appears to be unused, since the code
+            # was previously broken and did not fail anywhere
+            user = {'user_id': user}
         return f(self, user, *args, **kwargs)
 
     return wrapper

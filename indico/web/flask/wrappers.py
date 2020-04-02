@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import absolute_import, unicode_literals
 
@@ -60,11 +51,6 @@ class IndicoRequest(Request):
             ip = ip[7:]
         return ip
 
-    @property
-    def json(self):
-        # Override to avoid deprecation warning
-        return self.get_json()
-
     def __repr__(self):
         rv = super(IndicoRequest, self).__repr__()
         if isinstance(rv, unicode):
@@ -100,27 +86,9 @@ class IndicoFlask(PluginFlaskMixin, Flask):
             view_func = RHSimple.wrap_function(view_func)
         return super(IndicoFlask, self).add_url_rule(rule, endpoint=endpoint, view_func=view_func, **options)
 
-    def _find_error_handler(self, e):
-        # XXX: this is a backport from flask 1.0
-        # remove this method once flask 1.0 is out and we updated
-        exc_class, code = self._get_exc_class_and_code(type(e))
-        for name, c in ((request.blueprint, code), (None, code),
-                        (request.blueprint, None), (None, None)):
-            handler_map = self.error_handler_spec.setdefault(name, {}).get(c)
-            if not handler_map:
-                continue
-            for cls in exc_class.__mro__:
-                handler = handler_map.get(cls)
-                if handler is not None:
-                    return handler
-
     @property
-    def static_folder(self):
-        return os.path.join(self.root_path, 'web', 'static')
-
-    @property
-    def static_url_path(self):
-        return '/'
+    def has_static_folder(self):
+        return False
 
     @property
     def manifest(self):

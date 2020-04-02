@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from itertools import izip_longest
 from types import GeneratorType
@@ -63,9 +54,9 @@ def named_objects_from_signal(signal_response, name_attr='name', plugin_attr=Non
 
     The signal needs to return either a single object (which is not a
     generator) or a generator (usually by returning its values using
-    `yield`).
+    ``yield``).
 
-    :param signal_response: The return value of a Signal's `.send()` method
+    :param signal_response: The return value of a Signal's ``.send()`` method
     :param name_attr: The attribute containing each object's unique name
     :param plugin_attr: The attribute that will be set to the plugin containing
                         the object (set to `None` for objects in the core)
@@ -76,6 +67,8 @@ def named_objects_from_signal(signal_response, name_attr='name', plugin_attr=Non
         for plugin, cls in objects:
             setattr(cls, plugin_attr, plugin)
     mapping = {getattr(cls, name_attr): cls for _, cls in objects}
+    # check for two different objects having the same name, e.g. because of
+    # two plugins using a too generic name for their object
     conflicting = {cls for _, cls in objects} - set(mapping.viewvalues())
     if conflicting:
         names = ', '.join(sorted(getattr(x, name_attr) for x in conflicting))

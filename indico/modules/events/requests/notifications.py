@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -23,9 +14,15 @@ from indico.core.notifications import email_sender, make_email
 
 
 def _get_request_manager_emails(req):
-    """Get set of request manager emails"""
+    """Get set of request manager emails."""
     with plugin_context(req.definition.plugin):
         return req.definition.get_manager_notification_emails()
+
+
+def _get_notification_reply_email(req):
+    """Get the e-mail address that should be the `Reply-To:` of user notifications."""
+    with plugin_context(req.definition.plugin):
+        return req.definition.get_notification_reply_email()
 
 
 def _get_template_module(name, req, **context):
@@ -47,14 +44,14 @@ def notify_request_managers(req, template, **context):
     :param context: data passed to the template
     """
     event = req.event
-    from_addr = config.SUPPORT_EMAIL
+    reply_addr = config.SUPPORT_EMAIL
     request_manager_emails = _get_request_manager_emails(req)
     if not request_manager_emails:
         return
     context['event'] = event
     context['req'] = req
     tpl_request_managers = _get_template_module(template, **context)
-    return make_email(request_manager_emails, from_address=from_addr,
+    return make_email(request_manager_emails, from_address=config.NO_REPLY_EMAIL, reply_address=reply_addr,
                       subject=tpl_request_managers.get_subject(), body=tpl_request_managers.get_body())
 
 
@@ -66,12 +63,12 @@ def notify_event_managers(req, template, **context):
     :param context: data passed to the template
     """
     event = req.event
-    from_addr = config.SUPPORT_EMAIL
+    reply_addr = _get_notification_reply_email(req)
     context['event'] = event
     context['req'] = req
     tpl_event_managers = _get_template_module(template, **context)
-    return make_email(event.all_manager_emails, from_address=from_addr, subject=tpl_event_managers.get_subject(),
-                      body=tpl_event_managers.get_body())
+    return make_email(event.all_manager_emails, from_address=config.NO_REPLY_EMAIL, reply_address=reply_addr,
+                      subject=tpl_event_managers.get_subject(), body=tpl_event_managers.get_body())
 
 
 @email_sender

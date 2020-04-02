@@ -1,24 +1,16 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 import mimetypes
 from collections import defaultdict
 from operator import attrgetter
+from uuid import uuid4
 
 from flask import session
 
@@ -100,8 +92,12 @@ def delete_abstract_files(abstract, files):
                        data={'Files': ', '.join(f.filename for f in files)})
 
 
-def create_abstract(event, abstract_data, custom_fields_data=None, send_notifications=False):
-    abstract = Abstract(event=event, submitter=session.user)
+def create_abstract(event, abstract_data, custom_fields_data=None, send_notifications=False, submitter=None,
+                    is_invited=False):
+    abstract = Abstract(event=event, submitter=submitter or session.user)
+    if is_invited:
+        abstract.uuid = unicode(uuid4())
+        abstract.state = AbstractState.invited
     tracks = abstract_data.pop('submitted_for_tracks', None)
     attachments = abstract_data.pop('attachments', None)
     abstract.populate_from_dict(abstract_data)

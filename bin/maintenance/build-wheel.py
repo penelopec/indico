@@ -1,19 +1,10 @@
 #!/usr/bin/env python
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 import os
 import re
@@ -153,7 +144,7 @@ def _get_ignored_package_files_indico():
     output = subprocess.check_output(['git', 'ls-files', '--others', '--ignored', '--exclude-standard', 'indico/'])
     ignored = {line for line in output.splitlines()}
     dist_path = 'indico/web/static/dist/'
-    i18n_re = re.compile(r'^indico/translations/[a-zA-Z_]+/LC_MESSAGES/messages.mo')
+    i18n_re = re.compile(r'^indico/translations/[a-zA-Z_]+/LC_MESSAGES/(?:messages\.mo|messages-react\.json)')
     return {path for path in ignored & files if not path.startswith(dist_path) and not i18n_re.match(path)}
 
 

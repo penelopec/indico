@@ -1,24 +1,16 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
+import pytz
 
 from indico.core.db.sqlalchemy.protection import ProtectionMode
 from indico.modules.events import Event
@@ -86,3 +78,15 @@ def test_effective_protection_mode(db, dummy_category, dummy_event, category_pm,
     dummy_event.protection_mode = event_pm
     db.session.flush()
     assert dummy_event.effective_protection_mode == effective_pm
+
+
+@pytest.mark.parametrize(('start_dt', 'end_dt', 'days'), (
+    (datetime(2019, 8, 16, 10, 0), datetime(2019, 8, 16, 15, 0), [date(2019, 8, 16)]),
+    (datetime(2019, 8, 16, 10, 0), datetime(2019, 8, 17, 15, 0), [date(2019, 8, 16), date(2019, 8, 17)]),
+    (datetime(2019, 8, 16, 10, 0), datetime(2019, 8, 17, 8, 0), [date(2019, 8, 16), date(2019, 8, 17)]),
+    (datetime(2019, 8, 16, 0, 0), datetime(2019, 8, 17, 0, 0), [date(2019, 8, 16), date(2019, 8, 17)]),
+))
+def test_iter_days(dummy_event, start_dt, end_dt, days):
+    dummy_event.start_dt = pytz.utc.localize(start_dt)
+    dummy_event.end_dt = pytz.utc.localize(end_dt)
+    assert list(dummy_event.iter_days()) == days

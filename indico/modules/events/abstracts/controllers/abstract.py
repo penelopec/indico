@@ -1,26 +1,20 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from flask import flash, request, session
 from sqlalchemy.orm import defaultload, joinedload
+from werkzeug.exceptions import NotFound
 
-from indico.legacy.pdfinterface.conference import AbstractToPDF, ConfManagerAbstractToPDF
+from indico.core.config import config
+from indico.legacy.pdfinterface.latex import AbstractToPDF, ConfManagerAbstractToPDF
 from indico.modules.events.abstracts.controllers.base import RHAbstractBase
+from indico.modules.events.abstracts.models.abstracts import AbstractState
 from indico.modules.events.abstracts.models.files import AbstractFile
 from indico.modules.events.abstracts.operations import update_abstract
 from indico.modules.events.abstracts.util import make_abstract_form
@@ -35,6 +29,11 @@ from indico.web.util import jsonify_data, jsonify_form, jsonify_template
 class RHDisplayAbstract(RHAbstractBase):
     _abstract_query_options = (joinedload('reviewed_for_tracks'),
                                defaultload('reviews').joinedload('ratings').joinedload('question'))
+
+    def _check_abstract_protection(self):
+        if self.abstract.state == AbstractState.invited and not self.management:
+            return False
+        return RHAbstractBase._check_abstract_protection(self)
 
     @property
     def view_class(self):
@@ -52,9 +51,11 @@ class RHEditAbstract(RHAbstractBase):
         abstract_form_class = make_abstract_form(self.event, session.user, management=self.management)
         custom_field_values = {'custom_{}'.format(x.contribution_field_id): x.data for x in self.abstract.field_values}
         defaults = FormDefaults(self.abstract, attachments=self.abstract.files, **custom_field_values)
-        form = abstract_form_class(obj=defaults, abstract=self.abstract, event=self.event, management=self.management)
+        form = abstract_form_class(obj=defaults, abstract=self.abstract, event=self.event, management=self.management,
+                                   invited=(self.abstract.state == AbstractState.invited))
         if form.validate_on_submit():
-            update_abstract(self.abstract, *get_field_values(form.data))
+            fields, custom_fields = get_field_values(form.data)
+            update_abstract(self.abstract, fields, custom_fields)
             flash(_("Abstract modified successfully"), 'success')
             return jsonify_data(flash=False)
         self.commit = False
@@ -91,6 +92,8 @@ class RHAbstractNotificationLog(RHAbstractBase):
 
 class RHAbstractExportPDF(RHAbstractBase):
     def _process(self):
+        if not config.LATEX_ENABLED:
+            raise NotFound
         pdf = AbstractToPDF(self.abstract)
         filename = 'abstract-{}.pdf'.format(self.abstract.friendly_id)
         return send_file(filename, pdf.generate(), 'application/pdf')
@@ -103,6 +106,8 @@ class RHAbstractExportFullPDF(RHAbstractBase):
         return self.abstract.can_see_reviews(session.user)
 
     def _process(self):
+        if not config.LATEX_ENABLED:
+            raise NotFound
         pdf = ConfManagerAbstractToPDF(self.abstract)
         filename = 'abstract-{}-reviews.pdf'.format(self.abstract.friendly_id)
         return send_file(filename, pdf.generate(), 'application/pdf')

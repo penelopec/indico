@@ -1,24 +1,15 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from wtforms.fields import PasswordField, SelectField, StringField, TextAreaField
 from wtforms.fields.html5 import EmailField
-from wtforms.validators import DataRequired, Length, Optional, ValidationError
+from wtforms.validators import DataRequired, Email, Length, Optional, ValidationError
 
 from indico.modules.auth import Identity
 from indico.modules.users import User
@@ -33,12 +24,12 @@ def _tolower(s):
 
 
 def _check_existing_email(form, field):
-    if User.find_all(~User.is_deleted, ~User.is_pending, User.all_emails.contains(field.data)):
+    if User.query.filter(~User.is_deleted, ~User.is_pending, User.all_emails == field.data).has_rows():
         raise ValidationError(_('This email address is already in use.'))
 
 
 def _check_existing_username(form, field):
-    if Identity.find(provider='indico', identifier=field.data).count():
+    if Identity.query.filter_by(provider='indico', identifier=field.data).has_rows():
         raise ValidationError(_('This username is already in use.'))
 
 
@@ -68,10 +59,10 @@ class EditLocalIdentityForm(IndicoForm):
             raise ValidationError(_("Wrong current password"))
 
     def validate_username(self, field):
-        query = Identity.find(Identity.provider == 'indico',
-                              Identity.identifier == field.data,
-                              Identity.identifier != self.identity.identifier)
-        if query.count():
+        query = Identity.query.filter(Identity.provider == 'indico',
+                                      Identity.identifier == field.data,
+                                      Identity.identifier != self.identity.identifier)
+        if query.has_rows():
             raise ValidationError(_('This username is already in use.'))
 
 
@@ -81,7 +72,7 @@ class SelectEmailForm(IndicoForm):
 
 
 class RegistrationEmailForm(IndicoForm):
-    email = EmailField(_('Email address'), [DataRequired(), _check_existing_email], filters=[_tolower])
+    email = EmailField(_('Email address'), [DataRequired(), Email(), _check_existing_email], filters=[_tolower])
 
 
 class RegistrationForm(IndicoForm):
@@ -102,7 +93,7 @@ class MultipassRegistrationForm(SyncedInputsMixin, IndicoForm):
 
 
 class LocalRegistrationForm(RegistrationForm):
-    email = EmailField(_('Email address'), [_check_existing_email])
+    email = EmailField(_('Email address'), [Email(), _check_existing_email])
     username = StringField(_('Username'), [DataRequired(), _check_existing_username], filters=[_tolower])
     password = PasswordField(_('Password'), [DataRequired(), Length(min=5)])
     confirm_password = PasswordField(_('Confirm password'), [DataRequired(), ConfirmPassword('password')])
@@ -117,7 +108,7 @@ class LocalRegistrationForm(RegistrationForm):
 
 
 class ResetPasswordEmailForm(IndicoForm):
-    email = EmailField(_('Email address'), [DataRequired()], filters=[_tolower])
+    email = EmailField(_('Email address'), [DataRequired(), Email()], filters=[_tolower])
 
     def validate_email(self, field):
         user = self.user
@@ -131,8 +122,9 @@ class ResetPasswordEmailForm(IndicoForm):
     def user(self):
         if not self.is_submitted() or not self.email.data:
             return None
-        return User.find_first(~User.is_deleted, ~User.is_blocked, ~User.is_pending,
-                               User.all_emails.contains(self.email.data))
+        return (User.query
+                .filter(~User.is_deleted, ~User.is_blocked, ~User.is_pending, User.all_emails == self.email.data)
+                .first())
 
 
 class ResetPasswordForm(IndicoForm):

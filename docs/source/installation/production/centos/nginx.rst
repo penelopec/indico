@@ -30,7 +30,7 @@ to the ``[base]`` and ``[updates]`` sections, as described in the
 
     yum install -y https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
     yum install -y postgresql96 postgresql96-server postgresql96-libs postgresql96-devel postgresql96-contrib
-    yum install -y gcc redis nginx uwsgi uwsgi-plugin-python
+    yum install -y gcc redis nginx uwsgi uwsgi-plugin-python2
     yum install -y python-devel python-virtualenv libjpeg-turbo-devel libxslt-devel libxml2-devel libffi-devel pcre-devel libyaml-devel
     /usr/pgsql-9.6/bin/postgresql96-setup initdb
     systemctl start postgresql-9.6.service redis.service
@@ -71,7 +71,6 @@ most cases.
     uid = indico
     gid = nginx
     umask = 027
-    pidfile = /run/uwsgi/uwsgi.pid
 
     processes = 4
     enable-threads = true
@@ -142,11 +141,6 @@ most cases.
         alias /opt/indico/;
       }
 
-      location ~ ^/static/assets/(core|(?:plugin|theme)-[^/]+)/(.*)$ {
-        alias /opt/indico/assets/$1/$2;
-        access_log off;
-      }
-
       location ~ ^/(images|fonts)(.*)/(.+?)(__v[0-9a-f]+)?\.([^.]+)$ {
         alias /opt/indico/web/static/$1$2/$3.$5;
         access_log off;
@@ -158,7 +152,7 @@ most cases.
       }
 
       location /robots.txt {
-        alias /opt/indico/web/htdocs/robots.txt;
+        alias /opt/indico/web/static/robots.txt;
         access_log off;
       }
 
@@ -306,6 +300,7 @@ You are now ready to install Indico:
 
     virtualenv ~/.venv
     source ~/.venv/bin/activate
+    export PATH="$PATH:/usr/pgsql-9.6/bin"
     pip install -U pip setuptools
     pip install indico
 
@@ -332,7 +327,7 @@ Now finish setting up the directory structure and permissions:
 
     mkdir ~/log/nginx
     chmod go-rwx ~/* ~/.[^.]*
-    chmod 710 ~/ ~/archive ~/assets ~/cache ~/log ~/tmp
+    chmod 710 ~/ ~/archive ~/cache ~/log ~/tmp
     chmod 750 ~/web ~/.venv
     chmod g+w ~/log/nginx
     restorecon -R ~/

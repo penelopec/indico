@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -27,6 +18,7 @@ from indico.core.settings.converters import TimedeltaConverter
 from indico.modules.events.contributions.contrib_fields import get_contrib_field_types
 from indico.modules.events.contributions.models.contributions import Contribution
 from indico.modules.events.contributions.models.fields import ContributionField
+from indico.modules.events.models.events import EventType
 from indico.modules.events.settings import EventSettingsProxy
 from indico.util.i18n import _, ngettext
 from indico.web.flask.util import url_for
@@ -113,10 +105,13 @@ def _extend_event_menu(sender, **kwargs):
     from indico.modules.events.layout.util import MenuEntryData
 
     def _visible_my_contributions(event):
-        return session.user and has_contributions_with_user_as_submitter(event, session.user)
+        if not session.user:
+            return False
+        return has_contributions_with_user_as_submitter(event, session.user)
 
     def _visible_list_of_contributions(event):
-        return Contribution.query.filter(Contribution.event == event).has_rows()
+        published = contribution_settings.get(event, 'published')
+        return published and Contribution.query.filter(Contribution.event == event).has_rows()
 
     yield MenuEntryData(title=_("My Contributions"), name='my_contributions', visible=_visible_my_contributions,
                         endpoint='contributions.my_contributions', position=2, parent='my_conference')
@@ -128,8 +123,15 @@ def _extend_event_menu(sender, **kwargs):
                         position=6, is_enabled=False, static_site=True)
 
 
+@signals.event.created.connect
+def _event_created(event, **kwargs):
+    if event.type_ == EventType.conference:
+        contribution_settings.set(event, 'published', False)
+
+
 contribution_settings = EventSettingsProxy('contributions', {
-    'default_duration': timedelta(minutes=20)
+    'default_duration': timedelta(minutes=20),
+    'published': True
 }, converters={
     'default_duration': TimedeltaConverter
 })

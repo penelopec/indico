@@ -1,23 +1,15 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
-from indico.modules.events.tracks.controllers import (RHCreateTrack, RHDeleteTrack, RHDisplayTracks, RHEditProgram,
-                                                      RHEditTrack, RHManageTracks, RHSortTracks, RHTracksPDF)
+from indico.modules.events.tracks.controllers import (RHCreateTrack, RHCreateTrackGroup, RHDeleteTrack,
+                                                      RHDeleteTrackGroup, RHDisplayTracks, RHEditProgram, RHEditTrack,
+                                                      RHEditTrackGroup, RHManageTracks, RHSortTracks, RHTracksPDF)
 from indico.web.flask.util import make_compat_redirect_func
 from indico.web.flask.wrappers import IndicoBlueprint
 
@@ -31,6 +23,12 @@ _bp.add_url_rule('/manage/tracks/create', 'create_track', RHCreateTrack, methods
 _bp.add_url_rule('/manage/tracks/sort', 'sort_tracks', RHSortTracks, methods=('POST',))
 _bp.add_url_rule('/manage/tracks/<int:track_id>', 'edit_track', RHEditTrack, methods=('GET', 'POST'))
 _bp.add_url_rule('/manage/tracks/<int:track_id>', 'delete_track', RHDeleteTrack, methods=('DELETE',))
+
+_bp.add_url_rule('/manage/track-groups/create', 'create_track_group', RHCreateTrackGroup, methods=('GET', 'POST'))
+_bp.add_url_rule('/manage/track-groups/<int:track_group_id>', 'edit_track_group', RHEditTrackGroup,
+                 methods=('GET', 'POST'))
+_bp.add_url_rule('/manage/track-groups/<int:track_group_id>', 'delete_track_group', RHDeleteTrackGroup,
+                 methods=('DELETE',))
 
 _bp.add_url_rule('/program', 'program', RHDisplayTracks)
 _bp.add_url_rule('/program.pdf', 'program_pdf', RHTracksPDF)

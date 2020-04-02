@@ -1,29 +1,22 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from collections import OrderedDict
 from contextlib import contextmanager
 from datetime import timedelta
+from operator import attrgetter
 
 import pytz
-from flask import has_request_context, session
+from flask import has_request_context, render_template, session
+from markupsafe import Markup
 from sqlalchemy import DDL, orm
-from sqlalchemy.dialects.postgresql import ARRAY, JSON
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.event import listens_for
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
@@ -164,6 +157,17 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
         nullable=True,
         index=True,
     )
+    #: The ID of the label assigned to the event
+    label_id = db.Column(
+        db.ForeignKey('events.labels.id'),
+        index=True,
+        nullable=True
+    )
+    label_message = db.Column(
+        db.Text,
+        nullable=False,
+        default='',
+    )
     #: The creation date of the event
     created_dt = db.Column(
         UTCDateTime,
@@ -213,7 +217,7 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
     )
     #: The metadata of the logo (hash, size, filename, content_type)
     logo_metadata = db.Column(
-        JSON,
+        JSONB,
         nullable=False,
         default=lambda: None
     )
@@ -224,7 +228,7 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
     ))
     #: The metadata of the stylesheet (hash, size, filename)
     stylesheet_metadata = db.Column(
-        JSON,
+        JSONB,
         nullable=False,
         default=lambda: None
     )
@@ -341,29 +345,12 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
             primaryjoin='(Event.series_id == EventSeries.id) & ~Event.is_deleted',
         )
     )
-
-    #: Users who can review on all tracks
-    global_abstract_reviewers = db.relationship(
-        'User',
-        secondary='events.track_abstract_reviewers',
-        collection_class=set,
+    #: The label assigned to the event
+    label = db.relationship(
+        'EventLabel',
         lazy=True,
         backref=db.backref(
-            'global_abstract_reviewer_for_events',
-            collection_class=set,
-            lazy=True
-        )
-    )
-
-    #: Users who are conveners on all tracks
-    global_conveners = db.relationship(
-        'User',
-        secondary='events.track_conveners',
-        collection_class=set,
-        lazy=True,
-        backref=db.backref(
-            'global_convener_for_events',
-            collection_class=set,
+            'events',
             lazy=True
         )
     )
@@ -377,6 +364,7 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
     # - all_legacy_attachment_folder_mappings (LegacyAttachmentFolderMapping.event)
     # - all_legacy_attachment_mappings (LegacyAttachmentMapping.event)
     # - all_notes (EventNote.event)
+    # - all_room_reservation_links (ReservationLink.event)
     # - all_vc_room_associations (VCRoomEventAssociation.event)
     # - attachment_folders (AttachmentFolder.linked_event)
     # - clones (Event.cloned_from)
@@ -385,6 +373,8 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
     # - contributions (Contribution.event)
     # - custom_pages (EventPage.event)
     # - designer_templates (DesignerTemplate.event)
+    # - editing_file_types (EditingFileType.event)
+    # - editing_tags (EditingTag.event)
     # - layout_images (ImageFile.event)
     # - legacy_contribution_mappings (LegacyContributionMapping.event)
     # - legacy_mapping (LegacyEventMapping.event)
@@ -402,8 +392,8 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
     # - registrations (Registration.event)
     # - reminders (EventReminder.event)
     # - requests (Request.event)
-    # - reservations (Reservation.event)
     # - roles (EventRole.event)
+    # - room_reservation_links (ReservationLink.linked_event)
     # - session_types (SessionType.event)
     # - sessions (Session.event)
     # - settings (EventSetting.event)
@@ -412,6 +402,7 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
     # - static_sites (StaticSite.event)
     # - surveys (Survey.event)
     # - timetable_entries (TimetableEntry.event)
+    # - track_groups (TrackGroup.event)
     # - tracks (Track.event)
     # - vc_room_associations (VCRoomEventAssociation.linked_event)
 
@@ -439,12 +430,12 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
         return (cte.c.id == Event.category_id) & cte.c.path.overlap(category_ids)
 
     @classmethod
-    def is_visible_in(cls, category):
+    def is_visible_in(cls, category_id):
         """
         Create a filter that checks whether the event is visible in
         the specified category.
         """
-        cte = category.visible_categories_cte
+        cte = Category.get_visible_categories_cte(category_id)
         return (db.exists(db.select([1]))
                 .where(db.and_(cte.c.id == Event.category_id,
                                db.or_(Event.visibility.is_(None), Event.visibility > cte.c.level))))
@@ -699,6 +690,12 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
             title = '{} ({}/{})'.format(title, self.series_pos, self.series_count)
         return title
 
+    def get_label_markup(self, size=''):
+        label = self.label
+        if not label:
+            return ''
+        return Markup(render_template('events/label.html', label=label, message=self.label_message, size=size))
+
     def get_non_inheriting_objects(self):
         """Get a set of child objects that do not inherit protection"""
         return get_non_inheriting_objects(self)
@@ -706,6 +703,12 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
     def get_contribution(self, id_):
         """Get a contribution of the event"""
         return get_related_object(self, 'contributions', {'id': id_})
+
+    def get_sorted_tracks(self):
+        """Return tracks and track groups in the correct order"""
+        track_groups = self.track_groups
+        tracks = [track for track in self.tracks if not track.track_group]
+        return sorted(tracks + track_groups, key=attrgetter('position'))
 
     def get_session(self, id_=None, friendly_id=None):
         """Get a session of the event"""
@@ -833,7 +836,7 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
         if tzinfo:
             start_dt = start_dt.astimezone(tzinfo)
             end_dt = end_dt.astimezone(tzinfo)
-        duration = (end_dt - start_dt).days
+        duration = (end_dt.replace(hour=23, minute=59) - start_dt.replace(hour=0, minute=0)).days
         for offset in xrange(duration + 1):
             yield (start_dt + timedelta(days=offset)).date()
 
@@ -842,10 +845,16 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
         db.m.Session.preload_acl_entries(self)
 
     def move(self, category):
+        from indico.modules.events import EventLogRealm, EventLogKind
         old_category = self.category
         self.category = category
+        sep = ' \N{RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK} '
+        old_path = sep.join(old_category.chain_titles)
+        new_path = sep.join(self.category.chain_titles)
         db.session.flush()
         signals.event.moved.send(self, old_parent=old_category)
+        self.log(EventLogRealm.management, EventLogKind.change, 'Category', 'Event moved', session.user,
+                 data={'From': old_path, 'To': new_path})
 
     def delete(self, reason, user=None):
         from indico.modules.events import logger, EventLogRealm, EventLogKind
@@ -866,6 +875,14 @@ class Event(SearchableTitleMixin, DescriptionMixin, LocationMixin, ProtectionMan
     def cfp(self):
         from indico.modules.events.papers.models.call_for_papers import CallForPapers
         return CallForPapers(self)
+
+    @property
+    def reservations(self):
+        return [link.reservation for link in self.all_room_reservation_links]
+
+    @property
+    def has_ended(self):
+        return self.end_dt <= now_utc()
 
     @return_ascii
     def __repr__(self):
@@ -919,6 +936,12 @@ def _set_start_end_dt(target, value, oldvalue, *unused):
         return
     if value != oldvalue:
         register_event_time_change(target)
+
+
+@listens_for(Event.label, 'set')
+def _set_label(target, value, oldvalue, *unused):
+    if oldvalue and not value:
+        target.label_message = ''
 
 
 @listens_for(Event.__table__, 'after_create')

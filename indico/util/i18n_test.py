@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 import os
 
@@ -23,7 +14,7 @@ from babel.support import Translations
 from flask import has_request_context, request, session
 from flask_babelex import get_domain
 from speaklater import _LazyString
-from werkzeug.http import LanguageAccept
+from werkzeug.datastructures import LanguageAccept
 
 from indico.core.plugins import IndicoPlugin, plugin_engine
 from indico.util.i18n import _, babel, gettext_context, make_bound_gettext, ngettext, session_language, ungettext
@@ -66,8 +57,8 @@ class MockPlugin(IndicoPlugin):
 @pytest.fixture
 def mock_translations(monkeypatch, request_context):
     domain = get_domain()
-    locales = {'fr_FR': 'French',
-               'en_GB': 'English'}
+    locales = {'fr_FR': ('French', 'France'),
+               'en_GB': ('English', 'United Kingdom')}
     monkeypatch.setattr('indico.util.i18n.get_all_locales', lambda: locales)
     monkeypatch.setattr(domain, 'get_translations', MockTranslations)
 

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -78,6 +69,23 @@ class Placeholder(object):
     def is_in(cls, text, **kwargs):
         """Checks whether the placeholder is used in a string"""
         return cls.get_regex(**kwargs).search(text) is not None
+
+    @classmethod
+    def is_empty(cls, text, **kwargs):
+        """Checks whether the placeholder renders an empty string
+
+        :param text: The text to replace placeholders in
+        :param kwargs: arguments specific to the placeholder's context
+        """
+        empty = [False]
+
+        def _replace(m):
+            if not cls.render(**kwargs):
+                empty[0] = True
+            return ''
+
+        cls.get_regex(**kwargs).sub(_replace, text)
+        return empty[0]
 
     @classmethod
     def render(cls, **kwargs):
@@ -148,6 +156,23 @@ class ParametrizedPlaceholder(Placeholder):
         return cls.get_regex(**kwargs).sub(_replace, text)
 
     @classmethod
+    def is_empty(cls, text, **kwargs):
+        """Checks whether the placeholder renders an empty string
+
+        :param text: The text to replace placeholders in
+        :param kwargs: arguments specific to the placeholder's context
+        """
+        empty = [False]
+
+        def _replace(m):
+            if not cls.render(m.group(1), **kwargs):
+                empty[0] = True
+            return ''
+
+        cls.get_regex(**kwargs).sub(_replace, text)
+        return empty[0]
+
+    @classmethod
     def render(cls, param, **kwargs):
         raise NotImplementedError
 
@@ -164,9 +189,23 @@ def replace_placeholders(context, text, escape_html=True, **kwargs):
     :param escape_html: whether HTML escaping should be done
     :param kwargs: arguments specific to the context
     """
-    for name, placeholder in get_placeholders(context, **kwargs).iteritems():
+    for placeholder in get_placeholders(context, **kwargs).viewvalues():
         text = placeholder.replace(text, escape_html=escape_html, **kwargs)
     return text
+
+
+def get_empty_placeholders(context, text, **kwargs):
+    """Get a list of placeholders that evaluate to an empty string.
+
+    :param context: the context where the placeholders are used
+    :param text: the text containing some placeholders
+    :param kwargs: arguments specific to the context
+    """
+    return set(
+        placeholder.friendly_name
+        for placeholder in get_placeholders(context, **kwargs).viewvalues()
+        if placeholder.is_in(text, **kwargs) and placeholder.is_empty(text, **kwargs)
+    )
 
 
 def get_missing_placeholders(context, text, **kwargs):

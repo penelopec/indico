@@ -1,22 +1,13 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
-from flask import render_template, session
+from flask import session
 
 from indico.core import signals
 from indico.core.logger import Logger
@@ -27,7 +18,7 @@ from indico.modules.users.ext import ExtraUserPreferences
 from indico.modules.users.models.settings import UserSetting, UserSettingsProxy
 from indico.modules.users.models.users import NameFormat, User
 from indico.util.i18n import _
-from indico.web.flask.templating import get_template_module, template_hook
+from indico.web.flask.templating import get_template_module
 from indico.web.flask.util import url_for
 from indico.web.menu import SideMenuItem, TopMenuItem
 
@@ -80,13 +71,6 @@ def _sidemenu_items(sender, user, **kwargs):
 def _topmenu_items(sender, **kwargs):
     if session.user:
         yield TopMenuItem('profile', _('My profile'), url_for('users.user_dashboard', user_id=None), 50)
-
-
-@template_hook('global-announcement', priority=-1)
-def _inject_login_as_header(**kwargs):
-    login_as_data = session.get('login_as_orig_user')
-    if login_as_data:
-        return render_template('users/login_as_header.html', login_as_data=login_as_data)
 
 
 @signals.users.registration_requested.connect

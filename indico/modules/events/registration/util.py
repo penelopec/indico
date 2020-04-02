@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -23,6 +14,7 @@ from operator import attrgetter
 
 from flask import current_app, json, session
 from qrcode import QRCode, constants
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import joinedload, load_only, undefer
 from werkzeug.urls import url_parse
 from wtforms import BooleanField, ValidationError
@@ -34,6 +26,7 @@ from indico.core.db.sqlalchemy.util.session import no_autoflush
 from indico.core.errors import UserValueError
 from indico.modules.events import EventLogKind, EventLogRealm
 from indico.modules.events.models.events import Event
+from indico.modules.events.models.persons import EventPerson
 from indico.modules.events.payment.models.transactions import TransactionStatus
 from indico.modules.events.registration import logger
 from indico.modules.events.registration.badges import RegistrantsListToBadgesPDF, RegistrantsListToBadgesPDFFoldable
@@ -52,7 +45,7 @@ from indico.modules.users.util import get_user_by_email
 from indico.util.date_time import format_date
 from indico.util.i18n import _
 from indico.util.spreadsheets import unique_col
-from indico.util.string import to_unicode, validate_email
+from indico.util.string import to_unicode, validate_email, validate_email_verbose
 from indico.web.forms.base import IndicoForm
 from indico.web.forms.widgets import SwitchWidget
 
@@ -89,10 +82,10 @@ def get_event_section_data(regform, management=False, registration=None):
         section_data = section.own_data
         section_data['items'] = []
 
-        for child in section.fields:
+        for child in section.children:
             if child.is_deleted:
                 continue
-            if isinstance(child.field_impl, ChoiceBaseField) or isinstance(child.field_impl, AccommodationField):
+            if child.is_field and isinstance(child.field_impl, (ChoiceBaseField, AccommodationField)):
                 field_data = get_field_merged_options(child, registration_data)
             else:
                 field_data = child.view_data
@@ -127,9 +120,10 @@ def check_registration_email(regform, email, registration=None, management=False
         elif user:
             return dict(status='ok', user=user.full_name, self=(not management and user == session.user),
                         same=(user == registration.user))
-        elif not validate_email(email):
-            return dict(status='error', conflict='email-invalid')
-        elif regform.require_user and (management or email != registration.email):
+        email_err = validate_email_verbose(email)
+        if email_err:
+            return dict(status='error', conflict='email-invalid', email_error=email_err)
+        if regform.require_user and (management or email != registration.email):
             return dict(status='warning' if management else 'error', conflict='no-user')
         else:
             return dict(status='ok', user=None)
@@ -140,9 +134,10 @@ def check_registration_email(regform, email, registration=None, management=False
             return dict(status='error', conflict='user-already-registered')
         elif user:
             return dict(status='ok', user=user.full_name, self=(not management and user == session.user), same=False)
-        elif not validate_email(email):
-            return dict(status='error', conflict='email-invalid')
-        elif regform.require_user:
+        email_err = validate_email_verbose(email)
+        if email_err:
+            return dict(status='error', conflict='email-invalid', email_error=email_err)
+        if regform.require_user:
             return dict(status='warning' if management else 'error', conflict='no-user')
         else:
             return dict(status='ok', user=None)
@@ -372,7 +367,7 @@ def get_published_registrations(event):
     :return: list of `Registration` objects
     """
     return (Registration
-            .find(Registration.is_active,
+            .find(Registration.is_publishable,
                   ~RegistrationForm.is_deleted,
                   RegistrationForm.event_id == event.id,
                   RegistrationForm.publish_registrations_enabled,
@@ -436,6 +431,7 @@ def _build_personal_data(registration):
 def build_registration_api_data(registration):
     registration_info = _build_base_registration_info(registration)
     registration_info['amount_paid'] = registration.price if registration.is_paid else 0
+    registration_info['ticket_price'] = registration.price
     registration_info['registration_date'] = registration.submitted_dt.isoformat()
     registration_info['paid'] = registration.is_paid
     registration_info['checkin_date'] = registration.checked_in_dt.isoformat() if registration.checked_in_dt else ''
@@ -494,12 +490,34 @@ def get_event_regforms(event, user, with_registrations=False):
     return query.all()
 
 
+def get_event_regforms_registrations(event, user, include_scheduled=True):
+    """Get regforms and the associated registrations for an event+user.
+
+    :param event: the `Event` to get registration forms for
+    :param user: A `User`
+    :param include_scheduled: Whether to include scheduled
+                              but not open registration forms
+    :return: A tuple, which includes:
+            - All registration forms which are scheduled, open or registered.
+            - A dict mapping all registration forms to the user's registration if they have one.
+    """
+    all_regforms = get_event_regforms(event, user, with_registrations=True)
+    if include_scheduled:
+        displayed_regforms = [regform for regform, registration in all_regforms
+                              if regform.is_scheduled or registration]
+    else:
+        displayed_regforms = [regform for regform, registration in all_regforms
+                              if regform.is_open or registration]
+    return displayed_regforms, dict(all_regforms)
+
+
 def generate_ticket(registration):
     from indico.modules.designer.util import get_default_template_on_category
     from indico.modules.events.registration.controllers.management.tickets import DEFAULT_TICKET_PRINTING_SETTINGS
     template = (registration.registration_form.ticket_template or
                 get_default_template_on_category(registration.event.category))
-    signals.event.designer.print_badge_template.send(template, regform=registration.registration_form)
+    signals.event.designer.print_badge_template.send(template, regform=registration.registration_form,
+                                                     registrations=[registration])
     pdf_class = RegistrantsListToBadgesPDFFoldable if template.backside_template else RegistrantsListToBadgesPDF
     pdf = pdf_class(template, DEFAULT_TICKET_PRINTING_SETTINGS, registration.event, [registration.id])
     return pdf.get_pdf()
@@ -561,3 +579,12 @@ def import_registrations_from_csv(regform, fileobj, skip_moderation=True, notify
         })
     return [create_registration(regform, data, notify_user=notify_users, skip_moderation=skip_moderation)
             for data in todo]
+
+
+def get_registered_event_persons(event):
+    """Get all registered EventPersons of an event."""
+    query = event.persons.join(Registration, and_(Registration.event_id == EventPerson.event_id,
+                                                  Registration.is_active,
+                                                  or_(Registration.user_id == EventPerson.user_id,
+                                                      Registration.email == EventPerson.email)))
+    return set(query)

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -22,6 +13,7 @@ from operator import attrgetter
 from flask import flash, jsonify, request, session
 from sqlalchemy.orm import joinedload, subqueryload
 
+from indico.core.db import db
 from indico.modules.events.abstracts.controllers.base import RHManageAbstractsBase
 from indico.modules.events.abstracts.controllers.common import (AbstractsDownloadAttachmentsMixin, AbstractsExportCSV,
                                                                 AbstractsExportExcel, AbstractsExportPDFMixin,
@@ -32,10 +24,11 @@ from indico.modules.events.abstracts.models.abstracts import Abstract, AbstractS
 from indico.modules.events.abstracts.models.persons import AbstractPersonLink
 from indico.modules.events.abstracts.operations import create_abstract, delete_abstract, judge_abstract
 from indico.modules.events.abstracts.schemas import abstract_review_questions_schema, abstracts_schema
-from indico.modules.events.abstracts.util import make_abstract_form
+from indico.modules.events.abstracts.util import can_create_invited_abstracts, make_abstract_form
 from indico.modules.events.abstracts.views import WPManageAbstracts
 from indico.modules.events.contributions.models.persons import AuthorType
 from indico.modules.events.util import get_field_values
+from indico.modules.users.models.users import User
 from indico.util.i18n import _, ngettext
 from indico.web.util import jsonify_data, jsonify_form, jsonify_template
 
@@ -97,7 +90,8 @@ class RHAbstractList(DisplayAbstractListMixin, RHAbstractListBase):
 
     def _render_template(self, **kwargs):
         kwargs['track_session_map'] = {track.id: track.default_session_id for track in self.event.tracks}
-        return super(RHAbstractList, self)._render_template(**kwargs)
+        can_create = can_create_invited_abstracts(self.event)
+        return super(RHAbstractList, self)._render_template(can_create_invited_abstracts=can_create, **kwargs)
 
 
 class RHAbstractListCustomize(CustomizeAbstractListMixin, RHAbstractListBase):
@@ -116,12 +110,37 @@ class RHAbstractListStaticURL(RHAbstractListBase):
 
 class RHCreateAbstract(RHAbstractListBase):
     def _process(self):
-        abstract_form_class = make_abstract_form(self.event, session.user, notification_option=True, management=self.management)
-        form = abstract_form_class(event=self.event, management=self.management)
+        is_invited = request.args.get('invited') == '1'
+        abstract_form_class = make_abstract_form(self.event, session.user, notification_option=True,
+                                                 management=self.management, invited=is_invited)
+        form = abstract_form_class(event=self.event, management=self.management, invited=is_invited)
+        if is_invited:
+            del form.submitted_contrib_type
+            del form.attachments
+            del form.send_notifications
+            del form.person_links
+
         if form.validate_on_submit():
             data = form.data
-            send_notifications = data.pop('send_notifications')
-            abstract = create_abstract(self.event, *get_field_values(data), send_notifications=send_notifications)
+            submitter = None
+            if is_invited:
+                if form.users_with_no_account.data == 'existing':
+                    submitter = data['submitter']
+                else:
+                    submitter = User(first_name=data['first_name'], last_name=data['last_name'], email=data['email'],
+                                     is_pending=True)
+                    db.session.add(submitter)
+                    db.session.flush()
+
+                data.pop('first_name')
+                data.pop('last_name')
+                data.pop('email')
+                data.pop('users_with_no_account')
+                data.pop('submitter')
+
+            send_notifications = data.pop('send_notifications', is_invited)
+            abstract = create_abstract(self.event, *get_field_values(data), send_notifications=send_notifications,
+                                       submitter=submitter, is_invited=is_invited)
             flash(_("Abstract '{}' created successfully").format(abstract.title), 'success')
             tpl_components = self.list_generator.render_list(abstract)
             if tpl_components.get('hide_abstract'):
@@ -209,8 +228,8 @@ class RHAbstractsExportJSON(RHManageAbstractsExportActionsBase):
                                subqueryload('reviews').joinedload('ratings').joinedload('question'))
 
     def _process(self):
-        abstracts = abstracts_schema.dump(sorted(self.abstracts, key=attrgetter('friendly_id'))).data
-        questions = abstract_review_questions_schema.dump(self.event.abstract_review_questions).data
+        abstracts = abstracts_schema.dump(sorted(self.abstracts, key=attrgetter('friendly_id')))
+        questions = abstract_review_questions_schema.dump(self.event.abstract_review_questions)
         response = jsonify(version=1, abstracts=abstracts, questions=questions)
         response.headers['Content-Disposition'] = 'attachment; filename="abstracts.json"'
         return response

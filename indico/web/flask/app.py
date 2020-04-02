@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import absolute_import, unicode_literals
 
@@ -23,13 +14,12 @@ from babel.numbers import format_currency, get_currency_name
 from flask import _app_ctx_stack, request
 from flask.helpers import get_root_path
 from flask_pluginengine import current_plugin, plugins_loaded
-from flask_sqlalchemy import models_committed
 from markupsafe import Markup
 from pywebpack import WebpackBundleProject
 from sqlalchemy.orm import configure_mappers
-from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.exceptions import BadRequest
 from werkzeug.local import LocalProxy
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.urls import url_parse
 from wtforms.widgets import html_params
 
@@ -39,14 +29,12 @@ from indico.core.auth import multipass
 from indico.core.celery import celery
 from indico.core.config import IndicoConfig, config, load_config
 from indico.core.db.sqlalchemy import db
-from indico.core.db.sqlalchemy.core import on_models_committed
 from indico.core.db.sqlalchemy.logging import apply_db_loggers
 from indico.core.db.sqlalchemy.util.models import import_all_models
 from indico.core.logger import Logger
 from indico.core.marshmallow import mm
 from indico.core.plugins import plugin_engine, url_for_plugin
 from indico.core.webpack import IndicoManifestLoader, webpack
-from indico.legacy.common.TemplateExec import mako
 from indico.modules.auth.providers import IndicoAuthProvider, IndicoIdentityProvider
 from indico.modules.auth.util import url_for_login, url_for_logout
 from indico.modules.oauth import oauth
@@ -99,7 +87,7 @@ def configure_app(app, set_path=False):
             app.config['APPLICATION_ROOT'] = base.path
     configure_xsendfile(app, config.STATIC_FILE_METHOD)
     if config.USE_PROXY:
-        app.wsgi_app = ProxyFix(app.wsgi_app)
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     configure_webpack(app)
 
 
@@ -120,22 +108,22 @@ def configure_multipass(app, config):
 
 
 def configure_multipass_local(app):
-    app.config['MULTIPASS_AUTH_PROVIDERS']['indico'] = {
+    app.config['MULTIPASS_AUTH_PROVIDERS'] = dict(app.config['MULTIPASS_AUTH_PROVIDERS'], indico={
         'type': IndicoAuthProvider,
         'title': 'Indico',
         'default': not any(p.get('default') for p in app.config['MULTIPASS_AUTH_PROVIDERS'].itervalues())
-    }
-    app.config['MULTIPASS_IDENTITY_PROVIDERS']['indico'] = {
+    })
+    app.config['MULTIPASS_IDENTITY_PROVIDERS'] = dict(app.config['MULTIPASS_IDENTITY_PROVIDERS'], indico={
         'type': IndicoIdentityProvider,
         # We don't want any user info from this provider
         'identity_info_keys': {}
-    }
-    app.config['MULTIPASS_PROVIDER_MAP']['indico'] = 'indico'
+    })
+    app.config['MULTIPASS_PROVIDER_MAP'] = dict(app.config['MULTIPASS_PROVIDER_MAP'], indico='indico')
 
 
 def configure_webpack(app):
     pkg_path = os.path.dirname(get_root_path('indico'))
-    project = WebpackBundleProject(pkg_path)
+    project = WebpackBundleProject(pkg_path, None)
     app.config['WEBPACKEXT_PROJECT'] = project
     app.config['WEBPACKEXT_MANIFEST_LOADER'] = IndicoManifestLoader
     app.config['WEBPACKEXT_MANIFEST_PATH'] = os.path.join('dist', 'manifest.json')
@@ -159,10 +147,6 @@ def configure_xsendfile(app, method):
         app.wsgi_app = XAccelMiddleware(app.wsgi_app, args)
     else:
         raise ValueError('Invalid static file method: %s' % method)
-
-
-def setup_mako(app):
-    mako.template_args['module_directory'] = os.path.join(config.TEMP_DIR, 'mako_modules', indico.__version__)
 
 
 def setup_jinja(app):
@@ -237,7 +221,7 @@ def setup_jinja_customization(app):
 
 
 def configure_db(app):
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     if app.config['TESTING']:
         # tests do not actually use sqlite but run a postgres instance and
@@ -262,7 +246,6 @@ def configure_db(app):
         apply_db_loggers(app)
 
     plugins_loaded.connect(lambda sender: configure_mappers(), app, weak=False)
-    models_committed.connect(on_models_committed, app)
 
 
 def extend_url_map(app):
@@ -300,9 +283,9 @@ def add_plugin_blueprints(app):
 
 
 def reject_nuls():
-    for key, values in request.args.iterlists():
+    for key, values in request.values.iterlists():
         if '\0' in key or any('\0' in x for x in values):
-            raise BadRequest('NUL byte found in query data')
+            raise BadRequest('NUL byte found in request data')
 
 
 def inject_current_url(response):
@@ -337,7 +320,7 @@ def make_app(set_path=False, testing=False, config_override=None):
     if _app_ctx_stack.top:
         Logger.get('flask').warn('make_app called within app context, using existing app')
         return _app_ctx_stack.top.app
-    app = IndicoFlask('indico', static_folder=None, template_folder='web/templates')
+    app = IndicoFlask('indico', static_folder='web/static', static_url_path='/', template_folder='web/templates')
     app.config['TESTING'] = testing
     app.config['INDICO'] = load_config(only_defaults=testing, override=config_override)
     configure_app(app, set_path)
@@ -350,7 +333,6 @@ def make_app(set_path=False, testing=False, config_override=None):
         multipass.init_app(app)
         oauth.init_app(app)
         webpack.init_app(app)
-        setup_mako(app)
         setup_jinja(app)
         configure_db(app)
         mm.init_app(app)  # must be called after `configure_db`!

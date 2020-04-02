@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 import fnmatch
 import re
@@ -26,14 +17,17 @@ from sqlalchemy import Date, cast
 from sqlalchemy.orm import joinedload, subqueryload, undefer
 from werkzeug.exceptions import ServiceUnavailable
 
+from indico.core import signals
 from indico.core.config import config
 from indico.core.db import db
 from indico.core.db.sqlalchemy.principals import PrincipalType
 from indico.core.db.sqlalchemy.protection import ProtectionMode
 from indico.modules.attachments.api.util import build_folders_api_data, build_material_legacy_api_data
-from indico.modules.categories import Category, LegacyCategoryMapping
+from indico.modules.categories import Category
+from indico.modules.categories.models.legacy_mapping import LegacyCategoryMapping
 from indico.modules.categories.serialize import serialize_categories_ical
 from indico.modules.events import Event
+from indico.modules.events.contributions import contribution_settings
 from indico.modules.events.models.persons import PersonLinkBase
 from indico.modules.events.notes.util import build_note_api_data, build_note_legacy_api_data
 from indico.modules.events.sessions.models.sessions import Session
@@ -42,6 +36,7 @@ from indico.modules.events.timetable.models.entries import TimetableEntry
 from indico.util.date_time import iterdays
 from indico.util.fossilize import fossilize
 from indico.util.fossilize.conversion import Conversion
+from indico.util.signals import values_from_signal
 from indico.util.string import to_unicode
 from indico.web.flask.util import send_file, url_for
 from indico.web.http_api.fossils import IPeriodFossil
@@ -81,10 +76,14 @@ class EventTimeTableHook(HTTPAPIHook):
         super(EventTimeTableHook, self)._getParams()
         self._idList = self._pathParams['idlist'].split('-')
 
+    def _serialize_timetable(self, event, user):
+        if not contribution_settings.get(event, 'published') and not event.can_manage(user):
+            return {}
+        return TimetableSerializer(event, management=False, user=user).serialize_timetable()
+
     def export_timetable(self, user):
         events = Event.find_all(Event.id.in_(map(int, self._idList)), ~Event.is_deleted)
-        return {event.id: TimetableSerializer(event, management=False, user=user).serialize_timetable()
-                for event in events}
+        return {event.id: self._serialize_timetable(event, user) for event in events}
 
 
 @HTTPAPIHook.register
@@ -294,7 +293,7 @@ class SerializerBase(object):
             '_fossil': 'conference',
             'adjustedStartDate': self._serialize_date(event.start_dt_local),
             'adjustedEndDate': self._serialize_date(event.end_dt_local),
-            'bookedRooms': Conversion.reservationsList(event.reservations.all()),
+            'bookedRooms': Conversion.reservationsList(event.reservations),
             'supportInfo': {
                 '_fossil': 'supportInfo',
                 'caption': event.contact_title,
@@ -593,13 +592,15 @@ class CategoryEventFetcher(IteratedDataFetcher, SerializerBase):
 
         if can_manage:
             data['allowed'] = self._serialize_access_list(event)
-        if self._detail_level in {'contributions', 'subcontributions'}:
+
+        allow_details = contribution_settings.get(event, 'published') or can_manage
+        if self._detail_level in {'contributions', 'subcontributions'} and allow_details:
             data['contributions'] = []
             for contribution in event.contributions:
                 include_subcontribs = self._detail_level == 'subcontributions'
                 serialized_contrib = self._serialize_contribution(contribution, include_subcontribs)
                 data['contributions'].append(serialized_contrib)
-        elif self._detail_level == 'sessions':
+        elif self._detail_level == 'sessions' and allow_details:
             # Contributions without a session
             data['contributions'] = []
             for contribution in event.contributions:
@@ -614,6 +615,10 @@ class CategoryEventFetcher(IteratedDataFetcher, SerializerBase):
             data['occurrences'] = fossilize(self._calculate_occurrences(event, self._fromDT, self._toDT,
                                             pytz.timezone(config.DEFAULT_TIMEZONE)),
                                             {Period: IPeriodFossil}, tz=self._tz, naiveTZ=config.DEFAULT_TIMEZONE)
+        # check whether the plugins want to add/override any data
+        for update in values_from_signal(
+                signals.event.metadata_postprocess.send('http-api', event=event, data=data), as_list=True):
+            data.update(update)
         return data
 
 
@@ -656,6 +661,14 @@ class SessionContribFetcher(IteratedDataFetcher):
 class SessionHook(SessionContribHook):
     RE = r'(?P<event>[\w\s]+)/session/(?P<idlist>\w+(?:-\w+)*)'
     METHOD_NAME = 'export_session'
+
+    def _has_access(self, user):
+        event = Event.get(self._eventId, is_deleted=False)
+        if event:
+            can_manage = user is not None and event.can_manage(user)
+            if not can_manage and not contribution_settings.get(event, 'published'):
+                return False
+        return True
 
 
 class SessionFetcher(SessionContribFetcher, SerializerBase):

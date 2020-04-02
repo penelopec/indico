@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -25,6 +16,7 @@ from indico.modules.events.contributions.models.persons import (AuthorType, Cont
                                                                 SubContributionPersonLink)
 from indico.modules.events.contributions.models.subcontributions import SubContribution
 from indico.modules.events.controllers.base import RHEventBase
+from indico.modules.events.registration.util import get_registered_event_persons
 from indico.modules.events.util import check_event_locked
 from indico.util.i18n import _
 from indico.web.util import jsonify_template
@@ -70,11 +62,15 @@ class RHContributionPersonListMixin:
                                           .has(SubContribution.contribution.has(self._membership_filter)))
                                     .all())
 
+        registered_persons = get_registered_event_persons(self.event)
+
         contribution_persons_dict = defaultdict(lambda: {'speaker': False, 'primary_author': False,
-                                                         'secondary_author': False})
+                                                         'secondary_author': False, 'not_registered': True})
         for contrib_person in contribution_persons:
             person_roles = contribution_persons_dict[contrib_person.person]
             person_roles['speaker'] |= contrib_person.is_speaker
             person_roles['primary_author'] |= contrib_person.author_type == AuthorType.primary
             person_roles['secondary_author'] |= contrib_person.author_type == AuthorType.secondary
+            person_roles['not_registered'] = contrib_person.person not in registered_persons
+
         return jsonify_template(self.template, event_persons=contribution_persons_dict, event=self.event)

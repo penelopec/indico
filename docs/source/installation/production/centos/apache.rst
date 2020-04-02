@@ -29,7 +29,7 @@ to the ``[base]`` and ``[updates]`` sections, as described in the
     yum install -y https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
     yum install -y postgresql96 postgresql96-server postgresql96-libs postgresql96-devel postgresql96-contrib
     yum install -y httpd mod_proxy_uwsgi mod_ssl mod_xsendfile
-    yum install -y gcc redis uwsgi uwsgi-plugin-python
+    yum install -y gcc redis uwsgi uwsgi-plugin-python2
     yum install -y python-devel python-virtualenv libjpeg-turbo-devel libxslt-devel libxml2-devel libffi-devel pcre-devel libyaml-devel
     /usr/pgsql-9.6/bin/postgresql96-setup initdb
     systemctl start postgresql-9.6.service redis.service
@@ -70,7 +70,6 @@ most cases.
     uid = indico
     gid = apache
     umask = 027
-    pidfile = /run/uwsgi/uwsgi.pid
 
     processes = 4
     enable-threads = true
@@ -137,10 +136,9 @@ most cases.
         LogLevel error
         ServerSignature Off
 
-        AliasMatch "^/static/assets/(core|(?:plugin|theme)-[^/]+)/(.*)$" "/opt/indico/assets/$1/$2"
         AliasMatch "^/(images|fonts)(.*)/(.+?)(__v[0-9a-f]+)?\.([^.]+)$" "/opt/indico/web/static/$1$2/$3.$5"
         AliasMatch "^/(css|dist|images|fonts)/(.*)$" "/opt/indico/web/static/$1/$2"
-        Alias /robots.txt /opt/indico/web/htdocs/robots.txt
+        Alias /robots.txt /opt/indico/web/static/robots.txt
 
         SetEnv UWSGI_SCHEME https
         ProxyPass / uwsgi://127.0.0.1:8008/
@@ -289,6 +287,7 @@ You are now ready to install Indico:
 
     virtualenv ~/.venv
     source ~/.venv/bin/activate
+    export PATH="$PATH:/usr/pgsql-9.6/bin"
     pip install -U pip setuptools
     pip install indico
 
@@ -315,7 +314,7 @@ Now finish setting up the directory structure and permissions:
 
     mkdir ~/log/apache
     chmod go-rwx ~/* ~/.[^.]*
-    chmod 710 ~/ ~/archive ~/assets ~/cache ~/log ~/tmp
+    chmod 710 ~/ ~/archive ~/cache ~/log ~/tmp
     chmod 750 ~/web ~/.venv
     chmod g+w ~/log/apache
     restorecon -R ~/

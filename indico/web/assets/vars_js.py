@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -26,7 +17,6 @@ from indico.core.config import config
 from indico.core.plugins import plugin_engine
 from indico.modules.auth.util import url_for_login
 from indico.modules.events.registration.util import url_rule_to_angular
-from indico.modules.rb.models.locations import Location
 from indico.modules.users.util import serialize_user
 from indico.util.i18n import po_to_json
 from indico.web.flask.util import url_for, url_rule_to_js
@@ -83,15 +73,13 @@ def generate_user_file(user=None):
             'favorite_users': {u.id: serialize_user(u) for u in user.favorite_users},
             'language': session.lang,
             'avatar_bg_color': user.avatar_bg_color,
-            'is_admin': user.is_admin
+            'is_admin': user.is_admin,
+            'full_name': user.full_name
         }
     return render_template('assets/vars_user.js', user_vars=user_vars, user=user)
 
 
 def generate_global_file():
-    locations = Location.find_all() if config.ENABLE_ROOMBOOKING else []
-    location_names = {loc.name: loc.name for loc in locations}
-    default_location = next((loc.name for loc in locations if loc.is_default), None)
     ext_auths = [{
         'name': auth.name,
         'title': auth.title,
@@ -115,11 +103,6 @@ def generate_global_file():
 
             'AttachmentManager': url_rule_to_js('attachments.management'),
             'ManagementAttachmentInfoColumn': url_rule_to_js('attachments.management_info_column'),
-
-            'RoomBookingBookRoom': url_rule_to_js('rooms.room_book'),
-            'RoomBookingBook': url_rule_to_js('rooms.book'),
-            'RoomBookingDetails': url_rule_to_js('rooms.roomBooking-roomDetails'),
-            'RoomBookingCloneBooking': url_rule_to_js('rooms.roomBooking-cloneBooking'),
 
             'APIKeyCreate': url_for('api.key_create'),
             'APIKeyTogglePersistent': url_for('api.key_toggle_persistent'),
@@ -195,6 +178,7 @@ def generate_global_file():
             },
 
             'Categories': {
+                'display': url_rule_to_js('categories.display'),
                 'info': url_rule_to_js('categories.info'),
                 'infoFrom': url_rule_to_js('categories.info_from'),
                 'search': url_rule_to_js('categories.search')
@@ -203,13 +187,10 @@ def generate_global_file():
 
         'Data': {
             'WeekDays': ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-            'DefaultLocation': default_location,
-            'Locations': location_names
         },
 
         'Settings': {
             'ExtAuthenticators': ext_auths,
-            'RoomBookingModuleActive': config.ENABLE_ROOMBOOKING,
         },
 
         'FileRestrictions': {

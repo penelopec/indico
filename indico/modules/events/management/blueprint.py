@@ -1,23 +1,14 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from indico.modules.events import event_management_object_url_prefixes
-from indico.modules.events.management.controllers import actions, cloning, posters, protection, settings
+from indico.modules.events.management.controllers import actions, cloning, posters, program_codes, protection, settings
 from indico.web.flask.util import make_compat_redirect_func
 from indico.web.flask.wrappers import IndicoBlueprint
 
@@ -43,10 +34,11 @@ _bp.add_url_rule('/lock', 'lock', actions.RHLockEvent, methods=('GET', 'POST'))
 _bp.add_url_rule('/unlock', 'unlock', actions.RHUnlockEvent, methods=('POST',))
 _bp.add_url_rule('/move', 'move', actions.RHMoveEvent, methods=('POST',))
 # Protection
+_bp.add_url_rule('/api/principals', 'api_principals', protection.RHEventPrincipals, methods=('GET', 'POST'))
 _bp.add_url_rule('/protection', 'protection', protection.RHEventProtection, methods=('GET', 'POST'))
 _bp.add_url_rule('/protection/acl', 'acl', protection.RHEventACL)
 _bp.add_url_rule('/protection/acl-message', 'acl_message', protection.RHEventACLMessage)
-_bp.add_url_rule('!/permissions-dialog/<any(event,session,contribution):type>', 'permissions_dialog',
+_bp.add_url_rule('!/permissions-dialog/<any(event,session,contribution,category):type>', 'permissions_dialog',
                  protection.RHPermissionsDialog, methods=('POST',))
 # Cloning
 _bp.add_url_rule('/clone', 'clone', cloning.RHCloneEvent, methods=('GET', 'POST'))
@@ -54,6 +46,18 @@ _bp.add_url_rule('/clone/preview', 'clone_preview', cloning.RHClonePreview, meth
 # Posters
 _bp.add_url_rule('/print-poster/settings', 'poster_settings', posters.RHPosterPrintSettings, methods=('GET', 'POST'))
 _bp.add_url_rule('/print-poster/<int:template_id>/<uuid>', 'print_poster', posters.RHPrintEventPoster)
+# Program Codes
+_bp.add_url_rule('/program-codes/', 'program_codes', program_codes.RHProgramCodes)
+_bp.add_url_rule('/program-codes/templates', 'program_code_templates', program_codes.RHProgramCodeTemplates,
+                 methods=('GET', 'POST'))
+_bp.add_url_rule('/program-codes/assign/sessions', 'assign_program_codes_sessions',
+                 program_codes.RHAssignProgramCodesSessions, methods=('GET', 'POST'))
+_bp.add_url_rule('/program-codes/assign/session-blocks', 'assign_program_codes_session_blocks',
+                 program_codes.RHAssignProgramCodesSessionBlocks, methods=('GET', 'POST'))
+_bp.add_url_rule('/program-codes/assign/contributions', 'assign_program_codes_contributions',
+                 program_codes.RHAssignProgramCodesContributions, methods=('GET', 'POST'))
+_bp.add_url_rule('/program-codes/assign/subcontributions', 'assign_program_codes_subcontributions',
+                 program_codes.RHAssignProgramCodesSubContributions, methods=('GET', 'POST'))
 
 
 for object_type, prefixes in event_management_object_url_prefixes.iteritems():

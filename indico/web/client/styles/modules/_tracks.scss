@@ -1,21 +1,11 @@
-/* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
- *
- * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
- */
+// This file is part of Indico.
+// Copyright (C) 2002 - 2020 CERN
+//
+// Indico is free software; you can redistribute it and/or
+// modify it under the terms of the MIT License; see the
+// LICENSE file for more details.
 
-#track-list {
+.track-list {
     list-style-type: none;
     padding-left: 0;
 
@@ -56,8 +46,38 @@
     }
 }
 
-#no-tracks-box {
-    margin-top: 20px;
+ul.sub-tracks {
+    list-style-type: none;
+    padding-left: 30px;
+
+    li h3 {
+        font-size: 14px !important;
+    }
+}
+
+.embedded-track-list {
+    padding: 30px 20px;
+    border: 1px solid $pastel-gray;
+    background-color: $light-gray;
+    margin: 10px 0;
+}
+
+.track-group-handle {
+    background-color: $dark-gray !important;
+}
+
+.no-tracks-message {
+    color: $dark-gray;
+}
+
+.no-tracks-message:not(:only-child) {
+    display: none;
+}
+
+.track-placeholder {
+    background: $light-gray;
+    border: 1px dashed $gray;
+    margin-bottom: 15px;
 }
 
 .track-review-list {

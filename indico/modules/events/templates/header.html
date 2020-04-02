@@ -1,3 +1,6 @@
+{% from 'announcement/display.html' import render_announcements %}
+{% from 'core/impersonation.html' import render_impersonation %}
+
 {%- macro _render_nav_bar() -%}
     {% set rel = event.get_relative_event_ids() %}
 
@@ -36,7 +39,7 @@
 {%- macro _render_theme_selector() -%}
     <a class="i-button text-color subtle icon-layout arrow js-dropdown" data-toggle="dropdown"
        title="{% trans %}Change theme{% endtrans %}"></a>
-    <ul class="dropdown">
+    <ul class="i-dropdown">
         {% set endpoint = 'timetable.timetable' if event.type == 'conference' else 'events.display' %}
         {% for group in themes.items()|sort(attribute='1.name')|groupby('1.user_visible')|reverse
            if group.grouper or event.can_manage(session.user) %}
@@ -176,7 +179,9 @@
 {%- set filters_active = show_filter_button and (request.args.get('showDate', 'all') != 'all' or
                                                  request.args.get('showSession', 'all') != 'all' or
                                                  request.args.get('detailLevel', 'contribution') != 'contribution') -%}
-{{ template_hook('global-announcement') }}
+
+{{ render_impersonation(legacy=true) }}
+{{ render_announcements(legacy=true) }}
 
 <div class="page-header page-header-dark event-page-header">
     <div class="main-action-bar flexrow f-j-space-between f-a-center">
@@ -210,6 +215,8 @@
             {{ _render_theme_selector() }}
 
             <span class="separator"></span>
+
+            {{ template_hook('url-shortener', event=event, classes='i-button text-color subtle icon-link') }}
 
             <a class="i-button text-color subtle icon-edit"
                href="{{ url_for('event_management.settings', event) }}"

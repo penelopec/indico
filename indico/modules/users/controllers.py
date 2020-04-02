@@ -1,37 +1,30 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from collections import namedtuple
-from datetime import datetime
-from operator import attrgetter
+from io import BytesIO
+from operator import attrgetter, itemgetter
 
 from dateutil.relativedelta import relativedelta
 from flask import flash, jsonify, redirect, request, session
 from markupsafe import Markup, escape
+from marshmallow import fields
 from sqlalchemy.orm import joinedload, load_only, subqueryload, undefer
 from sqlalchemy.orm.exc import StaleDataError
-from webargs import fields, validate
-from webargs.flaskparser import use_args
+from webargs import validate
 from werkzeug.exceptions import BadRequest, Forbidden, NotFound
 
 from indico.core import signals
+from indico.core.auth import multipass
 from indico.core.db import db
 from indico.core.db.sqlalchemy.util.queries import get_n_matching
+from indico.core.marshmallow import mm
 from indico.core.notifications import make_email, send_email
 from indico.legacy.common.cache import GenericCache
 from indico.modules.admin import RHAdminBase
@@ -40,29 +33,49 @@ from indico.modules.auth.models.registration_requests import RegistrationRequest
 from indico.modules.auth.util import register_user
 from indico.modules.categories import Category
 from indico.modules.events import Event
+from indico.modules.events.util import serialize_event_for_ical
 from indico.modules.users import User, logger, user_management_settings
 from indico.modules.users.forms import (AdminAccountRegistrationForm, AdminsForm, AdminUserSettingsForm, MergeForm,
                                         SearchForm, UserDetailsForm, UserEmailsForm, UserPreferencesForm)
 from indico.modules.users.models.emails import UserEmail
 from indico.modules.users.operations import create_user
-from indico.modules.users.schemas import user_schema
-from indico.modules.users.util import (build_user_search_query, get_linked_events, get_related_categories,
-                                       get_suggested_categories, merge_users, search_users, serialize_user)
-from indico.modules.users.views import WPUser, WPUsersAdmin
-from indico.util.date_time import now_utc, timedelta_split
+from indico.modules.users.util import (get_linked_events, get_related_categories, get_suggested_categories, merge_users,
+                                       search_users, serialize_user)
+from indico.modules.users.views import WPUser, WPUserDashboard, WPUsersAdmin
+from indico.util.date_time import now_utc
 from indico.util.event import truncate_path
 from indico.util.i18n import _
+from indico.util.marshmallow import HumanizedDate, validate_with_message
 from indico.util.signals import values_from_signal
 from indico.util.string import make_unique_token
+from indico.web.args import use_kwargs
 from indico.web.flask.templating import get_template_module
-from indico.web.flask.util import url_for
+from indico.web.flask.util import send_file, url_for
 from indico.web.forms.base import FormDefaults
-from indico.web.rh import RHProtected
+from indico.web.http_api.metadata import Serializer
+from indico.web.rh import RHProtected, RHTokenProtected
 from indico.web.util import jsonify_data, jsonify_form, jsonify_template
 
 
 IDENTITY_ATTRIBUTES = {'first_name', 'last_name', 'email', 'affiliation', 'full_name'}
 UserEntry = namedtuple('UserEntry', IDENTITY_ATTRIBUTES | {'profile_url', 'user'})
+
+
+def get_events_in_categories(category_ids, user, limit=10):
+    """Get all the user-accessible events in a given set of categories."""
+    tz = session.tzinfo
+    today = now_utc(False).astimezone(tz).date()
+    query = (Event.query
+             .filter(~Event.is_deleted,
+                     Event.category_chain_overlaps(category_ids),
+                     Event.start_dt.astimezone(session.tzinfo) >= today)
+             .options(joinedload('category').load_only('id', 'title'),
+                      joinedload('series'),
+                      subqueryload('acl_entries'),
+                      load_only('id', 'category_id', 'start_dt', 'end_dt', 'title', 'access_key',
+                                'protection_mode', 'series_id', 'series_pos', 'series_count'))
+             .order_by(Event.start_dt, Event.id))
+    return get_n_matching(query, limit, lambda x: x.can_access(user))
 
 
 class RHUserBase(RHProtected):
@@ -108,35 +121,54 @@ class RHUserDashboard(RHUserBase):
 
     def _process(self):
         self.user.settings.set('suggest_categories', True)
-        tz = session.tzinfo
-        hours, minutes = timedelta_split(tz.utcoffset(datetime.now()))[:2]
         categories = get_related_categories(self.user)
         categories_events = []
         if categories:
             category_ids = {c['categ'].id for c in categories.itervalues()}
-            today = now_utc(False).astimezone(tz).date()
-            query = (Event.query
-                     .filter(~Event.is_deleted,
-                             Event.category_chain_overlaps(category_ids),
-                             Event.start_dt.astimezone(session.tzinfo) >= today)
-                     .options(joinedload('category').load_only('id', 'title'),
-                              joinedload('series'),
-                              subqueryload('acl_entries'),
-                              load_only('id', 'category_id', 'start_dt', 'end_dt', 'title', 'access_key',
-                                        'protection_mode', 'series_id', 'series_pos', 'series_count'))
-                     .order_by(Event.start_dt, Event.id))
-            categories_events = get_n_matching(query, 10, lambda x: x.can_access(self.user))
+            categories_events = get_events_in_categories(category_ids, self.user)
         from_dt = now_utc(False) - relativedelta(weeks=1, hour=0, minute=0, second=0)
         linked_events = [(event, {'management': bool(roles & self.management_roles),
                                   'reviewing': bool(roles & self.reviewer_roles),
                                   'attendance': bool(roles & self.attendance_roles)})
                          for event, roles in get_linked_events(self.user, from_dt, 10).iteritems()]
-        return WPUser.render_template('dashboard.html', 'dashboard',
-                                      offset='{:+03d}:{:02d}'.format(hours, minutes), user=self.user,
-                                      categories=categories,
-                                      categories_events=categories_events,
-                                      suggested_categories=get_suggested_categories(self.user),
-                                      linked_events=linked_events)
+        return WPUserDashboard.render_template('dashboard.html', 'dashboard',
+                                               user=self.user,
+                                               categories=categories,
+                                               categories_events=categories_events,
+                                               suggested_categories=get_suggested_categories(self.user),
+                                               linked_events=linked_events)
+
+
+class RHExportDashboardICS(RHTokenProtected):
+    @use_kwargs({
+        'from_': HumanizedDate(data_key='from', missing=lambda: now_utc(False) - relativedelta(weeks=1)),
+        'include': fields.List(fields.Str(), missing={'linked', 'categories'}),
+        'limit': fields.Integer(missing=100, validate=lambda v: 0 < v <= 500)
+    })
+    def _process(self, from_, include, limit):
+        categories = get_related_categories(self.user)
+        categories_events = []
+        if categories:
+            category_ids = {c['categ'].id for c in categories.itervalues()}
+            categories_events = get_events_in_categories(category_ids, self.user, limit=limit)
+
+        linked_events = get_linked_events(
+            self.user,
+            from_,
+            limit=limit,
+            load_also=('description', 'own_room_id', 'own_venue_id', 'own_room_name', 'own_venue_name')
+        )
+
+        all_events = set()
+        if 'linked' in include:
+            all_events |= set(linked_events)
+        if 'categories' in include:
+            all_events |= set(categories_events)
+        all_events = sorted(all_events, key=lambda e: (e.start_dt, e.id))[:limit]
+
+        response = {'results': [serialize_event_for_ical(event, 'events') for event in all_events]}
+        serializer = Serializer.create('ics')
+        return send_file('event.ics', BytesIO(serializer(response)), 'text/calendar')
 
 
 class RHPersonalData(RHUserBase):
@@ -156,7 +188,8 @@ class RHPersonalData(RHUserBase):
 
 class RHUserPreferences(RHUserBase):
     def _process(self):
-        extra_preferences = [pref(self.user) for pref in values_from_signal(signals.users.preferences.send(self.user))]
+        extra_preferences = [pref(self.user) for pref in values_from_signal(signals.users.preferences.send(self.user))
+                             if pref.is_active(self.user)]
         form_class = UserPreferencesForm
         defaults = FormDefaults(**self.user.settings.get_all(self.user))
         for pref in extra_preferences:
@@ -393,7 +426,7 @@ class RHUsersAdmin(RHAdminBase):
 
 
 class RHUsersAdminSettings(RHAdminBase):
-    """Manage global suer-related settings."""
+    """Manage global user-related settings."""
 
     def _process(self):
         form = AdminUserSettingsForm(obj=FormDefaults(**user_management_settings.get_all()))
@@ -439,6 +472,10 @@ def _get_merge_problems(source, target):
         warnings.append(_("Source user has never logged in to Indico!"))
     if target.is_pending:
         warnings.append(_("Target user has never logged in to Indico!"))
+    if source.is_blocked:
+        warnings.append(_("Source user is blocked!"))
+    if target.is_blocked:
+        warnings.append(_("Target user is blocked!"))
     if source.is_deleted:
         errors.append(_("Source user has been deleted!"))
     if target.is_deleted:
@@ -522,18 +559,83 @@ class RHRejectRegistrationRequest(RHRegistrationRequestBase):
         return jsonify_data()
 
 
+class UserSearchResultSchema(mm.ModelSchema):
+    class Meta:
+        model = User
+        fields = ('id', 'identifier', 'email', 'affiliation', 'full_name')
+
+
+search_result_schema = UserSearchResultSchema()
+
+
 class RHUserSearch(RHProtected):
     """Search for users based on given criteria"""
 
-    @use_args({
-        'email': fields.Str(validate=lambda s: len(s) > 3 and '@' in s),
-        'name': fields.Str(validate=validate.Length(min=3)),
-        'favorites_first': fields.Bool(missing=False)
-    })
-    def _process(self, args):
-        if not args:
-            raise BadRequest()
+    def _serialize_pending_user(self, entry):
+        first_name = entry.data.get('first_name') or ''
+        last_name = entry.data.get('last_name') or ''
+        full_name = '{} {}'.format(first_name, last_name).strip() or 'Unknown'
+        affiliation = entry.data.get('affiliation') or ''
+        email = entry.data['email'].lower()
+        ext_id = '{}:{}'.format(entry.provider.name, entry.identifier)
+        # detailed data to put in redis to create a pending user if needed
+        self.externals[ext_id] = {
+            'first_name': first_name,
+            'last_name': last_name,
+            'email': email,
+            'affiliation': affiliation,
+            'phone': entry.data.get('phone') or '',
+            'address': entry.data.get('address') or '',
+        }
+        # simple data for the search results
+        return {
+            '_ext_id': ext_id,
+            'id': None,
+            'identifier': 'ExternalUser:{}'.format(ext_id),
+            'email': email,
+            'affiliation': affiliation,
+            'full_name': full_name,
+        }
 
-        favorites_first = args.pop('favorites_first')
-        query = build_user_search_query(args, favorites_first=favorites_first)
-        return jsonify(user_schema.dump(query.limit(10).all(), many=True))
+    def _serialize_entry(self, entry):
+        if isinstance(entry, User):
+            return search_result_schema.dump(entry)
+        else:
+            return self._serialize_pending_user(entry)
+
+    def _process_pending_users(self, results):
+        cache = GenericCache('external-user')
+        for entry in results:
+            ext_id = entry.pop('_ext_id', None)
+            if ext_id is not None:
+                cache.set(ext_id, self.externals[ext_id], 86400)
+
+    @use_kwargs({
+        'first_name': fields.Str(validate=validate.Length(min=1)),
+        'last_name': fields.Str(validate=validate.Length(min=1)),
+        'email': fields.Str(validate=lambda s: len(s) > 3 and '@' in s),
+        'affiliation': fields.Str(validate=validate.Length(min=1)),
+        'exact': fields.Bool(missing=False),
+        'external': fields.Bool(missing=False),
+        'favorites_first': fields.Bool(missing=False)
+    }, validate=validate_with_message(
+        lambda args: args.viewkeys() & {'first_name', 'last_name', 'email', 'affiliation'},
+        'No criteria provided'
+    ))
+    def _process(self, exact, external, favorites_first, **criteria):
+        matches = search_users(exact=exact, include_pending=True, external=external, **criteria)
+        self.externals = {}
+        results = sorted((self._serialize_entry(entry) for entry in matches), key=itemgetter('full_name'))
+        if favorites_first:
+            favorites = {u.id for u in session.user.favorite_users}
+            results.sort(key=lambda x: x['id'] not in favorites)
+        total = len(results)
+        results = results[:10]
+        self._process_pending_users(results)
+        return jsonify(users=results, total=total)
+
+
+class RHUserSearchInfo(RHProtected):
+    def _process(self):
+        external_users_available = any(auth.supports_search for auth in multipass.identity_providers.itervalues())
+        return jsonify(external_users_available=external_users_available)

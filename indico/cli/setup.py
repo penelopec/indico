@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -41,6 +32,7 @@ from sqlalchemy.pool import NullPool
 from terminaltables import AsciiTable
 from werkzeug.urls import url_parse
 
+from indico.core.db.sqlalchemy.util.models import import_all_models
 from indico.util.console import cformat
 from indico.util.string import validate_email
 
@@ -189,6 +181,7 @@ def cli():
 @cli.command()
 def list_plugins():
     """Lists the available indico plugins."""
+    import_all_models()
     table_data = [['Name', 'Title']]
     for ep in sorted(iter_entry_points('indico.plugins'), key=attrgetter('name')):
         plugin = ep.load()
@@ -207,7 +200,7 @@ def create_symlinks(target_dir):
     updating Indico.
     """
     root_dir, target_dir = _get_dirs(target_dir)
-    _link(os.path.join(root_dir, 'htdocs'), os.path.join(target_dir, 'htdocs'))
+    _link(os.path.join(root_dir, 'web', 'static'), os.path.join(target_dir, 'static'))
     _copy(os.path.join(root_dir, 'web', 'indico.wsgi'), os.path.join(target_dir, 'indico.wsgi'), force=True)
 
 
@@ -354,6 +347,8 @@ class SetupWizard(object):
                 return False
             elif data.path not in ('', '/'):
                 _warn('It is recommended to run Indico on a subdomain instead of a subdirectory')
+                _warn('Unless you built your own indico package for the specified path, '
+                      'Indico will not work correctly!')
                 return False
             return True
 
@@ -603,7 +598,7 @@ class SetupWizard(object):
               os.path.join(self.config_dir_path, 'logging.yaml'))
 
         if not dev:
-            _link(os.path.join(package_root, 'htdocs'), os.path.join(self.data_root_path, 'web', 'htdocs'))
+            _link(os.path.join(package_root, 'web', 'static'), os.path.join(self.data_root_path, 'web', 'static'))
             _copy(os.path.join(package_root, 'web', 'indico.wsgi'),
                   os.path.join(self.data_root_path, 'web', 'indico.wsgi'),
                   force=True)

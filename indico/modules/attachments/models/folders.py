@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -25,7 +16,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import joinedload
 
 from indico.core.db import db
-from indico.core.db.sqlalchemy.links import LinkMixin
+from indico.core.db.sqlalchemy.links import LinkMixin, LinkType
 from indico.core.db.sqlalchemy.protection import ProtectionMixin, ProtectionMode
 from indico.core.db.sqlalchemy.util.models import auto_table_args
 from indico.modules.attachments.models.attachments import Attachment
@@ -38,6 +29,7 @@ from indico.util.string import return_ascii
 
 class AttachmentFolder(LinkMixin, ProtectionMixin, db.Model):
     __tablename__ = 'folders'
+    allowed_link_types = LinkMixin.allowed_link_types - {LinkType.session_block}
     unique_links = 'is_default'
     events_backref_name = 'all_attachment_folders'
     link_backref_name = 'attachment_folders'

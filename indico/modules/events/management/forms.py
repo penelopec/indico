@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -25,6 +16,7 @@ from markupsafe import escape
 from pytz import timezone
 from werkzeug.datastructures import ImmutableMultiDict
 from wtforms import BooleanField, FloatField, SelectField, StringField, TextAreaField
+from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from wtforms.fields.html5 import IntegerField
 from wtforms.validators import DataRequired, InputRequired, NumberRange, Optional, ValidationError
 
@@ -39,7 +31,8 @@ from indico.modules.events import Event, LegacyEventMapping
 from indico.modules.events.cloning import EventCloner
 from indico.modules.events.fields import EventPersonLinkListField, ReferencesField
 from indico.modules.events.models.events import EventType
-from indico.modules.events.models.references import EventReference
+from indico.modules.events.models.labels import EventLabel
+from indico.modules.events.models.references import EventReference, ReferenceType
 from indico.modules.events.sessions import COORDINATOR_PRIV_DESCS, COORDINATOR_PRIV_TITLES
 from indico.modules.events.timetable.util import get_top_level_entries
 from indico.modules.events.util import check_permissions
@@ -216,12 +209,20 @@ class EventContactInfoForm(IndicoForm):
 class EventClassificationForm(IndicoForm):
     keywords = IndicoTagListField(_('Keywords'))
     references = ReferencesField(_('External IDs'), reference_class=EventReference)
+    label = QuerySelectField(_('Label'), allow_blank=True, get_label='title')
+    label_message = TextAreaField(_('Label message'),
+                                  description=_('You can optionally provide a message that is shown when hovering '
+                                                'the selected label.'))
 
     def __init__(self, *args, **kwargs):
         event = kwargs.pop('event')
         super(EventClassificationForm, self).__init__(*args, **kwargs)
-        if event.type_ != EventType.meeting:
+        if event.type_ != EventType.meeting or not ReferenceType.query.has_rows():
             del self.references
+        self.label.query = EventLabel.query.order_by(db.func.lower(EventLabel.title))
+        if not self.label.query.has_rows():
+            del self.label
+            del self.label_message
 
 
 class EventProtectionForm(IndicoForm):
@@ -284,7 +285,7 @@ class PosterPrintingForm(IndicoForm):
     template = SelectField(_('Template'))
     margin_horizontal = FloatField(_('Horizontal margins'), [InputRequired()], default=0)
     margin_vertical = FloatField(_('Vertical margins'), [InputRequired()], default=0)
-    page_size = IndicoEnumSelectField(_('Page size'), enum=PageSize, default=PageSize.A4)
+    page_size = IndicoEnumSelectField(_('Page size'), enum=PageSize, default=PageSize.A4, sorted=True)
 
     def __init__(self, event, **kwargs):
         all_templates = set(event.designer_templates) | get_inherited_templates(event)
@@ -385,3 +386,10 @@ class CloneRepeatPatternForm(CloneRepeatUntilFormBase):
     week_day = IndicoWeekDayRepetitionField(_('Every'))
     num_months = IntegerField(_('Months'), [DataRequired(), NumberRange(min=1)], default=1,
                               description=_("Number of months between repetitions"))
+
+
+class ProgramCodesForm(IndicoForm):
+    session_template = StringField(_('Sessions'))
+    session_block_template = StringField(_('Session blocks'))
+    contribution_template = StringField(_('Contributions'))
+    subcontribution_template = StringField(_('Subcontributions'))

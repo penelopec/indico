@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -55,7 +46,8 @@ class BuildWithTranslations(build):
             json_file = os.path.join('indico/translations', locale, 'LC_MESSAGES', 'messages-react.json')
             if not os.path.exists(po_file):
                 continue
-            output = subprocess.check_output(['npx', 'react-jsx-i18n', 'compile', po_file])
+            with open(os.devnull, 'w') as devnull:
+                output = subprocess.check_output(['npx', 'react-jsx-i18n', 'compile', po_file], stderr=devnull)
             json.loads(output)  # just to be sure the JSON is valid
             with open(json_file, 'wb') as f:
                 f.write(output)
@@ -66,12 +58,18 @@ class BuildWithTranslations(build):
         build.run(self)
 
 
+cmdclass = {}
+if os.environ.get('READTHEDOCS') != 'True':
+    cmdclass = {'build': BuildWithTranslations}
+
+
 if __name__ == '__main__':
     setup(
         name='indico',
         version=get_version(),
-        cmdclass={'build': BuildWithTranslations},
+        cmdclass=cmdclass,
         description='Indico is a full-featured conference lifecycle management and meeting/lecture scheduling tool',
+        long_description_content_type='text/markdown',
         author='Indico Team',
         author_email='indico-team@cern.ch',
         url='https://getindico.io',
@@ -79,11 +77,16 @@ if __name__ == '__main__':
         long_description="Indico allows you to schedule conferences, from single talks to complex meetings with "
                          "sessions and contributions. It also includes an advanced user delegation mechanism, "
                          "allows paper reviewing, archival of conference information and electronic proceedings",
-        license='https://www.gnu.org/licenses/gpl-3.0.txt',
+        license='MIT',
         zip_safe=False,
         packages=find_packages(include=('indico', 'indico.*',)),
         include_package_data=True,
         install_requires=get_requirements(),
+        classifiers=[
+            'Environment :: Web Environment',
+            'License :: OSI Approved :: MIT License',
+            'Programming Language :: Python :: 2.7',
+        ],
         entry_points={
             'console_scripts': {'indico = indico.cli.core:cli'},
             'celery.commands': {'unlock = indico.core.celery.cli:UnlockCommand'},

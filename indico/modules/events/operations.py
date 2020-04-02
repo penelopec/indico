@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -23,8 +14,6 @@ from flask import session
 from indico.core import signals
 from indico.core.db import db
 from indico.core.db.sqlalchemy.util.session import no_autoflush
-from indico.core.permissions import (FULL_ACCESS_PERMISSION, READ_ACCESS_PERMISSION, get_available_permissions,
-                                     get_principal_permissions)
 from indico.modules.categories.util import get_visibility_options
 from indico.modules.events import Event, EventLogKind, EventLogRealm, logger
 from indico.modules.events.cloning import EventCloner
@@ -32,8 +21,8 @@ from indico.modules.events.features import features_event_settings
 from indico.modules.events.layout import layout_settings
 from indico.modules.events.logs.util import make_diff_log
 from indico.modules.events.models.events import EventType
+from indico.modules.events.models.labels import EventLabel
 from indico.modules.events.models.references import ReferenceType
-from indico.util.user import principal_from_fossil
 
 
 def create_reference_type(data):
@@ -64,8 +53,29 @@ def create_event_references(event, data):
         logger.info('Reference "%s" created by %s', reference, session.user)
 
 
+def create_event_label(data):
+    event_label = EventLabel()
+    event_label.populate_from_dict(data)
+    db.session.add(event_label)
+    db.session.flush()
+    logger.info('Event label "%s" created by %s', event_label, session.user)
+    return event_label
+
+
+def update_event_label(event_label, data):
+    event_label.populate_from_dict(data)
+    db.session.flush()
+    logger.info('Event label "%s" updated by %s', event_label, session.user)
+
+
+def delete_event_label(event_label):
+    db.session.delete(event_label)
+    db.session.flush()
+    logger.info('Event label "%s" deleted by %s', event_label, session.user)
+
+
 @no_autoflush
-def create_event(category, event_type, data, add_creator_as_manager=True, features=None):
+def create_event(category, event_type, data, add_creator_as_manager=True, features=None, cloning=False):
     """Create a new event.
 
     :param category: The category in which to create the event
@@ -77,10 +87,13 @@ def create_event(category, event_type, data, add_creator_as_manager=True, featur
                      event. If set, only those features will be used
                      and the default feature set for the event type
                      will be ignored.
+    :param cloning: Whether the event is created via cloning or not
     """
+    from indico.modules.rb.operations.bookings import create_booking_for_event
     event = Event(category=category, type_=event_type)
     data.setdefault('creator', session.user)
     theme = data.pop('theme', None)
+    create_booking = data.pop('create_booking', False)
     person_link_data = data.pop('person_link_data', {})
     event.populate_from_dict(data)
     db.session.flush()
@@ -93,10 +106,22 @@ def create_event(category, event_type, data, add_creator_as_manager=True, featur
     if features is not None:
         features_event_settings.set(event, 'enabled', features)
     db.session.flush()
-    signals.event.created.send(event)
+    signals.event.created.send(event, cloning=cloning)
     logger.info('Event %r created in %r by %r ', event, category, session.user)
     event.log(EventLogRealm.event, EventLogKind.positive, 'Event', 'Event created', session.user)
     db.session.flush()
+    if create_booking:
+        room_id = data['location_data'].pop('room_id', None)
+        if room_id:
+            booking = create_booking_for_event(room_id, event)
+            if booking:
+                logger.info('Booking %r created for event %r', booking, event)
+                log_data = {'Room': booking.room.full_name,
+                            'Date': booking.start_dt.strftime('%d/%m/%Y'),
+                            'Times': '%s - %s' % (booking.start_dt.strftime('%H:%M'), booking.end_dt.strftime('%H:%M'))}
+                event.log(EventLogRealm.event, EventLogKind.positive, 'Event', 'Room booked for the event',
+                          session.user, data=log_data)
+                db.session.flush()
     return event
 
 
@@ -104,14 +129,17 @@ def update_event(event, update_timetable=False, **data):
     assert set(data.viewkeys()) <= {'title', 'description', 'url_shortcut', 'location_data', 'keywords',
                                     'person_link_data', 'start_dt', 'end_dt', 'timezone', 'keywords', 'references',
                                     'organizer_info', 'additional_info', 'contact_title', 'contact_emails',
-                                    'contact_phones', 'start_dt_override', 'end_dt_override'}
+                                    'contact_phones', 'start_dt_override', 'end_dt_override', 'label', 'label_message'}
     old_person_links = event.person_links[:]
+    changes = {}
     if (update_timetable or event.type == EventType.lecture) and 'start_dt' in data:
         # Lectures have no exposed timetable so if we have any timetable entries
         # (e.g. because the event had a different type before) we always update them
         # silently.
-        event.move_start_dt(data.pop('start_dt'))
-    changes = event.populate_from_dict(data)
+        start_dt = data.pop('start_dt')
+        changes['start_dt'] = (event.start_dt, start_dt)
+        event.move_start_dt(start_dt)
+    changes.update(event.populate_from_dict(data))
     # Person links are partially updated when the WTForms field is processed,
     # we we don't have proper change tracking there in some cases
     changes.pop('person_link_data', None)
@@ -143,7 +171,7 @@ def clone_event(event, start_dt, cloners, category=None):
     }
     new_event = create_event(category or event.category, event.type_, data,
                              features=features_event_settings.get(event, 'enabled'),
-                             add_creator_as_manager=False)
+                             add_creator_as_manager=False, cloning=True)
 
     # Run the modular cloning system
     EventCloner.run_cloners(event, new_event, cloners)
@@ -183,6 +211,8 @@ def _log_event_update(event, changes, visible_person_link_changes=False):
         'contact_title': {'title': 'Contact/Support title', 'type': 'string'},
         'contact_emails': 'Contact emails',
         'contact_phones': 'Contact phone numbers',
+        'label': {'title': 'Label', 'type': 'string', 'attr': 'title'},
+        'label_message': 'Label message'
     }
     _split_location_changes(changes)
     if not visible_person_link_changes:
@@ -320,59 +350,3 @@ def sort_reviewing_questions(questions, new_positions):
         field.position = index
     db.session.flush()
     logger.info("Reviewing questions of %r reordered by %r", questions[0].event, session.user)
-
-
-def update_permissions(obj, form):
-    event = obj if isinstance(obj, Event) else obj.event
-    current_principal_permissions = {p.principal: get_principal_permissions(p, obj.__class__)
-                                     for p in obj.acl_entries}
-    current_principal_permissions = {k: v for k, v in current_principal_permissions.iteritems() if v}
-    new_principal_permissions = {
-        principal_from_fossil(fossil, allow_emails=True, allow_networks=True, event=event): set(permissions)
-        for fossil, permissions in form.permissions.data
-    }
-    update_principals_permissions(obj, current_principal_permissions, new_principal_permissions)
-
-
-def get_split_permissions(permissions):
-    full_access_permission = FULL_ACCESS_PERMISSION in permissions
-    read_access_permission = READ_ACCESS_PERMISSION in permissions
-    other_permissions = permissions - {FULL_ACCESS_PERMISSION, READ_ACCESS_PERMISSION}
-    return full_access_permission, read_access_permission, other_permissions
-
-
-def update_principals_permissions(obj, current, new):
-    """Handle the updates of permissions and creations/deletions of acl principals.
-    :param obj: The object to update. Must have ``acl_entries``
-    :param current: A dict mapping principals to a set with its current permissions
-    :param new: A dict mapping principals to a set with its new permissions
-    """
-    user_selectable_permissions = {v.name for k, v in get_available_permissions(obj.__class__).viewitems()
-                                   if v.user_selectable}
-    for principal, permissions in current.viewitems():
-        if principal not in new:
-            permissions_kwargs = {
-                'full_access': False,
-                'read_access': False,
-                'del_permissions': user_selectable_permissions
-            }
-            obj.update_principal(principal, **permissions_kwargs)
-        elif permissions != new[principal]:
-            full_access, read_access, permissions = get_split_permissions(new[principal])
-            all_user_permissions = [set(entry.permissions) for entry in obj.acl_entries
-                                    if entry.principal == principal][0]
-            permissions_kwargs = {
-                'full_access': full_access,
-                'read_access': read_access,
-                'permissions': (all_user_permissions - user_selectable_permissions) | permissions
-            }
-            obj.update_principal(principal, **permissions_kwargs)
-    new_principals = set(new) - set(current)
-    for p in new_principals:
-        full_access, read_access, permissions = get_split_permissions(new[p])
-        permissions_kwargs = {
-            'full_access': full_access,
-            'read_access': read_access,
-            'add_permissions': permissions & user_selectable_permissions
-        }
-        obj.update_principal(p, **permissions_kwargs)

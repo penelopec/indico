@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -114,17 +105,17 @@ def test_import_contributions_errors(db, dummy_event):
     dummy_event.end_dt = original_end_dt
 
     e = _check_importer_exception(dummy_event, b',,Test,,,,,')
-    assert 'malformed' in e.message
-    assert 'Row 1' in e.message
+    assert 'malformed' in str(e)
+    assert 'Row 1' in str(e)
 
     e = _check_importer_exception(dummy_event, b',,,,,,')
-    assert 'title' in e.message
+    assert 'title' in str(e)
 
     e = _check_importer_exception(dummy_event, b'2010-23-02T00:00:00,,Test,,,,')
-    assert 'parse date' in e.message
+    assert 'parse date' in str(e)
 
     e = _check_importer_exception(dummy_event, b'2010-02-23T00:00:00,15min,Test,,,,')
-    assert 'parse duration' in e.message
+    assert 'parse duration' in str(e)
 
     e = _check_importer_exception(dummy_event, b'2010-02-23T00:00:00,15,Test,Test,Test,Test,foobar')
-    assert 'invalid email' in e.message
+    assert 'invalid email' in str(e)

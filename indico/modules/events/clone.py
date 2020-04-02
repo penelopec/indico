@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -29,9 +20,12 @@ from indico.util.i18n import _
 
 class EventLocationCloner(EventCloner):
     name = 'event_location'
-    friendly_name = _('Location')
-    is_internal = True
+    friendly_name = _('Venue/Room')
     is_default = True
+
+    @property
+    def is_available(self):
+        return self.old_event.has_location_info
 
     def run(self, new_event, cloners, shared_data):
         with db.session.no_autoflush:
@@ -102,8 +96,10 @@ class EventProtectionCloner(EventCloner):
     name = 'event_protection'
     friendly_name = _('ACLs and protection settings')
     is_default = True
+    uses = {'event_roles'}
 
     def run(self, new_event, cloners, shared_data):
+        self._event_role_map = shared_data['event_roles']['event_role_map'] if 'event_roles' in cloners else None
         with db.session.no_autoflush:
             self._clone_protection(new_event)
             self._clone_session_coordinator_privs(new_event)
@@ -126,4 +122,4 @@ class EventProtectionCloner(EventCloner):
         })
 
     def _clone_acl(self, new_event):
-        new_event.acl_entries = clone_principals(EventPrincipal, self.old_event.acl_entries)
+        new_event.acl_entries = clone_principals(EventPrincipal, self.old_event.acl_entries, self._event_role_map)

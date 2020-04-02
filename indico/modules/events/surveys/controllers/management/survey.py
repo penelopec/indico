@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -153,8 +144,6 @@ class RHOpenSurvey(RHManageSurveyBase):
 class RHSendSurveyLinks(RHManageSurveyBase):
     """Send emails with URL of the survey"""
 
-    NOT_SANITIZED_FIELDS = {'from_address'}
-
     def _process(self):
         tpl = get_template_module('events/surveys/emails/survey_link_email.html', event=self.event)
         form = InvitationForm(body=tpl.get_html_body(), subject=tpl.get_subject(), event=self.event)
@@ -173,6 +162,6 @@ class RHSendSurveyLinks(RHManageSurveyBase):
                                                  survey=self.survey)
             tpl = get_template_module('emails/custom.html', subject=email_subject, body=email_body)
             bcc = [session.user.email] if form.copy_for_sender.data else []
-            email = make_email(to_list=recipient,  bcc_list=bcc, from_address=form.from_address.data,
+            email = make_email(to_list=recipient, bcc_list=bcc, from_address=form.from_address.data,
                                template=tpl, html=True)
             send_email(email, self.event, 'Surveys')

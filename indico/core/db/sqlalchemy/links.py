@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -26,24 +17,31 @@ from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from indico.core.db import db
 from indico.core.db.sqlalchemy import PyIntEnum
 from indico.util.decorators import strict_classproperty
-from indico.util.struct.enum import IndicoEnum
+from indico.util.i18n import _
+from indico.util.struct.enum import RichIntEnum
 
 
-class LinkType(int, IndicoEnum):
+class LinkType(RichIntEnum):
+    __titles__ = (None, _('Category'), _('Event'), _('Contribution'), _('Subcontribution'), _('Session'),
+                  _('Session block'))
+
     category = 1
     event = 2
     contribution = 3
     subcontribution = 4
     session = 5
+    session_block = 6
 
 
-_all_columns = {'category_id', 'linked_event_id', 'contribution_id', 'subcontribution_id', 'session_id'}
+_all_columns = {'category_id', 'linked_event_id', 'contribution_id', 'subcontribution_id', 'session_id',
+                'session_block_id'}
 _columns_for_types = {
     LinkType.category: {'category_id'},
     LinkType.event: {'linked_event_id'},
     LinkType.contribution: {'contribution_id'},
     LinkType.subcontribution: {'subcontribution_id'},
     LinkType.session: {'session_id'},
+    LinkType.session_block: {'session_block_id'},
 }
 
 
@@ -103,6 +101,7 @@ class LinkMixin(object):
         this mixin class.
         """
         event_mapping = {cls.session: lambda x: x.event,
+                         cls.session_block: lambda x: x.event,
                          cls.contribution: lambda x: x.event,
                          cls.subcontribution: lambda x: x.contribution.event,
                          cls.linked_event: lambda x: x}
@@ -110,6 +109,7 @@ class LinkMixin(object):
         type_mapping = {cls.category: LinkType.category,
                         cls.linked_event: LinkType.event,
                         cls.session: LinkType.session,
+                        cls.session_block: LinkType.session_block,
                         cls.contribution: LinkType.contribution,
                         cls.subcontribution: LinkType.subcontribution}
 
@@ -173,6 +173,16 @@ class LinkMixin(object):
             return db.Column(
                 db.Integer,
                 db.ForeignKey('events.sessions.id'),
+                nullable=True,
+                index=True
+            )
+
+    @declared_attr
+    def session_block_id(cls):
+        if LinkType.session_block in cls.allowed_link_types:
+            return db.Column(
+                db.Integer,
+                db.ForeignKey('events.session_blocks.id'),
                 nullable=True,
                 index=True
             )
@@ -253,6 +263,20 @@ class LinkMixin(object):
             )
 
     @declared_attr
+    def session_block(cls):
+        if LinkType.session_block in cls.allowed_link_types:
+            return db.relationship(
+                'SessionBlock',
+                lazy=True,
+                backref=db.backref(
+                    cls.link_backref_name,
+                    cascade='all, delete-orphan',
+                    uselist=(cls.unique_links != True),  # noqa
+                    lazy=cls.link_backref_lazy
+                )
+            )
+
+    @declared_attr
     def contribution(cls):
         if LinkType.contribution in cls.allowed_link_types:
             return db.relationship(
@@ -288,6 +312,8 @@ class LinkMixin(object):
             return self.event
         elif self.link_type == LinkType.session:
             return self.session
+        elif self.link_type == LinkType.session_block:
+            return self.session_block
         elif self.link_type == LinkType.contribution:
             return self.contribution
         elif self.link_type == LinkType.subcontribution:
@@ -296,13 +322,16 @@ class LinkMixin(object):
     @object.setter
     def object(self, obj):
         self.category = None
-        self.linked_event = self.event = self.session = self.contribution = self.subcontribution = None
+        self.linked_event = self.event = self.session = self.session_block = None
+        self.contribution = self.subcontribution = None
         if isinstance(obj, db.m.Category):
             self.category = obj
         elif isinstance(obj, db.m.Event):
             self.linked_event = obj
         elif isinstance(obj, db.m.Session):
             self.session = obj
+        elif isinstance(obj, db.m.SessionBlock):
+            self.session_block = obj
         elif isinstance(obj, db.m.Contribution):
             self.contribution = obj
         elif isinstance(obj, db.m.SubContribution):
@@ -333,6 +362,8 @@ class LinkMixin(object):
         data = {}
         if self.link_type == LinkType.session:
             data['Session'] = self.session.title
+        if self.link_type == LinkType.session_block:
+            data['Session Block'] = self.session_block.title
         elif self.link_type == LinkType.contribution:
             data['Contribution'] = self.contribution.title
         elif self.link_type == LinkType.subcontribution:
@@ -359,6 +390,9 @@ class LinkedObjectComparator(Comparator):
         elif isinstance(other, db.m.Session):
             return db.and_(self.cls.link_type == LinkType.session,
                            self.cls.session_id == other.id)
+        elif isinstance(other, db.m.SessionBlock):
+            return db.and_(self.cls.link_type == LinkType.session_block,
+                           self.cls.session_block_id == other.id)
         elif isinstance(other, db.m.Contribution):
             return db.and_(self.cls.link_type == LinkType.contribution,
                            self.cls.contribution_id == other.id)

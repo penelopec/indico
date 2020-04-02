@@ -1,39 +1,29 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import absolute_import, unicode_literals
 
 import inspect
 import os
+import re
 import time
+import unicodedata
 from importlib import import_module
 
 from flask import Blueprint, current_app, g, redirect, request
 from flask import send_file as _send_file
 from flask import url_for as _url_for
 from flask.helpers import get_root_path
-from werkzeug.datastructures import FileStorage, Headers
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.routing import BaseConverter, BuildError, RequestRedirect, UnicodeConverter
-from werkzeug.urls import url_parse
-from werkzeug.wrappers import Response as WerkzeugResponse
+from werkzeug.urls import url_parse, url_quote
 
 from indico.core.config import config
 from indico.util.caching import memoize
-from indico.util.fs import secure_filename
 from indico.util.locators import get_locator
 from indico.web.util import jsonify_data
 
@@ -76,29 +66,6 @@ def discover_blueprints():
             else:
                 blueprints.add(obj)
     return blueprints, compat_blueprints
-
-
-def _convert_request_value(x):
-    if isinstance(x, unicode):
-        return x.encode('utf-8')
-    elif isinstance(x, FileStorage):
-        return x
-    raise TypeError('Unexpected item in request data: %s' % type(x))
-
-
-def create_flat_args():
-    """Creates a dict containing the GET/POST arguments in a style old indico code expects.
-
-    Do not use this for anything new - use request.* directly instead!"""
-    args = request.args.copy()
-    for key, values in request.form.iterlists():
-        args.setlist(key, values)
-    for key, values in request.files.iterlists():
-        args.setlist(key, values)
-    flat_args = {}
-    for key, item in args.iterlists():
-        flat_args[key] = map(_convert_request_value, item) if len(item) > 1 else _convert_request_value(item[0])
-    return flat_args
 
 
 @memoize
@@ -238,7 +205,7 @@ def url_rule_to_js(endpoint):
                 ],
                 'converters': dict((key, type(converter).__name__)
                                    for key, converter in rule._converters.iteritems()
-                                   if type(converter) is not UnicodeConverter)
+                                   if not isinstance(converter, UnicodeConverter))
             } for rule in current_app.url_map.iter_rules(endpoint)
         ]
     }
@@ -270,6 +237,19 @@ def _is_office_mimetype(mimetype):
     return False
 
 
+# taken from flask's send_file code
+def make_content_disposition_args(attachment_filename):
+    try:
+        attachment_filename = attachment_filename.encode('ascii')
+    except UnicodeEncodeError:
+        return {
+            'filename': unicodedata.normalize('NFKD', attachment_filename).encode('ascii', 'ignore'),
+            'filename*': "UTF-8''%s" % url_quote(attachment_filename, safe=b''),
+        }
+    else:
+        return {'filename': attachment_filename}
+
+
 def send_file(name, path_or_fd, mimetype, last_modified=None, no_cache=True, inline=None, conditional=False, safe=True,
               **kwargs):
     """Sends a file to the user.
@@ -288,7 +268,7 @@ def send_file(name, path_or_fd, mimetype, last_modified=None, no_cache=True, inl
     text/html mimetypes
     """
 
-    name = secure_filename(name, 'file')
+    name = re.sub(r'\s+', ' ', name).strip()  # get rid of crap like linebreaks
     assert '/' in mimetype
     if inline is None:
         inline = mimetype not in ('text/csv', 'text/xml', 'application/xml')
@@ -310,7 +290,7 @@ def send_file(name, path_or_fd, mimetype, last_modified=None, no_cache=True, inl
         rv.headers.add('Content-Security-Policy', "script-src 'self'; object-src 'self'")
     if inline:
         # send_file does not add this header if as_attachment is False
-        rv.headers.add('Content-Disposition', 'inline', filename=name)
+        rv.headers.add('Content-Disposition', 'inline', **make_content_disposition_args(name))
     if last_modified:
         if not isinstance(last_modified, int):
             last_modified = int(time.mktime(last_modified.timetuple()))
@@ -353,7 +333,7 @@ class ListConverter(BaseConverter):
 
     def __init__(self, map):
         BaseConverter.__init__(self, map)
-        self.regex = '\w+(?:-\w+)*'
+        self.regex = r'\w+(?:-\w+)*'
 
     def to_python(self, value):
         return value.split('-')
@@ -362,44 +342,6 @@ class ListConverter(BaseConverter):
         if isinstance(value, (list, tuple, set)):
             value = '-'.join(value)
         return super(ListConverter, self).to_url(value)
-
-
-class ResponseUtil(object):
-    """This class allows "modifying" a Response object before it is actually created.
-
-    The purpose of this is to allow e.g. an Indico RH to trigger a redirect but revoke
-    it later in case of an error or to simply have something to pass around to functions
-    which want to modify headers while there is no response available.
-    """
-
-    def __init__(self):
-        self.headers = Headers()
-        self.status = 200
-        self.content_type = None
-
-    @property
-    def modified(self):
-        return bool(self.headers) or self.status != 200 or self.content_type
-
-    def make_empty(self):
-        return self.make_response('')
-
-    def make_response(self, res):
-        if isinstance(res, (current_app.response_class, WerkzeugResponse, tuple)):
-            if self.modified:
-                # If we receive a response - most likely one created by send_file - we do not allow any
-                # external modifications.
-                raise Exception('Cannot combine response object with custom modifications')
-            return res
-
-        # Return a plain string if that's all we have
-        if not res and not self.modified:
-            return ''
-
-        res = current_app.make_response((res, self.status, self.headers))
-        if self.content_type:
-            res.content_type = self.content_type
-        return res
 
 
 class XAccelMiddleware(object):

@@ -1,82 +1,128 @@
-/* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
- *
- * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
- */
+// This file is part of Indico.
+// Copyright (C) 2002 - 2020 CERN
+//
+// Indico is free software; you can redistribute it and/or
+// modify it under the terms of the MIT License; see the
+// LICENSE file for more details.
 
-/* global setupListGenerator:false, setupTableSorter:false, setupSearchBox:false */
+/* global setupListGenerator:false, setupTableSorter:false, setupSearchBox:false, enableIfChecked:false */
 
 import 'indico/modules/events/reviews';
 
+import setupReactPaperTimeline from './setup';
+
 (function(global) {
-    'use strict';
+  'use strict';
 
-    global.setupPaperAssignmentList = function setupPaperAssignmentList() {
-        var filterConfig = {
-            itemHandle: 'tr',
-            listItems: '#assignment-list tbody tr',
-            term: '#search-input',
-            state: '#filtering-state',
-            placeholder: '#filter-placeholder'
-        };
-
-        setupTableSorter('#assignment-list .tablesorter');
-        enableIfChecked('#assignment-list', 'input[name=contribution_id]', '.js-enable-if-checked');
-        setupListGenerator(filterConfig);
+  global.setupPaperAssignmentList = function setupPaperAssignmentList() {
+    const filterConfig = {
+      itemHandle: 'tr',
+      listItems: '#assignment-list tbody tr',
+      term: '#search-input',
+      state: '#filtering-state',
+      placeholder: '#filter-placeholder',
     };
 
-    global.setupReviewingAreaList = function setupReviewingAreaList(options) {
-        options = $.extend({
-            hasPapers: false
-        }, options);
+    setupTableSorter('#assignment-list .tablesorter');
+    enableIfChecked('#assignment-list', 'input[name=contribution_id]', '.js-enable-if-checked');
+    setupListGenerator(filterConfig);
+  };
 
-        if (options.hasPapers) {
-            var filterConfig = {
-                itemHandle: 'div.contribution-row'
-            };
-            if (options.list === 'to-review') {
-                filterConfig = $.extend({
-                    listItems: '#to-review-list div.contribution-row',
-                    term: '#search-input-to-review',
-                    state: '#filtering-state-to-review',
-                    placeholder: '#filter-placeholder-to-review'
-                }, filterConfig);
-            } else {
-                filterConfig = $.extend({
-                    listItems: '#reviewed-list div.contribution-row',
-                    term: '#search-input-reviewed',
-                    state: '#filtering-state-reviewed',
-                    placeholder: '#filter-placeholder-reviewed'
-                }, filterConfig);
-            }
-            var applySearchFilters = setupSearchBox(filterConfig);
-            applySearchFilters();
-        }
-    };
+  global.setupReviewingAreaList = function setupReviewingAreaList(options) {
+    options = $.extend(
+      {
+        hasPapers: false,
+      },
+      options
+    );
 
-    global.setupCallForPapersPage = function setupCallForPapersPage(options) {
-        if (options.hasPapers) {
-            var filterConfig = {
-                itemHandle: 'div.contribution-row',
-                listItems: 'div.paper-contribution-list div.contribution-row',
-                term: '#search-input',
-                state: '#filtering-state',
-                placeholder: '#filter-placeholder'
-            };
+    if (options.hasPapers) {
+      let filterConfig = {
+        itemHandle: 'div.contribution-row',
+      };
+      if (options.list === 'to-review') {
+        filterConfig = $.extend(
+          {
+            listItems: '#to-review-list div.contribution-row',
+            term: '#search-input-to-review',
+            state: '#filtering-state-to-review',
+            placeholder: '#filter-placeholder-to-review',
+          },
+          filterConfig
+        );
+      } else {
+        filterConfig = $.extend(
+          {
+            listItems: '#reviewed-list div.contribution-row',
+            term: '#search-input-reviewed',
+            state: '#filtering-state-reviewed',
+            placeholder: '#filter-placeholder-reviewed',
+          },
+          filterConfig
+        );
+      }
+      const applySearchFilters = setupSearchBox(filterConfig);
+      applySearchFilters();
+    }
+  };
 
-            var applySearchFilters = setupSearchBox(filterConfig);
-            applySearchFilters();
-        }
-    };
+  global.setupCallForPapersPage = function setupCallForPapersPage(options) {
+    if (options.hasPapers) {
+      const filterConfig = {
+        itemHandle: 'div.contribution-row',
+        listItems: 'div.paper-contribution-list div.contribution-row',
+        term: '#search-input',
+        state: '#filtering-state',
+        placeholder: '#filter-placeholder',
+      };
+
+      const applySearchFilters = setupSearchBox(filterConfig);
+      applySearchFilters();
+    }
+  };
+
+  global.setupConflictsList = function setupConflictsList() {
+    const $conflictListTooltip = $('.js-assign-dialog .name-column .affiliation > span');
+    $conflictListTooltip.qbubble({
+      show: {
+        event: 'mouseover',
+      },
+      hide: {
+        fixed: true,
+        delay: 100,
+        event: 'mouseleave',
+      },
+      position: {
+        my: 'left center',
+        at: 'right center',
+      },
+      content: {
+        text() {
+          const $this = $(this);
+          const html = $('<div>');
+          const title = $('<strong>', {text: $(this).data('title')});
+          html.append(title);
+          if ($this.is('.js-count-label')) {
+            const list = $('<ul>', {class: 'qbubble-item-list'});
+            const items = _.values($this.data('items'));
+            $.each(items, function(i, val) {
+              const item = $('<li>');
+              item.append(
+                $('<a>', {text: val[0], href: val[1]})
+                  .attr('target', '_blank')
+                  .attr('rel', 'noopener noreferrer')
+              );
+              list.append(item);
+            });
+            html.append(list);
+          }
+          return html;
+        },
+      },
+    });
+  };
 })(window);
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupReactPaperTimeline();
+});

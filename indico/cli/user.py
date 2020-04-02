@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import print_function, unicode_literals
 
@@ -39,6 +30,15 @@ def cli():
 
 
 def _print_user_info(user):
+    flags = []
+    if user.is_admin:
+        flags.append('%{yellow}admin%{reset}')
+    if user.is_blocked:
+        flags.append('%{red}blocked%{reset}')
+    if user.is_deleted:
+        flags.append('%{red!}deleted%{reset}')
+    if user.is_pending:
+        flags.append('%{cyan}pending%{reset}')
     print()
     print('User info:')
     print("  ID: {}".format(user.id))
@@ -46,6 +46,8 @@ def _print_user_info(user):
     print("  Family name: {}".format(user.last_name))
     print("  Email: {}".format(user.email))
     print("  Affiliation: {}".format(user.affiliation))
+    if flags:
+        print(cformat("  Flags: {}".format(', '.join(flags))))
     print()
 
 
@@ -113,7 +115,7 @@ def create(grant_admin):
         if email is None:
             return
         email = email.lower()
-        if not User.find(User.all_emails.contains(email), ~User.is_deleted, ~User.is_pending).count():
+        if not User.query.filter(User.all_emails == email, ~User.is_deleted, ~User.is_pending).has_rows():
             break
         print(cformat('%{red}Email already exists'))
     first_name = click.prompt("First name").strip()
@@ -175,3 +177,39 @@ def revoke_admin(user_id):
         user.is_admin = False
         db.session.commit()
         print(cformat("%{green}Administration rights revoked successfully"))
+
+
+@cli.command()
+@click.argument('user_id', type=int)
+def block(user_id):
+    """Blocks a given user"""
+    user = User.get(user_id)
+    if user is None:
+        print(cformat("%{red}This user does not exist"))
+        return
+    _print_user_info(user)
+    if user.is_blocked:
+        print(cformat("%{yellow}This user is already blocked"))
+        return
+    if click.confirm(cformat("%{yellow}Block this user?")):
+        user.is_blocked = True
+        db.session.commit()
+        print(cformat("%{green}Successfully blocked user"))
+
+
+@cli.command()
+@click.argument('user_id', type=int)
+def unblock(user_id):
+    """Unblocks a given user"""
+    user = User.get(user_id)
+    if user is None:
+        print(cformat("%{red}This user does not exist"))
+        return
+    _print_user_info(user)
+    if not user.is_blocked:
+        print(cformat("%{yellow}This user is not blocked"))
+        return
+    if click.confirm(cformat("%{yellow}Unblock this user?")):
+        user.is_blocked = False
+        db.session.commit()
+        print(cformat("%{green}Successfully unblocked user"))

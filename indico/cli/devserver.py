@@ -1,30 +1,21 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 
 import os
 
 from flask.cli import DispatchingApp
-from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.debug import DebuggedApplication
 from werkzeug.exceptions import NotFound
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.serving import WSGIRequestHandler, run_simple
 from werkzeug.urls import url_parse
-from werkzeug.wsgi import DispatcherMiddleware
 
 
 def run_cmd(info, host, port, url, ssl, ssl_key, ssl_cert, quiet, proxy, enable_evalex, evalex_from, reloader_type):
@@ -53,17 +44,18 @@ def run_cmd(info, host, port, url, ssl, ssl_key, ssl_cert, quiet, proxy, enable_
         else:
             url = '{}://{}:{}'.format(proto, url_host, port)
 
+    os.environ['INDICO_DEV_SERVER'] = '1'
     os.environ.pop('FLASK_DEBUG', None)
     os.environ['INDICO_CONF_OVERRIDE'] = repr({
         'BASE_URL': url,
     })
 
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        print ' * Serving Indico on {}'.format(url)
+        print(' * Serving Indico on {}'.format(url))
         if evalex_whitelist:
-            print ' * Werkzeug debugger console on {}/console'.format(url)
+            print(' * Werkzeug debugger console on {}/console'.format(url))
             if evalex_whitelist is True:  # noqa
-                print ' * Werkzeug debugger console is available to all clients!'
+                print(' * Werkzeug debugger console is available to all clients!')
 
     try:
         from indico.core.config import get_config_path
@@ -109,7 +101,7 @@ def _make_wsgi_app(info, url, evalex_whitelist, proxy):
     app = DebuggedIndico(app, evalex_whitelist)
     app = _make_indico_dispatcher(app, url_data.path)
     if proxy:
-        app = ProxyFix(app)
+        app = ProxyFix(app, x_for=1, x_proto=1, x_host=1)
     QuietWSGIRequestHandler.INDICO_URL_PREFIX = url_data.path.rstrip('/')
     return app
 

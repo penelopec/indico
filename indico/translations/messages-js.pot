@@ -1,2292 +1,1948 @@
 # Translations template for indico.
-# Copyright (C) 2018 ORGANIZATION
+# Copyright (C) 2020 ORGANIZATION
 # This file is distributed under the same license as the indico project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: indico 2.1.2-dev\n"
+"Project-Id-Version: indico 2.2.7-dev\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2018-05-31 12:02+0200\n"
+"POT-Creation-Date: 2020-03-20 12:25+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.5.3\n"
+"Generated-By: Babel 2.7.0\n"
 
-#: indico/htdocs/js/indico/Common/Export.js:65
-msgid "Would you like to export private information to your calendar?"
+#: indico/modules/attachments/client/js/index.js:154
+msgid "This file no longer exists. Please reload the page."
 msgstr ""
 
-#: indico/htdocs/js/indico/Common/Export.js:206
-msgid "Would you like to create a persistent URL for use with your calendaring application?"
+#: indico/modules/attachments/client/js/index.js:160
+msgid "You are not authorized to access this file."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Base.js:72 indico/htdocs/js/indico/jquery/ajaxqbubble.js:30
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:714
-msgid "Loading..."
+#: indico/modules/attachments/client/js/index.js:160 indico/modules/attachments/client/js/index.js:163
+msgid "Access Denied"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Popup.js:231
-msgid "OK"
+#: indico/modules/attachments/client/js/index.js:162
+msgid "This file is protected. You will be redirected to the login page."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Popup.js:328
-msgid "Reason: "
+#: indico/modules/attachments/client/js/index.js:230
+msgid "Manage material"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Popup.js:358 indico/htdocs/js/indico/Core/Dialogs/PopupWidgets.js:29
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:744 indico/htdocs/js/indico/Core/Dialogs/Users.js:890
-#: indico/htdocs/js/indico/Management/RoomBookingMapOfRooms.js:76 indico/htdocs/js/indico/angular/directives.js:78
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:559
-#: indico/htdocs/js/indico/widgets/multiple_items_widget.js:47
-msgid "Cancel"
+#: indico/modules/categories/client/js/calendar.js:24
+msgid "Today"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/PopupWidgets.js:26 indico/htdocs/js/indico/Core/Dialogs/Users.js:740
-msgid "Choose"
+#: indico/modules/categories/client/js/calendar.js:50
+msgid "Events happening on {0}"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/PopupWidgets.js:37
-msgid "Invalid date range"
+#: indico/modules/categories/client/js/calendar.js:62
+msgid "{0} long-lasting event not shown"
+msgid_plural "{0} long-lasting events not shown"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/calendar.js:72
+msgid "Long lasting events"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/PopupWidgets.js:37
-msgid "The selected date range is invalid."
+#: indico/modules/categories/client/js/display.js:23
+msgid "empty"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:34
-msgid "Remove from your list of favorite users"
+#: indico/modules/categories/client/js/display.js:24 indico/web/client/js/jquery/widgets/categorynavigator.js:298
+msgid "{0} event"
+msgid_plural "{0} events"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/display.js:153
+msgid "Remove from your favourites"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:34
-msgid "Add to your list of favorite users"
+#: indico/modules/categories/client/js/display.js:156
+msgid "Add to your favourites"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:108
-msgid "This person exists in the event"
+#: indico/modules/categories/client/js/display.js:158
+msgid "This will make events in this category visible on your <a href=\"{0}\">Dashboard</a>."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:176
-msgid "Users with no Indico account"
+#: indico/modules/categories/client/js/management.js:49 indico/modules/events/management/client/js/index.js:280
+msgid "Undo"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:202 indico/htdocs/js/indico/jquery/categorynavigator.js:150
-msgid "Search"
+#: indico/modules/categories/client/js/management.js:51
+msgid "The category order has been restored."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:215
-msgid "Grant all selected users submission rights"
+#: indico/modules/categories/client/js/management.js:53
+msgid "The category list has been sorted."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:234
-msgid "You can use the form above to search for users..."
+#: indico/modules/categories/client/js/management.js:171
+msgid "Delete category"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:276
-msgid "Family name"
+#: indico/modules/categories/client/js/management.js:175
+msgid "This category cannot be deleted because it is not empty."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:277
-msgid "First name"
+#: indico/modules/categories/client/js/management.js:183
+msgid "At least one selected category cannot be deleted because it is not empty."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:278
-msgid "E-mail"
+#: indico/modules/categories/client/js/management.js:188
+msgid "Delete the selected category"
+msgid_plural "Delete {0} selected categories"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/management.js:196
+msgid "Select the categories to delete first."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:279
-msgid "Organisation"
+#: indico/modules/categories/client/js/management.js:205
+msgid "Delete categories"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:280 indico/htdocs/js/indico/Core/Dialogs/Users.js:374
-msgid "Exact Match"
+#: indico/modules/categories/client/js/management.js:225
+msgid "Move the selected category"
+msgid_plural "Move the {0} selected categories"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/management.js:232
+msgid "Select the categories to move first."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:310 indico/htdocs/js/indico/Core/Dialogs/Users.js:394
-msgid "No results for this search..."
+#: indico/modules/categories/client/js/management.js:291 indico/modules/vc/client/js/index.js:54
+#: indico/web/client/js/jquery/utils/forms.js:388
+msgid "*"
+msgid_plural "All {0} events in this category are currently selected."
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/management.js:296
+msgid "Only {0} out of {1} events is currently selected."
+msgid_plural "Only {0} out of {1} events are currently selected."
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/management.js:334 indico/modules/categories/client/js/management.js:399
+msgid "Move here"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:374
-msgid "Group name"
+#: indico/modules/categories/client/js/management.js:335
+msgid "Move category"
+msgid_plural "Move categories"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/management.js:337
+msgid "Select new category parent for the category"
+msgid_plural "Select new category parent for {0} selected categories"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/management.js:354
+msgid "The category is already here"
+msgid_plural "The selected categories are already here"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/management.js:362
+msgid "This is the category you are trying to move"
+msgid_plural "This is one of the categories you are trying to move"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/management.js:400 indico/modules/events/management/client/js/index.js:45
+msgid "Move event"
+msgid_plural "Move events"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/management.js:403
+msgid "Select category destination for the event"
+msgid_plural "Select category destination for {0} selected events"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/categories/client/js/management.js:416
+msgid "The event is already here"
+msgid_plural "The selected events are already here"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/cephalopod/client/js/index.js:42
+msgid "Unknown error while contacting the Community Hub"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:481
-msgid "Users"
+#: indico/modules/cephalopod/client/js/index.js:44
+msgid "Internal error: Parse error on the reply of the Community Hub."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:481
-msgid "Groups"
+#: indico/modules/cephalopod/client/js/index.js:46
+msgid "Unable to contact the Community Hub."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:531
-msgid "Suggested users"
+#: indico/modules/cephalopod/client/js/index.js:48
+msgid "The connection to the Community Hub timed out."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:534
-msgid "There are no suggested users for you at the moment. Why not add some "
+#: indico/modules/cephalopod/client/js/index.js:53
+msgid "Your server is not registered with the Community Hub."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:535
-msgid "favourites"
+#: indico/modules/cephalopod/client/js/index.js:88
+msgid "Disabled"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:715
-msgid "Please select at least one item"
+#: indico/modules/cephalopod/client/js/index.js:89
+msgid "This server is not registered as part of the community."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:740 indico/htdocs/js/indico/modules/registration/form/field.js:147
-msgid "Add"
+#: indico/modules/cephalopod/client/js/index.js:110
+msgid "Synchronized"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:832 indico/htdocs/js/indico/widgets/person_link_widget.js:290
-msgid "Grant submission rights"
+#: indico/modules/cephalopod/client/js/index.js:111
+msgid "This server is registered as part of the community and is up to date."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:833 indico/htdocs/js/indico/Core/Dialogs/Users.js:840
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:848 indico/htdocs/js/indico/Core/Dialogs/Users.js:854
-msgid "Note:"
+#: indico/modules/cephalopod/client/js/index.js:120
+msgid "Out of sync"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:833 indico/htdocs/js/indico/Core/Dialogs/Users.js:840
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:848 indico/htdocs/js/indico/Core/Dialogs/Users.js:854
-msgid " If this person does not already have an Indico account, "
+#: indico/modules/cephalopod/client/js/index.js:121
+msgid "Your Indico server is out of sync. Synchronize it with the button on the right."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:834
-msgid "he or she will be sent an email asking to register as a user."
+#: indico/modules/cephalopod/client/js/index.js:131
+msgid "Error!"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:835
-msgid " After the registration the user will automatically be given"
+#: indico/modules/cephalopod/client/js/index.js:149
+msgid "Your Indico server is not synchronized with the Community Hub! You can solve this <a href=\"{0}\">here</a>."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:836
-msgid " submission rights."
+#: indico/modules/core/client/js/impersonation.js:35
+msgid "Select user to impersonate"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:839
-msgid "Give management rights"
+#: indico/modules/designer/client/js/index.js:28 indico/modules/designer/client/js/index.js:685
+msgid "The back side of the templates that use this one as the back side will be removed."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:841 indico/htdocs/js/indico/Core/Dialogs/Users.js:849
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:855
-msgid "he or she will be sent an email asking to create an account."
+#: indico/modules/designer/client/js/index.js:31 indico/modules/designer/client/js/index.js:688
+msgid "Disassociate back sides"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:842 indico/htdocs/js/indico/Core/Dialogs/Users.js:850
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:856
-msgid " After the account creation the user will automatically be"
+#: indico/modules/designer/client/js/index.js:81 indico/modules/designer/client/js/index.js:224
+msgid "Fixed text"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:843
-msgid " given management rights."
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:847
-msgid "Give coordination rights"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:851
-msgid " given coordination rights."
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:857
-msgid " given the rights."
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:861 indico/htdocs/js/indico/modules/timetable/timetable/Management.js:27
-msgid "Title"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:861
-msgid "Mr"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:861
-msgid "Mrs"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:861
-msgid "Ms"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:861
-msgid "Dr"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:861
-msgid "Prof."
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:862
-msgid "Family Name"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:863
-msgid "First Name"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:864
-msgid "Affiliation"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:865
-msgid "Email"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:866
-msgid "Address"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:867
-msgid "Telephone"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:876 indico/htdocs/js/indico/Management/RoomBookingMapOfRooms.js:71
-#: indico/htdocs/js/indico/widgets/multiple_items_widget.js:42
-msgid "Save"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:878 indico/htdocs/js/indico/jquery/principalfield.js:133
-#: indico/htdocs/js/indico/modules/designer.js:466 indico/htdocs/js/indico/modules/designer.js:470
-#: indico/legacy/webinterface/tpls/RoomBookingBlockingForm.tpl:114
+#: indico/modules/designer/client/js/index.js:475 indico/modules/designer/client/js/index.js:481
+#: indico/web/client/js/jquery/widgets/principalfield.js:136
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1119
 msgid "Warning"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:878
-msgid "It is not possible to grant submission rights to a participant without an email address. Please set an email address."
+#: indico/modules/designer/client/js/index.js:475
+msgid "Please choose a name for the template"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:927
-msgid "User privileges"
+#: indico/modules/designer/client/js/index.js:480
+msgid "The template cannot be empty. Add some elements or a background image."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:972
-msgid "User rights"
+#: indico/modules/designer/client/js/index.js:507
+msgid "Are you sure you want to change the dimensions of this template?"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:989
-msgid "Submission rights"
+#: indico/modules/designer/client/js/index.js:676
+msgid "This back side template will be removed"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1076 indico/htdocs/js/indico/jquery/permissions_widget.js:166
-msgid "Are you sure you want to remove yourself from the list?"
+#: indico/modules/designer/client/js/index.js:678
+msgid "The back side of this template will be removed"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1077 indico/htdocs/js/indico/jquery/categorynavigator.js:678
-#: indico/htdocs/js/indico/jquery/declarative.js:232
+#: indico/modules/designer/client/js/index.js:679
+msgid "Disassociate back side"
+msgstr ""
+
+#: indico/modules/designer/client/js/index.js:683
+msgid "The back side is empty."
+msgstr ""
+
+#: indico/modules/designer/client/js/index.js:793
+msgid "Error"
+msgstr ""
+
+#: indico/modules/designer/client/js/index.js:906
+msgid "Choose a file"
+msgstr ""
+
+#: indico/modules/events/abstracts/client/js/index.js:74 indico/modules/events/abstracts/client/js/index.js:87
+msgid "Show preview"
+msgstr ""
+
+#: indico/modules/events/abstracts/client/js/index.js:78
+msgid "Hide preview"
+msgstr ""
+
+#: indico/modules/events/client/js/display.js:168
+msgid "Edit minutes"
+msgstr ""
+
+#: indico/modules/events/client/js/layout.js:169
+msgid "Menu Entry Settings"
+msgstr ""
+
+#: indico/modules/events/client/js/util/static_filters.js:21
+msgid "{0} out of {1} displayed"
+msgstr ""
+
+#: indico/modules/events/client/js/util/static_filters.js:61
+msgid "There are no entries that match your search criteria."
+msgstr ""
+
+#: indico/modules/events/contributions/client/js/index.js:40
+msgid "Filter sessions"
+msgstr ""
+
+#: indico/modules/events/contributions/client/js/index.js:45
+msgid "Assign new session"
+msgstr ""
+
+#: indico/modules/events/contributions/client/js/index.js:48
+msgid "Add new session"
+msgstr ""
+
+#: indico/modules/events/contributions/client/js/index.js:75
+msgid "No session"
+msgstr ""
+
+#: indico/modules/events/contributions/client/js/index.js:95
+msgid "Not scheduled"
+msgstr ""
+
+#: indico/modules/events/contributions/client/js/index.js:99
+msgid "'{0}' has been unscheduled due to the session change."
+msgstr ""
+
+#: indico/modules/events/contributions/client/js/index.js:101
+msgid "Undo successful! Timetable entry and session have been restored."
+msgstr ""
+
+#: indico/modules/events/contributions/client/js/index.js:125
+msgid "Filter tracks"
+msgstr ""
+
+#: indico/modules/events/contributions/client/js/index.js:131 indico/modules/events/contributions/client/js/index.js:134
+msgid "Add new track"
+msgstr ""
+
+#: indico/modules/events/contributions/client/js/index.js:158
+msgid "No track"
+msgstr ""
+
+#: indico/modules/events/management/client/js/index.js:41
+msgid "You are about to move the event to the category \"{0}\". Are you sure you want to proceed?"
+msgstr ""
+
+#: indico/modules/events/management/client/js/index.js:278
+msgid "Undoing previous operation..."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/index.js:52 indico/modules/events/registration/client/js/registration.js:41
+msgid "Terms and Conditions"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/reglists.js:29
+msgid "Email Preview"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/reglists.js:46
+msgid "Do you really want to delete the selected registration?"
+msgid_plural "Do you really want to delete the {0} selected registrations?"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/modules/events/registration/client/js/form/field.js:144
+msgid "New Field"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:144
+msgid "Edit Field"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:147
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:876
+msgid "Add"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:147
+msgid "Update"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:181
+msgid "There is already a registration with this email address."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:183
+msgid "The user associated with this email address is already registered."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:185
+msgid "There is no Indico user associated with this email address."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:190
+msgid "This email address is not associated with your Indico account."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:193
+msgid "The registration will be re-associated to a different user (<strong>{0}</strong>)."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:199
+msgid "The registration will be disassociated from the current user (<strong>{0}</strong>)."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:204
+msgid "This email address is invalid."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:206
+msgid "The registration will not be associated with any Indico account."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:208
+msgid "The registration will be associated with your Indico account."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:211
+msgid "The registration will remain associated with the Indico account <strong>{0}</strong>."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:217
+msgid "The registration will be associated with the Indico account <strong>{0}</strong>."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:238
+msgid "Checking email address..."
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:394
+msgid "Checkbox"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:417
+msgid "Country"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:449
+msgid "Date"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:465
+msgid "File"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:481
+msgid "Free Text"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:497
+msgid "Number"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:636
+msgid "Choice"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:696
+#: indico/modules/events/registration/client/js/form/field.js:1151
+msgid "Caption"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:697
+#: indico/modules/events/registration/client/js/form/field.js:1074
+#: indico/modules/events/registration/client/js/form/field.js:1152
+msgid "Billable"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:698
+#: indico/modules/events/registration/client/js/form/field.js:1075
+#: indico/modules/events/registration/client/js/form/field.js:1153
+msgid "Price"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:699
+#: indico/modules/events/registration/client/js/form/field.js:1076
+#: indico/modules/events/registration/client/js/form/field.js:1154
+msgid "Places limit"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:700
+#: indico/modules/events/registration/client/js/form/field.js:1155
+msgid "Max. extra slots"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:701
+#: indico/modules/events/registration/client/js/form/field.js:1156
+msgid "Extra slots pay"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:702
+#: indico/modules/events/registration/client/js/form/field.js:1077
+#: indico/modules/events/registration/client/js/form/field.js:1157
+msgid "Enabled"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:799
+msgid "Phone"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:813
+msgid "Text"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:830
+msgid "Textarea"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:846
+msgid "Yes/No"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:849
+msgid "yes"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:849
+msgid "no"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:865
+msgid "Email address"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:988
+msgid "Title of the \"None\" option"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:995
+msgid "Accommodation"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:1073
+msgid "Accommodation option"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/field.js:1140
+msgid "Multi choice"
+msgstr ""
+
+#: indico/modules/events/registration/client/js/form/sectiontoolbar.js:44
+msgid "Add new field"
+msgstr ""
+
+#: indico/modules/events/sessions/client/js/index.js:118
+msgid "Filter types"
+msgstr ""
+
+#: indico/modules/events/sessions/client/js/index.js:123 indico/modules/events/sessions/client/js/index.js:126
+msgid "Add new type"
+msgstr ""
+
+#: indico/modules/events/sessions/client/js/index.js:150
+msgid "No type"
+msgstr ""
+
+#: indico/modules/vc/client/js/index.js:82
+msgid ""
+"This room has been deleted and cannot be used. \n"
+"                         You can detach it from the event, however."
+msgstr ""
+
+#: indico/modules/vc/client/js/index.js:112
+msgid "Click to toggle collapse status"
+msgstr ""
+
+#: indico/web/client/js/jquery/extensions/clipboard.js:49
+msgid "Copied to clipboard"
+msgstr ""
+
+#: indico/web/client/js/jquery/extensions/clipboard.js:57
+msgid "Press {0} to copy"
+msgstr ""
+
+#: indico/web/client/js/jquery/extensions/global.js:244
+msgid "Create new lecture"
+msgstr ""
+
+#: indico/web/client/js/jquery/extensions/global.js:245
+msgid "Create new meeting"
+msgstr ""
+
+#: indico/web/client/js/jquery/extensions/global.js:246
+msgid "Create new conference"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/ajaxdialog.js:79
+msgid "You have unsaved changes. Do you really want to close the dialog without saving?"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/ajaxdialog.js:148 indico/web/client/js/jquery/utils/ajaxform.js:134
+#: indico/web/client/js/jquery/utils/ajaxform.js:281
+msgid "Unsaved changes"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/ajaxdialog.js:180 indico/web/client/js/jquery/utils/misc.js:84
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Util.js:35
+#: indico/web/client/js/legacy/libs/timetable/Management.js:247
+msgid "Close"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/ajaxform.js:264
+msgid "You have unsaved changes that will be lost."
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/declarative.js:248 indico/web/client/js/jquery/widgets/categorynavigator.js:708
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1345
 msgid "Confirm action"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1160
+#: indico/web/client/js/jquery/utils/declarative.js:347
+msgid "Direct link to this item"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/defaults.js:19
+msgid "Next"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/defaults.js:20
+msgid "Previous"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/defaults.js:31
+msgid "Choose the start date"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/defaults.js:31
+msgid "Choose the end date"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/errors.js:31 indico/web/client/js/legacy/libs/presentation/Data/Remote.js:117
+#: indico/web/client/js/utils/axios.js:46
+msgid "Something went wrong"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/forms.js:15
+msgid "The passwords do not match."
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/forms.js:66
+msgid "Field must be at least {0} character long."
+msgid_plural "Field must be at least {0} characters long."
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/web/client/js/jquery/utils/forms.js:74
+msgid "Field cannot be longer than {0} character."
+msgid_plural "Field cannot be longer than {0} characters."
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/web/client/js/jquery/utils/forms.js:82
+msgid "Field must be between {0} and {1} characters long."
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/forms.js:88
+msgid "Field must contain at least {0} word."
+msgid_plural "Field must contain at least {0} words."
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/web/client/js/jquery/utils/forms.js:96
+msgid "Field cannot contain more than {0} word."
+msgid_plural "Field cannot contain more than {0} words."
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/web/client/js/jquery/utils/forms.js:104
+msgid "Field must contain between {0} and {1} words."
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/forms.js:122
+msgid "Save now"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/forms.js:123 indico/web/client/js/jquery/utils/pagedown_mathjax.js:293
+msgid "Saving..."
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/forms.js:124
+msgid "Do not forget to save your changes!"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/forms.js:394
+msgid "Only {0} out of {1} rows is currently selected"
+msgid_plural "Only {0} out of {1} rows are currently selected."
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/web/client/js/jquery/utils/forms.js:433
+msgid "Select only the current page."
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/forms.js:447
+msgid "Click here to select them all."
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/misc.js:16 indico/web/client/js/jquery/utils/misc.js:30
+msgid "Please confirm"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/misc.js:98
+msgid "Executing operation..."
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/misc.js:100
+msgid "Operation done!"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/misc.js:165
+msgid "Operation failed!"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/pagedown_mathjax.js:298
+msgid "Saved"
+msgstr ""
+
+#: indico/web/client/js/jquery/utils/pagedown_mathjax.js:331
+#: indico/web/client/js/jquery/widgets/jinja/multiple_items_widget.js:39
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1115
+msgid "Save"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/ajaxqbubble.js:20 indico/web/client/js/legacy/libs/indico/Core/Dialogs/Base.js:63
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:782
+msgid "Loading..."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:19
+msgid "Select"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:23
+msgid "This category doesn't contain any subcategory"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:27
+msgid "Select a category"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:34
+msgid "Not possible for categories containing subcategories"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:38
+msgid "Not possible for categories containing events"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:42
+msgid "Not possible for categories where you cannot create events"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:48
+msgid "Not possible for categories descending from category \"{0}\""
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:52
+msgid "Not possible for this category"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:141
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:217
+msgid "Search"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:194
+msgid "in"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:198
+msgid "Go to: {0}"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:235
+msgid "This category is protected"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:283
+msgid "Go to parent: {0}"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:294
+msgid "{0} category"
+msgid_plural "{0} categories"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:335
+msgid "You can only <a class=\"js-action\" data-category-id=\"{0}\">{1}</a> this one."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:340
+msgid ""
+"You can <a class=\"js-action\" data-category-id=\"{0}\">{1}</a> this one, <a class=\"js-navigate-up\" data-parent-"
+"id=\"{2}\">navigate up</a> or <a class=\"js-search\">search</a>."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:348
+msgid "You can <a class=\"js-navigate-up\" data-parent-id=\"{2}\">navigate up</a> or <a class=\"js-search\">search</a>."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:363
+msgid "Your search doesn't match any category"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:368
+msgid "You can <a class=\"js-search\">modify</a> or <a class=\"js-clear-search\">clear</a> your search."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:444
+msgid "In favourite categories"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:451
+msgid "Search result"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:472
+msgid "Displaying {0} out of {1} results."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:473
+msgid "There are no results."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:477
+msgid "Make the search more specific for more accurate results"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:482
+msgid "Clear search"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/categorynavigator.js:706
+msgid "You selected category <em>{0}</em>. Are you sure you want to proceed?"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/itempicker.js:21
+msgid "Type to filter..."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/misc.js:89
+msgid "You can copy the URL below using CTRL + C (&#8984; + C on OSX):"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/multitextfield.js:254
+msgid "Type to add {0}"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/multiple_items_widget.js:34
+#: indico/web/client/js/jquery/widgets/multitextfield.js:278 indico/web/client/js/legacy/libs/timetable/Draw.js:1654
+msgid "Delete"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/multitextfield.js:353
+msgid "Empty values are not allowed."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/principalfield.js:106
+msgid "Choose person"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/principalfield.js:135
+msgid "There is already another person with this email address."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:180
+#: indico/web/client/js/jquery/widgets/principalfield.js:143
+msgid "Edit information"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/principalfield.js:162
+msgid "Enter person"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/rulelistwidget.js:60
+msgid "Select an option"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/timerange.js:13
+msgid "Time"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/location_widget.js:67
+msgid "Using default location from: {0} ({1})"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/location_widget.js:69
+msgid "Using custom location"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/location_widget.js:165
+msgid "Just use \"{0}\""
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/markdown_widget.js:29
+msgid "<strong>1</strong> char left"
+msgid_plural "<strong>{0}</strong> chars left"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/web/client/js/jquery/widgets/jinja/markdown_widget.js:39
+msgid "<strong>1</strong> word left"
+msgid_plural "<strong>{0}</strong> words left"
+msgstr[0] ""
+msgstr[1] ""
+
+#: indico/web/client/js/jquery/widgets/jinja/multiple_items_widget.js:44
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:1586
+msgid "Edit"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/multiple_items_widget.js:49
+#: indico/web/client/js/legacy/angular/directives.js:68 indico/web/client/js/legacy/libs/indico/Core/Dialogs/Popup.js:413
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:883
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1140
+#: indico/web/client/js/legacy/libs/timetable/Management.js:672
+msgid "Cancel"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/multiple_items_widget.js:296
+msgid "Must be between {0} and {1}"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/multiple_items_widget.js:298
+msgid "Must be above {0}"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/multiple_items_widget.js:300
+msgid "Must be below {0}"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/multiple_items_widget.js:319
+msgid "Please fill in the required fields."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/permissions_widget.js:145
+msgid "IP networks cannot have management permissions"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/permissions_widget.js:152
+msgid "Assign Permissions"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/permissions_widget.js:169
+msgid "Delete entry '{0}'"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/permissions_widget.js:170
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1344
+msgid "Are you sure you want to remove yourself from the list?"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/permissions_widget.js:209
+msgid "All IP Networks were added"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/permissions_widget.js:240
+msgid "This entry was already added"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/permissions_widget.js:273
+msgid "Anonymous"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/permissions_widget.js:280
+msgid "Category Managers"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/permissions_widget.js:281
+msgid "Event Managers"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/permissions_widget.js:338
+msgid "Select a user or group to add"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:166
+msgid "Speaker"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:177
+msgid "Remove person"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:183
+msgid "Configure roles"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:198
+msgid "Submitter"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:245
+msgid "or"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:266
+msgid "Move to authors"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:272
+msgid "Move to co-authors"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:279
+msgid "Move to others"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:285
+msgid "Not a speaker anymore"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:286
+msgid "Make a speaker"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:297
+msgid "People in the 'Others' section <strong>must</strong> be speakers."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:317
+msgid "Revoke submission rights"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:318
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:986
+msgid "Grant submission rights"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:383
+msgid "Custom sorting has been applied. Click to restore alphabetical order."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:385
+msgid "Alphabetical sorting is ON. Click to turn it off."
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:430
+msgid "You must add at least one speaker"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:433
+msgid "You must add at least one submitter"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:436
+msgid "You must add at least one co-author"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:439
+msgid "You must add at least one author"
+msgstr ""
+
+#: indico/web/client/js/jquery/widgets/jinja/person_link_widget.js:447
+msgid "You cannot have users in the Other section, please make them authors or co-authors"
+msgstr ""
+
+#: indico/web/client/js/legacy/angular/directives.js:67
+msgid "Ok"
+msgstr ""
+
+#: indico/web/client/js/legacy/angular/directives.js:115
+msgid "The content of this dialog is currently unavailable."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Common/Export.js:82
+msgid "Would you like to export private information to your calendar?"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Common/Export.js:245
+msgid "Would you like to create a persistent URL for use with your calendaring application?"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Popup.js:243
+msgid "OK"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Popup.js:367
+msgid "Reason: "
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:26
+msgid "Remove from your list of favorite users"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:27
+msgid "Add to your list of favorite users"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:122
+msgid "This person exists in the event"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:191
+msgid "Users with no Indico account"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:239
+msgid "Grant all selected users submission rights"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:273
+msgid "You can use the form above to search for users..."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:321
+msgid "Family name"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:322
+msgid "First name"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:323
+msgid "E-mail"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:324
+msgid "Organisation"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:325
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:437
+msgid "Exact Match"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:355
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:456
+msgid "No results for this search..."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:437
+msgid "Group name"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:543
+msgid "Users"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:544
+msgid "Groups"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:620
+msgid "Suggested users"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:625
+msgid "There are no suggested users for you at the moment. Why not add some "
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:626
+msgid "favourites"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:846
+msgid "Please select at least one item"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:876
+msgid "Choose"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:992
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1011
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1031
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1046
+msgid "Note:"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:993
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1012
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1032
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1047
+msgid " If this person does not already have an Indico account, "
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:995
+msgid "he or she will be sent an email asking to register as a user."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:997
+msgid " After the registration the user will automatically be given"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:999
+msgid " submission rights."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1005
+msgid "Give management rights"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1014
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1034
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1049
+msgid "he or she will be sent an email asking to create an account."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1016
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1036
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1051
+msgid " After the account creation the user will automatically be"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1018
+msgid " given management rights."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1025
+msgid "Give coordination rights"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1038
+msgid " given coordination rights."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1053
+msgid " given the rights."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1060
+#: indico/web/client/js/legacy/libs/timetable/Management.js:21
+msgid "Title"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1065
+msgid "Mr"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1066
+msgid "Mrs"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1067
+msgid "Ms"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1068
+msgid "Dr"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1069
+msgid "Prof."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1075
+msgid "Family Name"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1082
+msgid "First Name"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1086
+msgid "Affiliation"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1090
+msgid "Email"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1100
+msgid "Address"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1101
+msgid "Telephone"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1120
+msgid "It is not possible to grant submission rights to a participant without an email address. Please set an email address."
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1194
+msgid "User privileges"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1239
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1240
+msgid "User rights"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1261
+msgid "Submission rights"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1445
 msgid ""
 "Please note that you have added a user that does not exist in Indico.\n"
 "                                    Non existing users will be asked via email to create an account so\n"
 "                                    that they will be able to use the privileges below."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1163
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1450
 msgid ""
 "Please note that you have added a user without an email address. Users without \n"
 "                                    email will not be able to use the privileges below."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1235
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1528
 msgid "Add User / Group"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1235
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1528
 msgid "Add user"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1238
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1537
 msgid "Add IP Network"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1261
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1561
 msgid "Add Users and Groups"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1261
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1561
 msgid "Add Users"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1263
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1563
 msgid "Search Users and Groups"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1263
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1563
 msgid "Search Users"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1322
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1648
 msgid "Add New"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1327
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1654
 msgid "New user"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Users.js:1349
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Users.js:1680
 msgid "Grant all these users with privileges: "
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Util.js:42
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Util.js:33
 msgid "Please reload the page and report this error to us if it persists."
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Util.js:43
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Util.js:34
 msgid "Report Error"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Dialogs/Util.js:44 indico/htdocs/js/indico/jquery/ajaxdialog.js:164
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:228
-msgid "Close"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Dialogs/Util.js:50
+#: indico/web/client/js/legacy/libs/indico/Core/Dialogs/Util.js:42
 msgid "Thanks for your error report!"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Widgets/Base.js:449 indico/htdocs/js/indico/Core/Widgets/Base.js:453
+#: indico/web/client/js/legacy/libs/indico/Core/Widgets/Base.js:465
+#: indico/web/client/js/legacy/libs/indico/Core/Widgets/Base.js:473
 msgid "Previous tab"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Widgets/Base.js:462 indico/htdocs/js/indico/Core/Widgets/Base.js:466
+#: indico/web/client/js/legacy/libs/indico/Core/Widgets/Base.js:485
+#: indico/web/client/js/legacy/libs/indico/Core/Widgets/Base.js:492
 msgid "Next tab"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Widgets/Inline.js:189
-msgid "No options"
-msgstr ""
-
-#: indico/htdocs/js/indico/Core/Widgets/RichText.js:220
+#: indico/web/client/js/legacy/libs/indico/Core/Widgets/RichText.js:212
 msgid "switch to plain text"
 msgstr ""
 
-#: indico/htdocs/js/indico/Core/Widgets/RichText.js:223
+#: indico/web/client/js/legacy/libs/indico/Core/Widgets/RichText.js:213
 msgid "switch to rich text"
 msgstr ""
 
-#: indico/htdocs/js/indico/Legacy/Util.js:310
+#: indico/web/client/js/legacy/libs/indico/Legacy/Util.js:309
 msgid "At least one must be selected"
 msgstr ""
 
-#: indico/htdocs/js/indico/Legacy/Util.js:315
+#: indico/web/client/js/legacy/libs/indico/Legacy/Util.js:313
 msgid "Please enable the checkbox"
 msgstr ""
 
-#: indico/htdocs/js/indico/Legacy/Util.js:320 indico/htdocs/js/indico/Legacy/Util.js:325
+#: indico/web/client/js/legacy/libs/indico/Legacy/Util.js:317 indico/web/client/js/legacy/libs/indico/Legacy/Util.js:321
 msgid "Please choose an option"
 msgstr ""
 
-#: indico/htdocs/js/indico/Legacy/Util.js:329
+#: indico/web/client/js/legacy/libs/indico/Legacy/Util.js:328
 msgid "Field must be a number"
 msgstr ""
 
-#: indico/htdocs/js/indico/Legacy/Util.js:335
+#: indico/web/client/js/legacy/libs/indico/Legacy/Util.js:340
 msgid "Field must be a positive number"
 msgstr ""
 
-#: indico/htdocs/js/indico/Legacy/Util.js:338
+#: indico/web/client/js/legacy/libs/indico/Legacy/Util.js:346
 msgid "Date format is not valid. It should be dd/mm/yyyy hh:mm"
 msgstr ""
 
-#: indico/htdocs/js/indico/Legacy/Util.js:341
+#: indico/web/client/js/legacy/libs/indico/Legacy/Util.js:352
 msgid "Invalid e-mail address"
 msgstr ""
 
-#: indico/htdocs/js/indico/Legacy/Util.js:344
+#: indico/web/client/js/legacy/libs/indico/Legacy/Util.js:358
 msgid "Invalid URL"
 msgstr ""
 
-#: indico/htdocs/js/indico/Legacy/Util.js:347
+#: indico/web/client/js/legacy/libs/indico/Legacy/Util.js:360
 msgid "Time format is not valid. It should be hh:mm"
 msgstr ""
 
-#: indico/htdocs/js/indico/Legacy/Util.js:350
+#: indico/web/client/js/legacy/libs/indico/Legacy/Util.js:366
 msgid "Field is mandatory"
 msgstr ""
 
-#: indico/htdocs/js/indico/Management/RoomBookingMapOfRooms.js:62
-msgid "Default on start-up"
-msgstr ""
-
-#: indico/htdocs/js/indico/Management/RoomBookingMapOfRooms.js:142
-msgid "Default"
-msgstr ""
-
-#: indico/htdocs/js/indico/Management/RoomBookingMapOfRooms.js:172
-msgid "Add Map Aspect"
-msgstr ""
-
-#: indico/htdocs/js/indico/Management/RoomBookingMapOfRooms.js:177
-msgid "New map aspect"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/MapOfRooms.js:173 indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:821
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:54
-msgid "Room"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/MapOfRooms.js:183
-msgid "Book"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/MapOfRooms.js:188
-msgid "More"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/MapOfRooms.js:193
-msgid "Details"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/MapOfRooms.js:459
-msgid "Search criteria"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/MapOfRooms.js:476 indico/htdocs/js/indico/modules/timetable/timetable/Base.js:190
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:385
-msgid "Filter"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/MapOfRooms.js:483
-msgid "Reset"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/MapOfRooms.js:764
-msgid "Total"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/MapOfRooms.js:765
-msgid "room(s)"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/MapOfRooms.js:766
-msgid "building(s)"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:29
-msgid "Legend:"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:30
-msgid "Available"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:31
-msgid "Conflict"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:32
-msgid "Booked"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:33
-msgid "PRE-Booking"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:34
-msgid "Conflict with PRE-Booking"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:35
-msgid "Concurrent PRE-Bookings"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:36
-msgid "Blocked"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:37
-msgid "Too early to book"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:257
-msgid "Click to book it"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:260
-msgid "This bar indicates the time which will be booked."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:264
-msgid "Room blocked by"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:269
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:822
-msgid "Reason"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:271
-msgid "Booking not allowed for this period.<br>This room can only be booked {0} days in advance."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:347
-msgid "This room cannot booked more than {0} days in advance."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:357
-msgid "This room cannot be booked due to conflicts with existing reservations or room blockings."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:361
-msgid "This booking contains conflicts with existing reservations or blockings."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:387
-msgid "Bookings of this room are limited to members of {0}."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:389
-msgid "You are not authorized to book this room."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:400
-msgid "This room is blocked on this date and you don't have permissions to book it."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:401
-msgid "This room is not available on this date."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:430
-msgid "Unable to book"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:590
-msgid "No results found in the given period of time."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:619
-msgid "This room cannot be booked for this date"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:663
-msgid "( show 3 months preview )"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:680
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:824
-#: indico/htdocs/js/indico/modules/registration/form/field.js:414
-msgid "Date"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:754
-msgid "Show"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:758
-msgid "Reject"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:761
-msgid "Rejecting a booking"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:763
-msgid "Are you sure you want to REJECT the booking for ?"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:764
-msgid "If so, please give a reason:"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:823
-msgid "Booked for"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:825 indico/htdocs/js/indico/jquery/timerange.js:23
-msgid "Time"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:853
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:862
-msgid "Display room booking summary "
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:868
-msgid "Hide room booking summary"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:877
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:879
-msgid "Reject ALL Conflicting PRE-Bookings"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:880
-msgid "Are you sure you want to REJECT ALL conflicting PRE-bookings?"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:913
-msgid "day"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:914
-msgid "week"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:914
-msgid "period"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:929
-msgid "Choose Period"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:947
-msgid "Change period"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:964 indico/htdocs/js/indico/jquery/defaults.js:28
-msgid "Previous"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:973 indico/htdocs/js/indico/jquery/defaults.js:27
-msgid "Next"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/RoomBookingCalendar.js:989
-msgid "Hide empty rooms/days"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:126
-msgid "Filter rooms"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:238
-msgid "Show only my rooms"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:271 indico/htdocs/js/indico/jquery/categorynavigator.js:29
-msgid "Select"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:280
-msgid "Require"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:283
-msgid "Videoconference"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:286
-msgid "Webcast"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:289
-msgid "Projector"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:292 indico/htdocs/js/indico/RoomBooking/roomselector.js:354
-msgid "Public room"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:300
-msgid "Capacity"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:351
-msgid "Videoconference available"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:352
-msgid "Webcast/Recording available"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:353
-msgid "Projector available"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:355
-msgid "Maximum capacity"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:356
-msgid "Videoconference not available"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:357
-msgid "Webcast/Recording not available"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:358
-msgid "Projector not available"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:359
-msgid "Private room"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/roomselector.js:378
-msgid "Expand picture"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/validation.js:135
-msgid "Invalid end date for daily repetition"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/validation.js:140
-msgid "Invalid end date for weekly repetition"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/validation.js:145
-msgid "Invalid end date for monthly repetition"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/validation.js:187
-msgid "Please, confirm first you understood the implications of the conflicts mentioned above."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/validation.js:189
-msgid "Unable to book for the selected day(s)."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/validation.js:215 indico/htdocs/js/indico/RoomBooking/validation.js:234
-#: indico/htdocs/js/indico/modules/designer.js:749 indico/legacy/webinterface/tpls/RoomBookingSearchBookings.tpl:237
-#: indico/legacy/webinterface/tpls/RoomBookingSearchRooms.tpl:324
-msgid "Error"
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/validation.js:215 indico/legacy/webinterface/tpls/RoomBookingSearchBookings.tpl:241
-msgid "Please select a room (or several rooms)."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/validation.js:234
-msgid "Please fill in all the required fields (highlighted in red)."
-msgstr ""
-
-#: indico/htdocs/js/indico/RoomBooking/validation.js:267
-msgid "Booking creation error"
-msgstr ""
-
-#: indico/htdocs/js/indico/angular/directives.js:77
-msgid "Ok"
-msgstr ""
-
-#: indico/htdocs/js/indico/angular/directives.js:118
-msgid "The content of this dialog is currently unavailable."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/ajaxdialog.js:80
-msgid "You have unsaved changes. Do you really want to close the dialog without saving?"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/ajaxdialog.js:140 indico/htdocs/js/indico/jquery/ajaxform.js:137
-#: indico/htdocs/js/indico/jquery/ajaxform.js:277
-msgid "Unsaved changes"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/ajaxform.js:260
-msgid "You have unsaved changes that will be lost."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:33
-msgid "This category doesn't contain any subcategory"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:37
-msgid "Select a category"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:44
-msgid "Not possible for categories containing subcategories"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:48
-msgid "Not possible for categories containing events"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:52
-msgid "Not possible for categories where you cannot create events"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:58
-msgid "Not possible for categories descending from category \"{0}\""
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:62
-msgid "Not possible for this category"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:203
-msgid "in"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:207
-msgid "Go to: {0}"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:242
-msgid "This category is protected"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:290
-msgid "Go to parent: {0}"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:299
-msgid "{0} category"
-msgid_plural "{0} categories"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:301 indico/htdocs/js/indico/modules/categories/display.js:33
-msgid "{0} event"
-msgid_plural "{0} events"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:333
-msgid "You can only <a class=\"js-action\" data-category-id=\"{0}\">{1}</a> this one."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:337
-msgid ""
-"You can <a class=\"js-action\" data-category-id=\"{0}\">{1}</a> this one, <a class=\"js-navigate-up\" data-parent-"
-"id=\"{2}\">navigate up</a> or <a class=\"js-search\">search</a>."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:342
-msgid "You can <a class=\"js-navigate-up\" data-parent-id=\"{2}\">navigate up</a> or <a class=\"js-search\">search</a>."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:354
-msgid "Your search doesn't match any category"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:357
-msgid "You can <a class=\"js-search\">modify</a> or <a class=\"js-clear-search\">clear</a> your search."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:424
-msgid "In favourite categories"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:429
-msgid "Search result"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:448
-msgid "Displaying {0} out of {1} results."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:449
-msgid "There are no results."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:452
-msgid "Make the search more specific for more accurate results"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:456
-msgid "Clear search"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/categorynavigator.js:676
-msgid "You selected category <em>{0}</em>. Are you sure you want to proceed?"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/declarative.js:320
-msgid "Direct link to this item"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/defaults.js:41
-msgid "Choose the start date"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/defaults.js:42
-msgid "Choose the end date"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/errors.js:38
-msgid "Something went wrong"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/global.js:248
-msgid "Create new lecture"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/global.js:249
-msgid "Create new meeting"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/global.js:250
-msgid "Create new conference"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/itempicker.js:30
-msgid "Type to filter..."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/multitextfield.js:247
-msgid "Type to add {0}"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/multitextfield.js:270 indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:1490
-#: indico/htdocs/js/indico/widgets/multiple_items_widget.js:40
-msgid "Delete"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/multitextfield.js:344
-msgid "Empty values are not allowed."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/permissions_widget.js:141
-msgid "IP networks cannot have management permissions"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/permissions_widget.js:148
-msgid "Assign Permissions"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/permissions_widget.js:165
-msgid "Delete entry '{0}'"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/permissions_widget.js:207
-msgid "All IP Networks were added"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/permissions_widget.js:229
-msgid "This entry was already added"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/permissions_widget.js:263
-msgid "Anonymous"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/permissions_widget.js:268
-msgid "Category Managers"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/permissions_widget.js:268
-msgid "Event Managers"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/permissions_widget.js:324
-msgid "Select a user or group to add"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/principalfield.js:112
-msgid "Choose person"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/principalfield.js:132
-msgid "There is already another person with this email address."
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/principalfield.js:138 indico/htdocs/js/indico/widgets/person_link_widget.js:174
-msgid "Edit information"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/principalfield.js:146
-msgid "Enter person"
-msgstr ""
-
-#: indico/htdocs/js/indico/jquery/rulelistwidget.js:69
-msgid "Select an option"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/abstracts.js:74 indico/htdocs/js/indico/modules/abstracts.js:86
-msgid "Show preview"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/abstracts.js:78
-msgid "Hide preview"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/attachments.js:154
-msgid "This file no longer exists. Please reload the page."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/attachments.js:160
-msgid "You are not authorized to access this file."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/attachments.js:160 indico/htdocs/js/indico/modules/attachments.js:163
-msgid "Access Denied"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/attachments.js:162
-msgid "This file is protected. You will be redirected to the login page."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/attachments.js:226
-msgid "Manage material"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:50
-msgid "Unknown error while contacting the Community Hub"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:52
-msgid "Internal error: Parse error on the reply of the Community Hub."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:54
-msgid "Unable to contact the Community Hub."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:56
-msgid "The connection to the Community Hub timed out."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:58
-msgid "Your server is not registered with the Community Hub."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:95
-msgid "Disabled"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:96
-msgid "This server is not registered as part of the community."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:112
-msgid "Synchronized"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:113
-msgid "This server is registered as part of the community and is up to date."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:120
-msgid "Out of sync"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:121
-msgid "Your Indico server is out of sync. Synchronize it with the button on the right."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:128
-msgid "Error!"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/cephalopod.js:141
-msgid "Your Indico server is not synchronized with the Community Hub! You can solve this <a href=\"{0}\">here</a>."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:38 indico/htdocs/js/indico/modules/designer.js:660
-msgid "The back side of the templates that use this one as the back side will be removed."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:39 indico/htdocs/js/indico/modules/designer.js:661
-msgid "Disassociate back sides"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:89 indico/htdocs/js/indico/modules/designer.js:227
-msgid "Fixed text"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:466
-msgid "Please choose a name for the template"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:470
-msgid "The template cannot be empty. Add some elements or a background image."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:494
-msgid "Are you sure you want to change the dimensions of this template?"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:651
-msgid "This back side template will be removed"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:653
-msgid "The back side of this template will be removed"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:654
-msgid "Disassociate back side"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:658
-msgid "The back side is empty."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/designer.js:854
-msgid "Choose a file"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/static_filters.js:29
-msgid "{0} out of {1} displayed"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/static_filters.js:65
-msgid "There are no entries that match your search criteria."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:256 indico/htdocs/js/indico/modules/vc.js:58
-msgid "*"
-msgid_plural ""
-"This videoconference room is used in other Indico events.<br>Do you want to \n"
-"                     <strong>delete</strong> it from all {0} events or just <strong>detach</strong> \n"
-"                     it from this event?"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/vc.js:78
-msgid ""
-"This room has been deleted and cannot be used. \n"
-"                         You can detach it from the event, however."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/vc.js:100
-msgid "Click to toggle collapse status"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/calendar.js:49
-msgid "Events happening on {0}"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/calendar.js:54
-msgid "Today"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/calendar.js:63
-msgid "{0} long-lasting event not shown"
-msgid_plural "{0} long-lasting events not shown"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/categories/calendar.js:70
-msgid "Long lasting events"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/display.js:32
-msgid "empty"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/display.js:152
-msgid "Remove from your favourites"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/display.js:156
-msgid "Add to your favourites"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/display.js:157
-msgid "This will make events in this category visible on your <a href=\"{0}\">Dashboard</a>."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:56 indico/htdocs/js/indico/modules/events/management.js:259
-msgid "Undo"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:58
-msgid "The category order has been restored."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:60
-msgid "The category list has been sorted."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:157
-msgid "Delete category"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:160
-msgid "This category cannot be deleted because it is not empty."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:168
-msgid "At least one selected category cannot be deleted because it is not empty."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:170
-msgid "Delete the selected category"
-msgid_plural "Delete {0} selected categories"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:174
-msgid "Select the categories to delete first."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:183
-msgid "Delete categories"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:202
-msgid "Move the selected category"
-msgid_plural "Move the {0} selected categories"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:205
-msgid "Select the categories to move first."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:259
-msgid "Only {0} out of {1} events is currently selected."
-msgid_plural "Only {0} out of {1} events are currently selected."
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:294
-#: indico/htdocs/js/indico/modules/categories/management.js:344
-msgid "Move here"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:295
-msgid "Move category"
-msgid_plural "Move categories"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:296
-msgid "Select new category parent for the category"
-msgid_plural "Select new category parent for {0} selected categories"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:309
-msgid "The category is already here"
-msgid_plural "The selected categories are already here"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:314
-msgid "This is the category you are trying to move"
-msgid_plural "This is one of the categories you are trying to move"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:345 indico/htdocs/js/indico/modules/events/management.js:44
-msgid "Move event"
-msgid_plural "Move events"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:347
-msgid "Select category destination for the event"
-msgid_plural "Select category destination for {0} selected events"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/categories/management.js:359
-msgid "The event is already here"
-msgid_plural "The selected events are already here"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/contributions/common.js:50
-msgid "Filter sessions"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/contributions/common.js:54
-msgid "Assign new session"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/contributions/common.js:57
-msgid "Add new session"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/contributions/common.js:81
-msgid "No session"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/contributions/common.js:97
-msgid "Not scheduled"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/contributions/common.js:100
-msgid "'{0}' has been unscheduled due to the session change."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/contributions/common.js:101
-msgid "Undo successful! Timetable entry and session have been restored."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/contributions/common.js:121
-msgid "Filter tracks"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/contributions/common.js:126 indico/htdocs/js/indico/modules/contributions/common.js:129
-msgid "Add new track"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/contributions/common.js:152
-msgid "No track"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/events/display.js:157
-msgid "Edit minutes"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/events/layout.js:169
-msgid "Menu Entry Settings"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/events/management.js:43
-msgid "You are about to move the event to the category \"{0}\". Are you sure you want to proceed?"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/events/management.js:257
-msgid "Undoing previous operation..."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/global/impersonation.js:43
-msgid "Select user to impersonate"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/registration.js:50
-msgid "Terms and Conditions"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/reglists.js:37
-msgid "Email Preview"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/reglists.js:53
-msgid "Do you really want to delete the selected registration?"
-msgid_plural "Do you really want to delete the {0} selected registrations?"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:144
-msgid "New Field"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:144
-msgid "Edit Field"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:147
-msgid "Update"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:178
-msgid "There is already a registration with this email address."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:180
-msgid "The user associated with this email address is already registered."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:182
-msgid "There is no Indico user associated with this email address."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:184
-msgid "This email address is not associated with your Indico account."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:186
-msgid "The registration will be re-associated to a different user (<strong>{0}</strong>)."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:188
-msgid "The registration will be disassociated from the current user (<strong>{0}</strong>)."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:190
-msgid "The registration will not be associated with any Indico account."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:192
-msgid "The registration will be associated with your Indico account."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:194
-msgid "The registration will remain associated with the Indico account <strong>{0}</strong>."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:196
-msgid "The registration will be associated with the Indico account <strong>{0}</strong>."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:214
-msgid "Checking email address..."
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:359
-msgid "Checkbox"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:382
-msgid "Country"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:430
-msgid "File"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:446
-msgid "Free Text"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:462
-msgid "Number"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:590
-msgid "Choice"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:650
-#: indico/htdocs/js/indico/modules/registration/form/field.js:1074
-msgid "Caption"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:651
-#: indico/htdocs/js/indico/modules/registration/form/field.js:997
-#: indico/htdocs/js/indico/modules/registration/form/field.js:1075
-msgid "Billable"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:652
-#: indico/htdocs/js/indico/modules/registration/form/field.js:998
-#: indico/htdocs/js/indico/modules/registration/form/field.js:1076
-msgid "Price"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:653
-#: indico/htdocs/js/indico/modules/registration/form/field.js:999
-#: indico/htdocs/js/indico/modules/registration/form/field.js:1077
-msgid "Places limit"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:654
-#: indico/htdocs/js/indico/modules/registration/form/field.js:1078
-msgid "Max. extra slots"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:655
-#: indico/htdocs/js/indico/modules/registration/form/field.js:1079
-msgid "Extra slots pay"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:656
-#: indico/htdocs/js/indico/modules/registration/form/field.js:1000
-#: indico/htdocs/js/indico/modules/registration/form/field.js:1080
-msgid "Enabled"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:744
-msgid "Phone"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:758
-msgid "Text"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:775
-msgid "Textarea"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:791
-msgid "Yes/No"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:794
-msgid "yes"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:794
-msgid "no"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:810
-msgid "Email address"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:912
-msgid "Title of the \"None\" option"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:919
-msgid "Accommodation"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:996
-msgid "Accommodation option"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/field.js:1063
-msgid "Multi choice"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/registration/form/sectiontoolbar.js:53
-msgid "Add new field"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/sessions/common.js:118
-msgid "Filter types"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/sessions/common.js:122 indico/htdocs/js/indico/modules/sessions/common.js:125
-msgid "Add new type"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/sessions/common.js:148
-msgid "No type"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/timetable/timetable/Actions.js:228
+#: indico/web/client/js/legacy/libs/timetable/Actions.js:225
 msgid "Add break"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Actions.js:244
+#: indico/web/client/js/legacy/libs/timetable/Actions.js:241
 msgid "Add session"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Actions.js:272
+#: indico/web/client/js/legacy/libs/timetable/Actions.js:269
 msgid "Add session block"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:52
+#: indico/web/client/js/legacy/libs/timetable/Base.js:43
 msgid "Session"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:139
+#: indico/web/client/js/legacy/libs/timetable/Base.js:44
+msgid "Room"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/timetable/Base.js:131
 msgid "Updating the timetable..."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:207
+#: indico/web/client/js/legacy/libs/timetable/Base.js:182 indico/web/client/js/legacy/libs/timetable/Base.js:421
+msgid "Filter"
+msgstr ""
+
+#: indico/web/client/js/legacy/libs/timetable/Base.js:200
 msgid "Printable version"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:223
+#: indico/web/client/js/legacy/libs/timetable/Base.js:221
 msgid "Go back"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:225
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:360
+#: indico/web/client/js/legacy/libs/timetable/Base.js:228 indico/web/client/js/legacy/libs/timetable/Base.js:387
 msgid "Print"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:255
+#: indico/web/client/js/legacy/libs/timetable/Base.js:272
 msgid "Export to PDF"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:263
+#: indico/web/client/js/legacy/libs/timetable/Base.js:280
 msgid "Switching to full screen mode..."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:292
+#: indico/web/client/js/legacy/libs/timetable/Base.js:317
 msgid "Exit Full Screen"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:366
+#: indico/web/client/js/legacy/libs/timetable/Base.js:394
 msgid "PDF"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:372
+#: indico/web/client/js/legacy/libs/timetable/Base.js:401
 msgid "Full screen"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:379
+#: indico/web/client/js/legacy/libs/timetable/Base.js:408
 msgid "Link"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:382
+#: indico/web/client/js/legacy/libs/timetable/Base.js:413
 msgid "Detailed view"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:437
+#: indico/web/client/js/legacy/libs/timetable/Base.js:476
 msgid "All days"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:630
+#: indico/web/client/js/legacy/libs/timetable/Base.js:689
 msgid "You are viewing the contents of the session block:"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:712
+#: indico/web/client/js/legacy/libs/timetable/Base.js:778
 msgid "Your changes triggered the automatic modification of some settings:"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:722
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:723
+#: indico/web/client/js/legacy/libs/timetable/Base.js:786 indico/web/client/js/legacy/libs/timetable/Base.js:790
 msgid "The <strong>starting time</strong> of the session interval <strong>"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:722
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:723
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:727
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:728
+#: indico/web/client/js/legacy/libs/timetable/Base.js:788 indico/web/client/js/legacy/libs/timetable/Base.js:792
+#: indico/web/client/js/legacy/libs/timetable/Base.js:801 indico/web/client/js/legacy/libs/timetable/Base.js:805
 msgid "</strong> was moved from "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:724
+#: indico/web/client/js/legacy/libs/timetable/Base.js:793
 msgid "The <strong>starting time</strong> of the <strong>Event</strong> was moved from "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:727
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:728
+#: indico/web/client/js/legacy/libs/timetable/Base.js:799 indico/web/client/js/legacy/libs/timetable/Base.js:803
 msgid "The <strong>ending time</strong> of the session interval <strong>"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:729
+#: indico/web/client/js/legacy/libs/timetable/Base.js:806
 msgid "The <strong>ending time</strong> of the <strong>Event</strong> was moved from "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:732
+#: indico/web/client/js/legacy/libs/timetable/Base.js:812
 msgid "The contents of the interval <strong>"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:732
+#: indico/web/client/js/legacy/libs/timetable/Base.js:814
 msgid "</strong> were moved from "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:738
+#: indico/web/client/js/legacy/libs/timetable/Base.js:824
 msgid " to "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:910
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1017
 msgid "Session block"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:924
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1035
 msgid "Contribution"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:932
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1049
 msgid "Break"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:950
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1071
 msgid "Add poster"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:952
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1076
 msgid "Add new"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:955
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:556
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1080 indico/web/client/js/legacy/libs/timetable/Management.js:666
 msgid "Reschedule"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:962
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1090
 msgid "Fit to content"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:969
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1099
 msgid "Add new block"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:1009
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1143
 msgid "Add one hour"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:1063
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1212
 msgid "Session legend"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:1097
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1248
 msgid "see more..."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:1102
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1253
 msgid "less..."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:1400
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1598
 msgid "Go to event timetable"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Base.js:1535
+#: indico/web/client/js/legacy/libs/timetable/Base.js:1768
 msgid "Up to timetable"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/DragAndDrop.js:49
+#: indico/web/client/js/legacy/libs/timetable/DragAndDrop.js:42
 msgid "move to resize"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/DragAndDrop.js:422
+#: indico/web/client/js/legacy/libs/timetable/DragAndDrop.js:420
 msgid "<span class=\"key light\">Shift</span> is currently pressed. Changes will be applied to blocks after."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/DragAndDrop.js:575
+#: indico/web/client/js/legacy/libs/timetable/DragAndDrop.js:594
 msgid "Drop to move block inside session"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:134
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:135
 msgid "Show materials"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:207
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:236
 msgid "et al."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:293
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:332
 msgid "This poster session has "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:293
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:334
 msgid " contribution(s)."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:294
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:336
 msgid "Please click for more information."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:668
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:732
 msgid "Move entry"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:710
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:719
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:776 indico/web/client/js/legacy/libs/timetable/Draw.js:787
 msgid "This timetable entry does not exist anymore. Please refresh the page."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:720
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:788
 msgid "Refresh"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:819
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:891
 msgid "Move up"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:828
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:900
 msgid "Move down"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:1422
-#: indico/htdocs/js/indico/widgets/multiple_items_widget.js:43
-msgid "Edit"
-msgstr ""
-
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:1424
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:1588
 msgid "Edit poster"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:1456
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:1620
 msgid "Manage protection"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:1458
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:1622
 msgid "Manage poster protection"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:1486
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:1650
 msgid "Unschedule"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:1487
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:1651
 msgid "Unschedule poster"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:1488
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:1652
 msgid "Are you sure you want to unschedule the poster?"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:1491
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:1655
 msgid "Delete poster"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Draw.js:1492
+#: indico/web/client/js/legacy/libs/timetable/Draw.js:1656
 msgid "Are you sure you want to delete the poster?"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Filter.js:198
+#: indico/web/client/js/legacy/libs/timetable/Filter.js:219
 msgid "Sessions"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Filter.js:199
+#: indico/web/client/js/legacy/libs/timetable/Filter.js:224
 msgid "No sessions in the timetable"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Filter.js:202
+#: indico/web/client/js/legacy/libs/timetable/Filter.js:228
 msgid "Rooms"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Filter.js:203
+#: indico/web/client/js/legacy/libs/timetable/Filter.js:233
 msgid "No rooms found in the timetable"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Filter.js:207
+#: indico/web/client/js/legacy/libs/timetable/Filter.js:238
 msgid "Filter options"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Filter.js:209
+#: indico/web/client/js/legacy/libs/timetable/Filter.js:244
 msgid "Reset filter"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:24
+#: indico/web/client/js/legacy/libs/timetable/Management.js:15
 msgid "All"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:25
+#: indico/web/client/js/legacy/libs/timetable/Management.js:16
 msgid "None"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:26
+#: indico/web/client/js/legacy/libs/timetable/Management.js:19
 msgid "ID"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:29
+#: indico/web/client/js/legacy/libs/timetable/Management.js:24
 msgid "Sort by: "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:30
+#: indico/web/client/js/legacy/libs/timetable/Management.js:29
 msgid "Select: "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:173
+#: indico/web/client/js/legacy/libs/timetable/Management.js:188
 msgid "Add Contribution"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:222
+#: indico/web/client/js/legacy/libs/timetable/Management.js:238
 msgid "Add selected"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:249
+#: indico/web/client/js/legacy/libs/timetable/Management.js:273
 msgid "Create a new one"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:254
+#: indico/web/client/js/legacy/libs/timetable/Management.js:280
 msgid "You may choose to:"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:258
+#: indico/web/client/js/legacy/libs/timetable/Management.js:286
 msgid "Choose one (or more) unscheduled"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:264
+#: indico/web/client/js/legacy/libs/timetable/Management.js:294
 msgid "To add an unscheduled contribution, please select at least one"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:303
+#: indico/web/client/js/legacy/libs/timetable/Management.js:334
 msgid "Add contribution"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:353
+#: indico/web/client/js/legacy/libs/timetable/Management.js:387
 msgid "Step 1: Choose type of rescheduling"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:356
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:374
+#: indico/web/client/js/legacy/libs/timetable/Management.js:397
+#: indico/web/client/js/legacy/libs/timetable/Management.js:434
 msgid "See an example"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:359
+#: indico/web/client/js/legacy/libs/timetable/Management.js:402
 msgid "Adjust starting time of all entries"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:362
+#: indico/web/client/js/legacy/libs/timetable/Management.js:406
 msgid "Move the entries of "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:362
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:363
+#: indico/web/client/js/legacy/libs/timetable/Management.js:406
+#: indico/web/client/js/legacy/libs/timetable/Management.js:409
 msgid " by changing their"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:363
+#: indico/web/client/js/legacy/libs/timetable/Management.js:407
 msgid "Move the entries of the interval "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:364
+#: indico/web/client/js/legacy/libs/timetable/Management.js:410
 msgid " starting times. "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:366
+#: indico/web/client/js/legacy/libs/timetable/Management.js:412
 msgid "The first entry will start when the event starts ("
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:367
+#: indico/web/client/js/legacy/libs/timetable/Management.js:415
 msgid "The first entry will start when the interval starts ("
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:368
+#: indico/web/client/js/legacy/libs/timetable/Management.js:418
 msgid "and the other entries will follow consecutively after it. The durations of the entries will not change. "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:377
+#: indico/web/client/js/legacy/libs/timetable/Management.js:439
 msgid "Adjust duration of all entries"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:379
+#: indico/web/client/js/legacy/libs/timetable/Management.js:442
 msgid "Adjust the "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:379
+#: indico/web/client/js/legacy/libs/timetable/Management.js:443
 msgid " duration "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:379
+#: indico/web/client/js/legacy/libs/timetable/Management.js:444
 msgid "of the entries of "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:382
+#: indico/web/client/js/legacy/libs/timetable/Management.js:447
 msgid "the interval "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:383
+#: indico/web/client/js/legacy/libs/timetable/Management.js:448
 msgid ""
 " to fill the gaps between them, so that their starting time don't change. If a time gap is specified, the duration "
 "will be extended up to the value of this time gap before the starting time of the next entry. "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:448
+#: indico/web/client/js/legacy/libs/timetable/Management.js:531
 msgid "Step 2: Choose time gap between entries"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:470
+#: indico/web/client/js/legacy/libs/timetable/Management.js:568
 msgid "Step 3: Choose to fit sessions to their content"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:480
+#: indico/web/client/js/legacy/libs/timetable/Management.js:591
 msgid "This changes the start and end times of the session blocks occuring on  in order to fit their respective content "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:481
+#: indico/web/client/js/legacy/libs/timetable/Management.js:594
 msgid "before"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:481
+#: indico/web/client/js/legacy/libs/timetable/Management.js:595
 msgid " performing the rescheduling."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:506
+#: indico/web/client/js/legacy/libs/timetable/Management.js:619
 msgid "There will be no gaps between consecutive entries."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:511
+#: indico/web/client/js/legacy/libs/timetable/Management.js:624
 msgid "Entries will be separated by gaps of "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:513
+#: indico/web/client/js/legacy/libs/timetable/Management.js:626
 msgid "1 hour "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:515
+#: indico/web/client/js/legacy/libs/timetable/Management.js:628
 msgid " hours "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:519
+#: indico/web/client/js/legacy/libs/timetable/Management.js:632
 msgid "and "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:523
+#: indico/web/client/js/legacy/libs/timetable/Management.js:636
 msgid "1 minute."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:525
+#: indico/web/client/js/legacy/libs/timetable/Management.js:638
 msgid " minutes."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:607
+#: indico/web/client/js/legacy/libs/timetable/Management.js:719
 msgid "Rescheduling..."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:617
+#: indico/web/client/js/legacy/libs/timetable/Management.js:735
 msgid "Are you sure you want to reschedule entries ?"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:618
+#: indico/web/client/js/legacy/libs/timetable/Management.js:742
 msgid "The entries that are part of a session will"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:619
+#: indico/web/client/js/legacy/libs/timetable/Management.js:747
 msgid " first"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:620
+#: indico/web/client/js/legacy/libs/timetable/Management.js:749
 msgid " be fitted to their content."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:621
+#: indico/web/client/js/legacy/libs/timetable/Management.js:755
 msgid "Then, all entries "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:621
+#: indico/web/client/js/legacy/libs/timetable/Management.js:755
 msgid "All entries "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:622
+#: indico/web/client/js/legacy/libs/timetable/Management.js:756
 msgid " will have their "
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:623
+#: indico/web/client/js/legacy/libs/timetable/Management.js:757
 msgid "starting times"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:623
+#: indico/web/client/js/legacy/libs/timetable/Management.js:757
 msgid "duration"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:624
+#: indico/web/client/js/legacy/libs/timetable/Management.js:758
 msgid " changed."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:629
+#: indico/web/client/js/legacy/libs/timetable/Management.js:765
 msgid "Please review your choice"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:643
+#: indico/web/client/js/legacy/libs/timetable/Management.js:781
 msgid "Please select the rescheduling type"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:669
+#: indico/web/client/js/legacy/libs/timetable/Management.js:811
 msgid "Reschedule Entries"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:704
+#: indico/web/client/js/legacy/libs/timetable/Management.js:847
 msgid ""
 "This will change the starting and ending times of the session block {0} so that it encompasses all entries defined in"
 " its timetable."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:708
+#: indico/web/client/js/legacy/libs/timetable/Management.js:854
 msgid "Are you sure you want to proceed?"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:729
+#: indico/web/client/js/legacy/libs/timetable/Management.js:876
 msgid "Fitting..."
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Management.js:743
+#: indico/web/client/js/legacy/libs/timetable/Management.js:890
 msgid "Fit timetable to content"
 msgstr ""
 
-#: indico/htdocs/js/indico/modules/timetable/timetable/Undo.js:23
+#: indico/web/client/js/legacy/libs/timetable/Undo.js:13
 msgid "Undo last operation"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/location_widget.js:72
-msgid "Using default location from: {0} ({1})"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/location_widget.js:73
-msgid "Using custom location"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/location_widget.js:169
-msgid "Just use \"{0}\""
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/markdown_widget.js:40
-msgid "<strong>1</strong> char left"
-msgid_plural "<strong>{0}</strong> chars left"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/widgets/markdown_widget.js:49
-msgid "<strong>1</strong> word left"
-msgid_plural "<strong>{0}</strong> words left"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/htdocs/js/indico/widgets/multiple_items_widget.js:274
-msgid "Must be between {0} and {1}"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/multiple_items_widget.js:276
-msgid "Must be above {0}"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/multiple_items_widget.js:278
-msgid "Must be below {0}"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/multiple_items_widget.js:297
-msgid "Please fill in the required fields."
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:166
-msgid "Speaker"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:172
-msgid "Remove person"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:176
-msgid "Configure roles"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:187
-msgid "Submitter"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:232
-msgid "or"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:250
-msgid "Move to authors"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:254
-msgid "Move to co-authors"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:259
-msgid "Move to others"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:261
-msgid "Not a speaker anymore"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:262
-msgid "Make a speaker"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:273
-msgid "People in the 'Others' section <strong>must</strong> be speakers."
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:289
-msgid "Revoke submission rights"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:354
-msgid "Custom sorting has been applied. Click to restore alphabetical order."
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:356
-msgid "Alphabetical sorting is ON. Click to turn it off."
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:396
-msgid "You must add at least one speaker"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:399
-msgid "You must add at least one submitter"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:402
-msgid "You must add at least one co-author"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:405
-msgid "You must add at least one author"
-msgstr ""
-
-#: indico/htdocs/js/indico/widgets/person_link_widget.js:408
-msgid "You cannot have users in the Other section, please make them authors or co-authors"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingAdminLocation.tpl:259
-msgid "Delete room"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingAdminLocation.tpl:259
-msgid "Are you sure you want to delete this room? All related bookings will also be deleted. this action is PERMANENT!"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingBlockingForm.tpl:114
-msgid "Please add at least one room."
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingBlockingForm.tpl:118
-msgid "Create blocking"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingBlockingForm.tpl:118
-msgid "Do you want to create the blocking? Please note that the start and end date cannot be changed after creation."
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingBlockingForm.tpl:164
-msgid "Add Room"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingBlockingList.tpl:50
-msgid "Hide rooms"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingBlockingList.tpl:50
-msgid "Show rooms"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingBlockingsForMyRooms.tpl:77
-msgid "Processing..."
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:22
-msgid "This applies to all the following occurrences ({0} in total):"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:35
-msgid "Are you sure you want to <strong>cancel the whole booking</strong>?"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:36
-msgid "Cancel booking"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:42 indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:51
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:62 indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:74
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:84 indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:93
-msgid "Yes"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:42 indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:51
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:62 indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:74
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:84 indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:93
-msgid "No"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:45
-msgid "Accept booking"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:45
-msgid "Are you sure you want to <strong>accept</strong> this booking?"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:54
-msgid "Are you sure you want to <strong>reject the whole booking</strong>?"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:55
-msgid "Reject booking"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:66
-msgid "Are you sure you want to <strong>reject</strong> the booking for the selected date"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:67
-msgid "Reject occurrence"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:77
-msgid "Are you sure you want to <strong>cancel</strong> the booking for the selected date"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:78
-msgid "Cancel occurrence"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:87
-msgid "This action is irreversible. Are you sure you want to <strong>delete</strong> the booking?"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingDetails.tpl:88
-msgid "Delete booking"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingNewBookingPeriodWidget.tpl:262
-msgid "It is not possible to book room {0}"
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingRoomForm.tpl:115
-msgid "Saving failed. There is an error"
-msgid_plural "Saving failed. There are {0} errors"
-msgstr[0] ""
-msgstr[1] ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingSearchBookings.tpl:237
-#: indico/legacy/webinterface/tpls/RoomBookingSearchRooms.tpl:324
-msgid "There are errors in the form. Please correct fields with red background."
-msgstr ""
-
-#: indico/legacy/webinterface/tpls/RoomBookingSearchBookings.tpl:241
-msgid "Select room"
 msgstr ""
 

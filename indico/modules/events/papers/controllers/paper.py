@@ -1,26 +1,19 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 import os
+from collections import defaultdict
 from itertools import chain
 from operator import attrgetter
 
 from flask import flash, request, session
+from sqlalchemy.orm import selectinload
 from werkzeug.exceptions import Forbidden
 from werkzeug.utils import cached_property
 
@@ -35,6 +28,7 @@ from indico.modules.events.papers.views import WPDisplayJudgingArea, WPManagePap
 from indico.modules.events.util import ZipGeneratorMixin
 from indico.util.fs import secure_filename
 from indico.util.i18n import _, ngettext
+from indico.web.flask.util import url_for
 from indico.web.util import jsonify_data, jsonify_form, jsonify_template
 
 
@@ -98,11 +92,15 @@ class RHCustomizePapersList(RHPapersListBase):
 class RHPapersActionBase(RHPapersListBase):
     """Base class for actions on selected papers"""
 
+    def _get_contrib_query_options(self):
+        return ()
+
     def _process_args(self):
         RHPapersListBase._process_args(self)
         ids = map(int, request.form.getlist('contribution_id'))
         self.contributions = (self.list_generator._build_query()
                               .filter(Contribution.id.in_(ids))
+                              .options(*self._get_contrib_query_options())
                               .all())
 
 
@@ -157,6 +155,9 @@ class RHJudgePapers(RHPapersActionBase):
 class RHAssignPapersBase(RHPapersActionBase):
     """Base class for assigning/unassigning paper reviewing roles"""
 
+    def _get_contrib_query_options(self):
+        return [selectinload('person_links')]
+
     def _process_args(self):
         RHPapersActionBase._process_args(self)
         self.role = PaperReviewingRole[request.view_args['role']]
@@ -176,13 +177,30 @@ class RHAssignPapersBase(RHPapersActionBase):
             flash(_("Paper reviewing roles have been unassigned."), 'success')
         return jsonify_data(**self.list_generator.render_list())
 
+    def _get_conflicts(self, users):
+        conflicts = defaultdict(list)
+        for user in users:
+            if not user.affiliation:
+                continue
+            for contribution in self.contributions:
+                conflicts[user].extend(
+                    (
+                        contribution.title,
+                        url_for('contributions.display_contribution', contribution),
+                    )
+                    for person in contribution.person_links
+                    if user.affiliation in person.affiliation
+                )
+        return conflicts
+
     def _render_form(self, users, action):
+        conflicts = self._get_conflicts(users)
         user_competences = self.event.cfp.user_competences
         competences = {'competences_{}'.format(user_id): competences.competences
                        for user_id, competences in user_competences.iteritems()}
         return jsonify_template('events/papers/assign_role.html', event=self.event, role=self.role.name,
                                 action=action, users=users, competences=competences,
-                                contribs=self.contributions)
+                                contribs=self.contributions, conflicts=conflicts)
 
 
 class RHAssignPapers(RHAssignPapersBase):

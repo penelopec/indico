@@ -1,23 +1,15 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from indico.modules.events.roles.controllers import (RHAddEventRole, RHAddEventRoleMembers, RHDeleteEventRole,
-                                                     RHEditEventRole, RHEventRoles, RHRemoveEventRoleMember)
+                                                     RHEditEventRole, RHEventRoleMembersImportCSV, RHEventRoles,
+                                                     RHRemoveEventRoleMember)
 from indico.web.flask.wrappers import IndicoBlueprint
 
 
@@ -30,5 +22,9 @@ _bp.add_url_rule('/create', 'add_role', RHAddEventRole, methods=('GET', 'POST'))
 _bp.add_url_rule('/<int:role_id>/edit', 'edit_role', RHEditEventRole, methods=('GET', 'POST'))
 _bp.add_url_rule('/<int:role_id>', 'delete_role', RHDeleteEventRole, methods=('DELETE',))
 
-_bp.add_url_rule('/<int:role_id>/members', 'add_members', RHAddEventRoleMembers, methods=('POST',))
-_bp.add_url_rule('/<int:role_id>/members/<int:user_id>', 'remove_member', RHRemoveEventRoleMember, methods=('DELETE',))
+_bp.add_url_rule('/<int:role_id>/members', 'add_role_members', RHAddEventRoleMembers, methods=('POST',))
+_bp.add_url_rule('/<int:role_id>/members/<int:user_id>', 'remove_role_member', RHRemoveEventRoleMember,
+                 methods=('DELETE',))
+
+_bp.add_url_rule('/<int:role_id>/members/import', 'add_members_import_csv', RHEventRoleMembersImportCSV,
+                 methods=('GET', 'POST'))

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 """
 Base export interface
@@ -115,7 +106,7 @@ class HTTPAPIHook(object):
             tzName = config.DEFAULT_TIMEZONE
         try:
             self._tz = pytz.timezone(tzName)
-        except pytz.UnknownTimeZoneError, e:
+        except pytz.UnknownTimeZoneError as e:
             raise HTTPAPIError("Bad timezone: '%s'" % e.message, 400)
         max = self.MAX_RECORDS.get(self._detail, 1000)
         self._userLimit = get_query_parameter(self._queryParams, ['n', 'limit'], 0, integer=True)
@@ -175,6 +166,8 @@ class HTTPAPIHook(object):
     def __call__(self, user):
         """Perform the actual exporting"""
         if self.HTTP_POST != (request.method == 'POST'):
+            # XXX: this should never happen, since HTTP_POST is only used within /api/,
+            # where the flask url rule requires POST
             raise HTTPAPIError('This action requires %s' % ('POST' if self.HTTP_POST else 'GET'), 405)
         if not self.GUEST_ALLOWED and not user:
             raise HTTPAPIError('Guest access to this resource is forbidden.', 403)
@@ -261,12 +254,12 @@ class DataFetcher(object):
 
         try:
             rel, value = cls._parseDateTime(dateTime, ctx == 'from')
-        except ArgumentParseError, e:
+        except ArgumentParseError as e:
             raise HTTPAPIError(e.message, 400)
 
         if rel == 'abs':
             return tz.localize(value) if not value.tzinfo else value
-        elif rel == 'ctx' and type(value) == timedelta:
+        elif rel == 'ctx' and isinstance(value, timedelta):
             value = now_utc() + value
 
         # from here on, 'value' has to be a datetime

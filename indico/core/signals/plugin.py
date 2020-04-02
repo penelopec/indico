@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from blinker import Namespace
 
@@ -78,4 +69,43 @@ This signal is called once during initialization so it should not use any
 data that may change at runtime.  The behavior of a customization path returned
 by this function is exactly like ``<CUSTOMIZATION_DIR>/templates``, but
 it has lower priority than the one from the global customization dir.
+""")
+
+schema_post_dump = _signals.signal('schema-post-dump', """
+Called when a marshmallow schema is dumped. The *sender* is the schema class
+and code using this signal should always specify it. The signal is called with
+the following arguments:
+
+- ``many`` -- bool indicating whether the data was dumped with ``many=True`` or not
+- ``data`` -- the dumped data. this is guaranteed to be a list; in case of ``many=False``
+              it is guaranteed to contain exactly one element
+- ``orig`` -- the original data before dumping. just like ``data`` it is always a list
+
+If a plugin wants to modify the data returned when dumping, it may do so by modifying
+the contents of ``data``.
+""")
+
+schema_pre_load = _signals.signal('schema-pre-load', """
+Called when a marshmallow schema is loaded. The *sender* is the schema class
+and code using this signal should always specify it. The signal is called with
+the following arguments:
+
+- ``data`` -- the raw data passed to marshmallow; this is usually a dict of raw
+              json/form data coming from the user, so it can have all types valid
+              in JSON
+
+If a plugin wants to modify the data the schema will eventually load, it may do so by
+modifying the contents of ``data``.
+""")
+
+schema_post_load = _signals.signal('schema-post-load', """
+Called after a marshmallow schema is loaded. The *sender* is the schema class
+and code using this signal should always specify it. The signal is called with
+the following arguments:
+
+- ``data`` -- the data returned by marshmallow; this is usually a dict which may contain
+              more complex data types than those valid in JSON
+
+If a plugin wants to modify the resulting data, it may do so by modifying the contents of
+``data``.
 """)

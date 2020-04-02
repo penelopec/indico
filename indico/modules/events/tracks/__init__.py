@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -53,10 +44,8 @@ def _extend_event_menu(sender, **kwargs):
 
 @signals.users.merged.connect
 def _merge_users(target, source, **kwargs):
-    target.abstract_reviewer_for_tracks |= source.abstract_reviewer_for_tracks
-    source.abstract_reviewer_for_tracks.clear()
-    target.convener_for_tracks |= source.convener_for_tracks
-    source.convener_for_tracks.clear()
+    from indico.modules.events.tracks.models.principals import TrackPrincipal
+    TrackPrincipal.merge_users(target, source, 'track')
 
 
 @signals.event_management.get_cloners.connect
@@ -65,11 +54,31 @@ def _get_cloners(sender, **kwargs):
 
 
 @signals.acl.get_management_permissions.connect_via(Event)
-def _get_management_permissions(sender, **kwargs):
-    return TrackConvenerPermission
+def _get_event_management_permissions(sender, **kwargs):
+    yield TrackConvenerPermission
+    yield GlobalConvenePermission
+
+
+@signals.acl.get_management_permissions.connect_via(Track)
+def _get_track_management_permissions(sender, **kwargs):
+    yield ConvenePermission
+
+
+class ConvenePermission(ManagementPermission):
+    name = 'convene'
+    friendly_name = _('Convene')
+    description = _('Grants track convener rights in a track.')
+    user_selectable = True
+    color = 'purple'
+
+
+class GlobalConvenePermission(ManagementPermission):
+    name = 'convene_all_abstracts'
+    friendly_name = _('Convene all tracks')
+    description = _('Grants convene rights to all tracks of the event.')
 
 
 class TrackConvenerPermission(ManagementPermission):
     name = 'track_convener'
     friendly_name = _('Track convener')
-    description = _('Grants track convener rights in an event')
+    description = _('Grants track convener rights in an event.')

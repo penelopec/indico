@@ -1,29 +1,22 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from datetime import timedelta
 
+from flask import request
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
-from wtforms.fields import BooleanField, StringField, TextAreaField
+from wtforms.fields import BooleanField, HiddenField, SelectField, StringField, TextAreaField
 from wtforms.validators import DataRequired, ValidationError
 
 from indico.core.db import db
 from indico.core.db.sqlalchemy.descriptions import RenderMode
+from indico.modules.events.abstracts.settings import BOASortField
 from indico.modules.events.contributions.fields import (ContributionPersonLinkListField,
                                                         SubContributionPersonLinkListField)
 from indico.modules.events.contributions.models.references import ContributionReference, SubContributionReference
@@ -34,8 +27,8 @@ from indico.util.date_time import get_day_end
 from indico.util.i18n import _
 from indico.web.flask.util import url_for
 from indico.web.forms.base import IndicoForm, generated_data
-from indico.web.forms.fields import (IndicoDateTimeField, IndicoLocationField, IndicoProtectionField,
-                                     IndicoTagListField, TimeDeltaField)
+from indico.web.forms.fields import (HiddenFieldList, IndicoDateTimeField, IndicoEnumSelectField, IndicoLocationField,
+                                     IndicoProtectionField, IndicoTagListField, TimeDeltaField)
 from indico.web.forms.fields.principals import PermissionsField
 from indico.web.forms.validators import DateTimeRange, MaxDuration
 from indico.web.forms.widgets import SwitchWidget
@@ -59,6 +52,7 @@ class ContributionForm(IndicoForm):
     references = ReferencesField(_("External IDs"), reference_class=ContributionReference,
                                  description=_("Manage external resources for this contribution"))
     board_number = StringField(_("Board Number"))
+    code = StringField(_('Programme code'))
 
     @generated_data
     def render_mode(self):
@@ -123,6 +117,7 @@ class SubContributionForm(IndicoForm):
                                                   description=_('The speakers of the subcontribution'))
     references = ReferencesField(_("External IDs"), reference_class=SubContributionReference,
                                  description=_("Manage external resources for this sub-contribution"))
+    code = StringField(_('Programme code'))
 
     @generated_data
     def render_mode(self):
@@ -208,3 +203,21 @@ class ContributionTypeForm(IndicoForm):
             query = query.filter(ContributionType.id != self.contrib_type.id)
         if query.count():
             raise ValidationError(_("A contribution type with this name already exists"))
+
+
+class ContributionExportTeXForm(IndicoForm):
+    """Form for TeX-based export selection"""
+    format = SelectField(_('Format'), default='PDF')
+    sort_by = IndicoEnumSelectField(_('Sort by'), enum=BOASortField, default=BOASortField.abstract_title,
+                                    sorted=True)
+    contribution_ids = HiddenFieldList()
+    submitted = HiddenField()
+
+    def __init__(self, *args, **kwargs):
+        self.contribs = kwargs.get('contribs')
+        super(ContributionExportTeXForm, self).__init__(*args, **kwargs)
+        if not self.contribution_ids.data:
+            self.contribution_ids.data = [c.id for c in self.contribs]
+
+    def is_submitted(self):
+        return super(ContributionExportTeXForm, self).is_submitted() and 'submitted' in request.form

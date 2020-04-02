@@ -1,25 +1,21 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
+from collections import OrderedDict
 from datetime import timedelta
 
 import dateutil.parser
 import pytz
+from sqlalchemy import inspect
+from werkzeug.utils import cached_property
+
+from indico.core.db import db
 
 
 class SettingConverter(object):
@@ -81,3 +77,81 @@ class EnumConverter(SettingConverter):
 
     def to_python(self, value):
         return self.enum[value]
+
+
+class ModelConverter(SettingConverter):
+    """Convert a SQLAlchemy object from/to its PK.
+
+    :param model: A SQLAlchemy model with a single-column PK or the name
+                  of a model (if importing the model would cause circular
+                  dependencies).
+    """
+
+    def __init__(self, model):
+        self._model = model
+
+    @cached_property
+    def model(self):
+        model = getattr(db.m, self._model) if isinstance(self._model, basestring) else self._model
+        assert len(inspect(model).primary_key) == 1
+        return model
+
+    def from_python(self, value):
+        if value is None:
+            return None
+        assert isinstance(value, self.model)
+        return inspect(value).identity_key[1][0]
+
+    def to_python(self, value):
+        if value is None:
+            return None
+        return self.model.query.get(value)
+
+
+class ModelListConverter(SettingConverter):
+    """Convert a list of SQLAlchemy objects from/to a list of PKs.
+
+    :param model: A SQLAlchemy model with a single-column PK or the name
+                  of a model (if importing the model would cause circular
+                  dependencies).
+    :param collection_class: The collection to use for the python-side
+                             value. Defaults to `list` but could also be
+                             `set` for example.
+    """
+
+    def __init__(self, model, collection_class=list):
+        self._model = model
+        self.collection_class = collection_class
+
+    @cached_property
+    def model(self):
+        if isinstance(self._model, basestring):
+            return getattr(db.m, self._model)
+        return self._model
+
+    @cached_property
+    def column(self):
+        pks = inspect(self.model).primary_key
+        assert len(pks) == 1
+        return pks[0]
+
+    def from_python(self, value):
+        if not value:
+            return []
+        assert all(isinstance(x, self.model) for x in value)
+        return [inspect(x).identity_key[1][0] for x in value]
+
+    def to_python(self, value):
+        if not value:
+            return []
+        return self.collection_class(self.model.query.filter(self.column.in_(value)))
+
+
+class OrderedDictConverter(SettingConverter):
+    @staticmethod
+    def from_python(value):
+        return value.items()
+
+    @staticmethod
+    def to_python(value):
+        return OrderedDict(value)

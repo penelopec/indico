@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -24,7 +15,7 @@ import jsonschema
 from flask import request
 from wtforms.fields import BooleanField, FloatField, HiddenField, IntegerField, SelectField, StringField, TextAreaField
 from wtforms.fields.html5 import DecimalField, EmailField
-from wtforms.validators import DataRequired, InputRequired, NumberRange, Optional, ValidationError
+from wtforms.validators import DataRequired, Email, InputRequired, NumberRange, Optional, ValidationError
 from wtforms.widgets.html5 import NumberInput
 
 from indico.core.config import config
@@ -179,7 +170,7 @@ class InvitationFormNew(InvitationFormBase):
                              description=_("The first name of the user you are inviting."))
     last_name = StringField(_('Last name'), [DataRequired()],
                             description=_("The last name of the user you are inviting."))
-    email = EmailField(_('Email'), [DataRequired()], filters=[lambda x: x.lower() if x else x],
+    email = EmailField(_('Email'), [DataRequired(), Email()], filters=[lambda x: x.lower() if x else x],
                        description=_("The invitation will be sent to this address."))
     affiliation = StringField(_('Affiliation'),
                               description=_("The affiliation of the user you are inviting."))
@@ -373,7 +364,7 @@ class BadgeSettingsForm(IndicoForm):
                                description=_("Save these values in the event settings"))
     dashed_border = BooleanField(_("Dashed border around each badge"), widget=SwitchWidget(),
                                  description=_("Display a dashed border around each badge"))
-    page_size = IndicoEnumSelectField(_('Page size'), enum=PageSize)
+    page_size = IndicoEnumSelectField(_('Page size'), enum=PageSize, sorted=True)
     page_orientation = IndicoEnumSelectField(_('Page orientation'), enum=PageOrientation)
     page_layout = IndicoEnumSelectField(_('Page layout'), enum=PageLayout,
                                         description=_('The single sided (foldable) option is only available if the '

@@ -1,19 +1,9 @@
-/* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
- *
- * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
- */
+// This file is part of Indico.
+// Copyright (C) 2002 - 2020 CERN
+//
+// Indico is free software; you can redistribute it and/or
+// modify it under the terms of the MIT License; see the
+// LICENSE file for more details.
 
 @import "partials/toolbars";
 
@@ -51,7 +41,23 @@
     @include border-all($red);
 }
 
-@include apply-to-inputs('%text-input');
+:not(.ui) {
+    > input[type=date],
+    > input[type=datetime],
+    > input[type=datetime-local],
+    > input[type=email],
+    > input[type=month],
+    > input[type=number],
+    > input[type=password],
+    > input[type=search],
+    > input[type=tel],
+    > input[type=text],
+    > input[type=time],
+    > input[type=url],
+    > input[type=week] {
+        @extend %text-input;
+    }
+}
 
 input[type=file] {
     &.hasError {
@@ -280,8 +286,11 @@ $dropdown-transition: $dropdown-transition-step ease-out;
     }
 
     .clear-pickers {
+        @include icon-before('icon-cross');
         font-size: 1.3em;
-        vertical-align: sub;
+        position: relative;
+        left: 20px;
+        top: 4px;
 
         &:hover {
             color: $red;
@@ -433,4 +442,9 @@ dd > .i-has-action {
     .placeholders {
         padding: 0.25em 0;
     }
+}
+
+code.placeholder {
+    font-style: normal;
+    font-size: 0.9em;
 }

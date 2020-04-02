@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 """
 Mixins that provide inheriting classes with the basic columns and
@@ -219,13 +210,16 @@ class StoredFileMixin(object):
             raise Exception('There is no file to send')
         return self.storage.send_file(self.storage_file_id, self.content_type, self.filename, inline=inline)
 
-    def delete(self):
+    def delete(self, delete_from_db=False):
         """Delete the file from storage"""
         if self.storage_file_id is None:
             raise Exception('There is no file to delete')
         self.storage.delete(self.storage_file_id)
-        self.storage_backend = None
-        self.storage_file_id = None
-        self.size = None
-        self.content_type = None
-        self.filename = None
+        if delete_from_db:
+            db.session.delete(self)
+        else:
+            self.storage_backend = None
+            self.storage_file_id = None
+            self.size = None
+            self.content_type = None
+            self.filename = None

@@ -1,19 +1,10 @@
 #!/usr/bin/env python
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 import errno
 import json
@@ -57,6 +48,7 @@ def _get_webpack_build_config(url_root='/'):
             'baseURLPath': url_root,
             'clientPath': os.path.join(root_path, 'web', 'client'),
             'rootPath': root_path,
+            'urlMapPath': os.path.normpath(os.path.join(root_path, '..', 'url_map.json')),
             'staticPath': os.path.join(root_path, 'web', 'static'),
             'staticURL': url_root.rstrip('/') + '/',
             'distPath': os.path.join(root_path, 'web', 'static', 'dist'),
@@ -75,6 +67,16 @@ def _get_plugin_bundle_config(plugin_dir):
     except IOError as e:
         if e.errno == errno.ENOENT:
             return {}
+        raise
+
+
+def _get_plugin_build_deps(plugin_dir):
+    try:
+        with open(os.path.join(plugin_dir, 'required-build-plugins.json')) as f:
+            return json.load(f)
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            return []
         raise
 
 
@@ -109,6 +111,7 @@ def _get_plugin_webpack_build_config(plugin_dir, url_root='/'):
     plugin_name = packages[0].replace('indico_', '')  # XXX: find a better solution for this
     return {
         'isPlugin': True,
+        'plugin': plugin_name,
         'indico': {
             'build': core_config['build']
         },
@@ -116,6 +119,7 @@ def _get_plugin_webpack_build_config(plugin_dir, url_root='/'):
             'indicoSourcePath': os.path.abspath('.'),
             'clientPath': os.path.join(plugin_root_path, 'client'),
             'rootPath': plugin_root_path,
+            'urlMapPath': os.path.join(plugin_dir, 'url_map.json'),
             'staticPath': os.path.join(plugin_root_path, 'static'),
             'staticURL': os.path.join(url_root, 'static', 'plugins', plugin_name) + '/',
             'distPath': os.path.join(plugin_root_path, 'static', 'dist'),
@@ -126,11 +130,7 @@ def _get_plugin_webpack_build_config(plugin_dir, url_root='/'):
 
 
 def _get_webpack_args(dev, watch):
-    args = []
-    if dev:
-        args.append('--env.NODE_ENV=development')
-    else:
-        args += ['-p', '--env.NODE_ENV=production']
+    args = ['--mode', 'development' if dev else 'production']
     if watch:
         args.append('--watch')
     return args
@@ -174,7 +174,8 @@ def build_indico(dev, clean, watch, url_root):
     if clean:
         _clean(webpack_build_config)
     force_url_map = ['--force'] if clean or not dev else []
-    subprocess.check_call(['python', 'bin/maintenance/dump_url_map.py'] + force_url_map)
+    url_map_path = webpack_build_config['build']['urlMapPath']
+    subprocess.check_call(['python', 'bin/maintenance/dump_url_map.py', '--output', url_map_path] + force_url_map)
     args = _get_webpack_args(dev, watch)
     try:
         subprocess.check_call(['npx', 'webpack'] + args)
@@ -227,7 +228,12 @@ def build_plugin(plugin_dir, dev, clean, watch, url_root):
     if clean:
         _clean(webpack_build_config, plugin_dir)
     force_url_map = ['--force'] if clean or not dev else []
-    subprocess.check_call(['python', 'bin/maintenance/dump_url_map.py'] + force_url_map)
+    url_map_path = webpack_build_config['build']['urlMapPath']
+    dump_plugin_args = ['--plugin', webpack_build_config['plugin']]
+    for name in _get_plugin_build_deps(plugin_dir):
+        dump_plugin_args += ['--plugin', name]
+    subprocess.check_call(['python', 'bin/maintenance/dump_url_map.py',
+                           '--output', url_map_path] + dump_plugin_args + force_url_map)
     webpack_config_file = os.path.join(plugin_dir, 'webpack.config.js')
     if not os.path.exists(webpack_config_file):
         webpack_config_file = 'plugin.webpack.config.js'

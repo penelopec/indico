@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 """
 String manipulation functions
@@ -34,7 +25,7 @@ from uuid import uuid4
 import bleach
 import email_validator
 import markdown
-import translitcodec  # this is NOT unused. it needs to be imported to register the codec.
+import translitcodec  # noqa: F401 (this is NOT unused. it needs to be imported to register the codec)
 from html2text import HTML2Text
 from jinja2.filters import do_striptags
 from lxml import etree, html
@@ -154,32 +145,24 @@ def slugify(*args, **kwargs):
 
     :param lower: Whether the slug should be all-lowercase
     :param maxlen: Maximum slug length
+    :param fallback: Fallback in case of an empty slug
     """
 
     lower = kwargs.get('lower', True)
     maxlen = kwargs.get('maxlen')
+    fallback = kwargs.get('fallback', '')
 
     value = u'-'.join(to_unicode(val) for val in args)
     value = value.encode('translit/long')
-    value = re.sub(ur'[^\w\s-]', u'', value).strip()
+    value = re.sub(r'[^\w\s-]', u'', value).strip()
 
     if lower:
         value = value.lower()
-    value = re.sub(ur'[-\s]+', u'-', value)
+    value = re.sub(r'[-\s]+', u'-', value)
     if maxlen:
         value = value[0:maxlen].rstrip(u'-')
 
-    return value
-
-
-def unicode_struct_to_utf8(obj):
-    if isinstance(obj, unicode):
-        return obj.encode('utf-8', 'replace')
-    elif isinstance(obj, list):
-        return map(unicode_struct_to_utf8, obj)
-    elif isinstance(obj, dict):
-        return {unicode_struct_to_utf8(k): unicode_struct_to_utf8(v) for k, v in obj.iteritems()}
-    return obj
+    return value or fallback
 
 
 def return_ascii(f):
@@ -256,11 +239,6 @@ def render_markdown(text, escape_latex_math=True, md=None, **kwargs):
         return result
 
 
-def render_markdown_utf8(text):
-    """UTF-8 version for Mako usage (will be deprecated)"""
-    return render_markdown(text).encode('utf-8')
-
-
 def sanitize_for_platypus(text):
     """Sanitize HTML to be used in platypus"""
     tags = ['b', 'br', 'em', 'font', 'i', 'img', 'strike', 'strong', 'sub', 'sup', 'u', 'span', 'div', 'p']
@@ -300,10 +278,31 @@ def validate_email(email):
         return True
 
 
+def validate_email_verbose(email):
+    """Validate the given email address.
+
+    This checks both if it looks valid and if it has valid
+    MX (or A/AAAA) records.
+
+    :return: ``None`` for a valid email address, otherwise ``'invalid'`` or
+             ``'undeliverable'`` depending on whether the email address has
+             syntax errors or dns validation failed.
+    """
+    email = to_unicode(email)
+    try:
+        email_validator.validate_email(to_unicode(email))
+    except email_validator.EmailUndeliverableError:
+        return 'undeliverable'
+    except email_validator.EmailNotValidError:
+        return 'invalid'
+    else:
+        return None
+
+
 def validate_emails(emails):
     """Validate a space/semicolon/comma-separated list of email addresses."""
     emails = to_unicode(emails)
-    emails = re.split(ur'[\s;,]+', emails)
+    emails = re.split(r'[\s;,]+', emails)
     return all(validate_email(email) for email in emails if email)
 
 
@@ -397,7 +396,7 @@ def text_to_repr(text, html=False, max_length=50):
         text = u''
     if html:
         text = bleach.clean(text, tags=[], strip=True)
-    text = re.sub(ur'\s+', u' ', text)
+    text = re.sub(r'\s+', u' ', text)
     if max_length is not None and len(text) > max_length:
         text = text[:max_length] + u'...'
     return text.strip()

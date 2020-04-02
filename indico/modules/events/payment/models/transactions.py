@@ -1,23 +1,14 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from flask import render_template
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.dialects.postgresql import JSONB
 
 from indico.core.db import db
 from indico.core.db.sqlalchemy import PyIntEnum
@@ -164,7 +155,7 @@ class PaymentTransaction(db.Model):
     )
     #: the base amount the user needs to pay (without payment-specific fees)
     amount = db.Column(
-        db.Numeric(8, 2),  # max. 999999.99
+        db.Numeric(11, 2),  # max. 999999999.99
         nullable=False
     )
     #: the currency of the payment (ISO string, e.g. EUR or USD)
@@ -186,7 +177,7 @@ class PaymentTransaction(db.Model):
     )
     #: plugin-specific data of the payment
     data = db.Column(
-        JSON,
+        JSONB,
         nullable=False
     )
 

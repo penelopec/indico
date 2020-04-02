@@ -18,6 +18,7 @@ logging.yaml
 *.mo
 indico/web/static/dist
 url_map.json
+messages-react.json
 
 # fetched external dependencies
 indico/htdocs/*/lib/
@@ -28,7 +29,6 @@ node_modules
 .idea/
 *.sublime-*
 .vscode/
-jsconfig.json
 
 # testing
 .coverage
@@ -44,5 +44,4 @@ htmlcov/
 
 # node/webpack
 webpack-build-config.json
-package-lock.json
 *.lock

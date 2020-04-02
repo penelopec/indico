@@ -27,7 +27,7 @@
                 <div class="toolbar">
                     <a class="icon-checkbox-checked i-button arrow left icon-only" aria-hidden="true" href="#"
                        data-toggle="dropdown"></a>
-                    <ul class="dropdown">
+                    <ul class="i-dropdown">
                         <li><a href="#" id="select-all">{% trans %}All{% endtrans %}</a></li>
                         <li><a href="#" id="select-none">{% trans %}None{% endtrans %}</a></li>
                     </ul>
@@ -48,14 +48,16 @@
                     <a class="i-button arrow button js-requires-selected-row disabled" data-toggle="dropdown">
                         {%- trans %}Export{% endtrans -%}
                     </a>
-                    <ul class="dropdown">
-                        <li>
-                            <a href="#"
-                               class="icon-file-pdf js-requires-selected-row disabled js-submit-list-form"
-                               data-href="{{ url_for('.display_abstracts_pdf_export', track) }}">
-                                PDF
-                            </a>
-                        </li>
+                    <ul class="i-dropdown">
+                        {% if indico_config.LATEX_ENABLED %}
+                            <li>
+                                <a href="#"
+                                   class="icon-file-pdf js-requires-selected-row disabled js-submit-list-form"
+                                   data-href="{{ url_for('.display_abstracts_pdf_export', track) }}">
+                                    PDF
+                                </a>
+                            </li>
+                        {% endif %}
                         <li>
                             <a href="#"
                                class="icon-file-spreadsheet js-requires-selected-row disabled js-submit-list-form"

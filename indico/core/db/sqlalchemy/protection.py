@@ -1,20 +1,13 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
+
+import itertools
 
 from flask import has_request_context, session
 from sqlalchemy import inspect
@@ -44,6 +37,8 @@ class ProtectionMode(RichIntEnum):
 
 
 class ProtectionMixin(object):
+    #: Whether the object protection mode is disabled
+    disable_protection_mode = False
     #: The protection modes that are not allowed.  Can be overridden
     #: in the model that is using the mixin.  Affects the table
     #: structure, so any changes to it should go along with a migration
@@ -51,6 +46,8 @@ class ProtectionMixin(object):
     #: not make much sense in most cases to make something public even
     #: though its parent object is private (or inheriting).
     disallowed_protection_modes = frozenset({ProtectionMode.public})
+    #: The default protection mode a new object has
+    default_protection_mode = ProtectionMode.inheriting
     #: Whether objects with inheriting protection may have their own
     #: ACL entries (which will grant access even if the user cannot
     #: access the parent object).
@@ -77,11 +74,12 @@ class ProtectionMixin(object):
 
     @declared_attr
     def protection_mode(cls):
-        return db.Column(
-            PyIntEnum(ProtectionMode, exclude_values=cls.disallowed_protection_modes),
-            nullable=False,
-            default=ProtectionMode.inheriting
-        )
+        if not cls.disable_protection_mode:
+            return db.Column(
+                PyIntEnum(ProtectionMode, exclude_values=cls.disallowed_protection_modes),
+                nullable=False,
+                default=cls.default_protection_mode
+            )
 
     @declared_attr
     def access_key(cls):
@@ -110,10 +108,14 @@ class ProtectionMixin(object):
 
     @hybrid_property
     def is_public(self):
+        if self.disable_protection_mode:
+            raise NotImplementedError
         return self.protection_mode == ProtectionMode.public
 
     @hybrid_property
     def is_inheriting(self):
+        if self.disable_protection_mode:
+            raise NotImplementedError
         return self.protection_mode == ProtectionMode.inheriting
 
     @hybrid_property
@@ -123,6 +125,8 @@ class ProtectionMixin(object):
         If you also care about inherited protection from a parent,
         use `is_protected` instead.
         """
+        if self.disable_protection_mode:
+            raise NotImplementedError
         return self.protection_mode == ProtectionMode.protected
 
     @property
@@ -131,6 +135,8 @@ class ProtectionMixin(object):
         Checks whether ths object is protected, either by itself or
         by inheriting from a protected object.
         """
+        if self.disable_protection_mode:
+            raise NotImplementedError
         if self.is_inheriting:
             return self.protection_parent.is_protected
         else:
@@ -138,6 +144,8 @@ class ProtectionMixin(object):
 
     @property
     def protection_repr(self):
+        if self.disable_protection_mode:
+            return 'protection_mode=disabled'
         protection_mode = self.protection_mode.name if self.protection_mode is not None else None
         return 'protection_mode={}'.format(protection_mode)
 
@@ -155,6 +163,10 @@ class ProtectionMixin(object):
         # we stay on the safe side and deny access
         return all(rv) if rv else None
 
+    @staticmethod
+    def is_user_admin(user):
+        return user.is_admin
+
     @memoize_request
     def can_access(self, user, allow_admin=True):
         """Checks if the user can access the object.
@@ -163,13 +175,15 @@ class ProtectionMixin(object):
                      user is not logged in.
         :param allow_admin: If admin users should always have access
         """
+        if self.disable_protection_mode:
+            raise NotImplementedError
 
         override = self._check_can_access_override(user, allow_admin=allow_admin)
         if override is not None:
             return override
 
         # Usually admins can access everything, so no need for checks
-        if allow_admin and user and user.is_admin:
+        if allow_admin and user and type(self).is_user_admin(user):
             rv = True
         # If there's a valid access key we can skip all other ACL checks
         elif self.allow_access_key and self.check_access_key():
@@ -260,10 +274,13 @@ class ProtectionMixin(object):
                       that the change should not be logged, trigger
                       emails or result in similar notifications.
         :return: The ACL entry for the given principal or ``None`` if
-                 he was removed (or not added).
+                 there is no corresponding entry in the end.
         """
         principal = _resolve_principal(principal)
         principal_class, entry = _get_acl_data(self, principal)
+        if read_access is None:
+            # nothing to do -> return the entry (which may be None)
+            return entry
         if entry is None and read_access:
             entry = principal_class(principal=principal)
             self.acl_entries.add(entry)
@@ -365,7 +382,7 @@ class ProtectionManagersMixin(ProtectionMixin):
             return all(rv)
 
         # Usually admins can access everything, so no need for checks
-        if not explicit_permission and allow_admin and user.is_admin:
+        if not explicit_permission and allow_admin and type(self).is_user_admin(user):
             return True
 
         if any(user in entry.principal
@@ -414,7 +431,7 @@ class ProtectionManagersMixin(ProtectionMixin):
                       that the change should not be logged, trigger
                       emails or result in similar notifications.
         :return: The ACL entry for the given principal or ``None`` if
-                 he was removed (or not added).
+                 there is no corresponding entry in the end.
         """
         if permissions is not None and (add_permissions or del_permissions):
             raise ValueError('add_permissions/del_permissions and permissions are mutually exclusive')
@@ -463,11 +480,26 @@ class ProtectionManagersMixin(ProtectionMixin):
                                        old_data=old_data, quiet=quiet)
         return entry
 
-    def get_manager_list(self, recursive=False):
-        managers = {x.principal for x in self.acl_entries if x.has_management_permission()}
+    def get_manager_list(self, recursive=False, include_groups=True):
+        managers = {
+            x.principal
+            for x in self.acl_entries
+            if x.has_management_permission() and (include_groups or x.type == PrincipalType.user)
+        }
         if recursive and self.protection_parent:
-            managers.update(self.protection_parent.get_manager_list(recursive=True))
+            managers.update(self.protection_parent.get_manager_list(recursive=True, include_groups=include_groups))
         return managers
+
+    def get_manager_emails(self, include_groups=True):
+        """Get the emails of all managers.
+
+        :param include_groups: whether to also include group members
+        """
+        return set(itertools.chain.from_iterable(
+            x.get_emails()
+            for x in self.acl_entries
+            if x.has_management_permission() and (include_groups or x.type == PrincipalType.user)
+        ))
 
     def get_access_list(self, skip_managers=False, skip_self_acl=False):
         read_access_list = {x.principal for x in self.acl_entries if x.read_access} if not skip_self_acl else set()

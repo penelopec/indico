@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -415,14 +406,18 @@ def get_base_ical_parameters(user, detail, path, params=None):
             'user_logged': user is not None, 'request_urls': request_urls}
 
 
-def create_event_logo_tmp_file(event):
-    """Creates a temporary file with the event's logo"""
+def create_event_logo_tmp_file(event, tmpdir=None):
+    """Creates a temporary file with the event's logo
+
+    If `tmpdir` is specified, the logo file is created in there and
+    a path relative to that directory is returned.
+    """
     logo_meta = event.logo_metadata
     logo_extension = guess_extension(logo_meta['content_type']) or os.path.splitext(logo_meta['filename'])[1]
-    temp_file = NamedTemporaryFile(delete=False, dir=config.TEMP_DIR, suffix=logo_extension)
+    temp_file = NamedTemporaryFile(delete=False, dir=(tmpdir or config.TEMP_DIR), suffix=logo_extension)
     temp_file.write(event.logo)
     temp_file.flush()
-    return temp_file
+    return os.path.relpath(temp_file.name, tmpdir) if tmpdir else temp_file.name
 
 
 @contextmanager
@@ -449,7 +444,7 @@ def track_time_changes(auto_extend=False, user=None):
     changes = defaultdict(dict)
     try:
         yield changes
-    except:
+    except Exception:
         del g.old_times
         raise
     else:
@@ -607,7 +602,7 @@ def set_custom_fields(obj, custom_fields_data):
 def check_permissions(event, field, allow_networks=False):
     for principal_fossil, permissions in field.data:
         principal = principal_from_fossil(principal_fossil, allow_emails=True, allow_networks=allow_networks,
-                                          event=event)
+                                          allow_pending=True, event=event, category=event.category)
         if allow_networks and isinstance(principal, IPNetworkGroup) and set(permissions) - {READ_ACCESS_PERMISSION}:
             msg = _('IP networks cannot have management permissions: {}').format(principal.name)
             return msg

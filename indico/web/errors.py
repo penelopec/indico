@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import absolute_import, unicode_literals
 
@@ -26,7 +17,6 @@ from werkzeug.exceptions import Forbidden, HTTPException
 
 from indico.core.errors import NoReportError
 from indico.legacy.common.cache import GenericCache
-from indico.web.flask.util import url_for
 from indico.web.util import get_request_info
 from indico.web.views import WPError
 
@@ -100,15 +90,10 @@ def _is_error_reportable(exc):
 
 
 def _jsonify_error(exc, title, message, code):
-    report_url = error_uuid = None
-    if _is_error_reportable(exc) and 'saved_error_uuid' in g:
-        report_url = url_for('core.report_error', error_id=g.saved_error_uuid)
-        error_uuid = g.saved_error_uuid
     error_data = {
         'title': title,
         'message': message,
-        'report_url': report_url,
-        'error_uuid': error_uuid,
+        'error_uuid': g.get('saved_error_uuid') if _is_error_reportable(exc) else None,
     }
     response = jsonify(error=error_data)
     response.status_code = code

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -46,8 +37,8 @@ def create_user(email, data, identity=None, settings=None, other_emails=None, fr
     settings.setdefault('lang', config.DEFAULT_LOCALE)
     settings.setdefault('suggest_categories', False)
     # Get a pending user if there is one
-    user = User.find_first(~User.is_deleted, User.is_pending,
-                           User.all_emails.contains(db.func.any(list({email} | set(other_emails)))))
+    user = User.query.filter(~User.is_deleted, User.is_pending,
+                             User.all_emails.in_({email} | set(other_emails))).first()
     if not user:
         user = User()
 
@@ -57,13 +48,15 @@ def create_user(email, data, identity=None, settings=None, other_emails=None, fr
         user.make_email_primary(email)
     else:
         user.email = email
-    user.populate_from_dict(data)
+    user.populate_from_dict(data, skip={'synced_fields'})
     user.is_pending = False
     user.secondary_emails |= other_emails
     user.favorite_users.add(user)
     if identity is not None:
         user.identities.add(identity)
     db.session.add(user)
+    db.session.flush()
+    user.populate_from_dict(data, keys={'synced_fields'})  # this is a setting, so the user must have an ID
     user.settings.set_multi(settings)
     db.session.flush()
     signals.users.registered.send(user, from_moderation=from_moderation, identity=identity)

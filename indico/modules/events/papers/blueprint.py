@@ -1,30 +1,38 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 from flask import current_app, g
 
-from indico.modules.events.papers.controllers import display, management, paper, templates
+from indico.modules.events.papers.controllers import api, display, management, paper, templates
 from indico.web.flask.wrappers import IndicoBlueprint
 
 
 _bp = IndicoBlueprint('papers', __name__, url_prefix='/event/<confId>', template_folder='templates',
                       virtual_template_folder='events/papers')
 
+# CfP React
+_bp.add_url_rule('/papers/<int:contrib_id>/new', 'new_paper_timeline', display.RHNewPaperTimeline)
+
+# API
+_bp.add_url_rule('/papers/api/<int:contrib_id>', 'api_paper_details', api.RHPaperDetails)
+_bp.add_url_rule('/papers/api/<int:contrib_id>', 'api_reset_paper_state', api.RHResetPaperState, methods=('DELETE',))
+_bp.add_url_rule('/papers/api/<int:contrib_id>/comment', 'api_create_comment', api.RHCreatePaperComment,
+                 methods=('POST',))
+_bp.add_url_rule('/papers/api/<int:contrib_id>/revision/<int:revision_id>/comment/<int:comment_id>',
+                 'api_comment_actions', api.RHCommentActions, methods=('DELETE', 'PATCH'))
+_bp.add_url_rule('/papers/api/<int:contrib_id>/judge', 'api_judge_paper', api.RHJudgePaper, methods=('POST',))
+_bp.add_url_rule('/papers/api/<int:contrib_id>/paper/submit', 'api_submit_revision', api.RHSubmitNewRevision,
+                 methods=('POST',))
+_bp.add_url_rule('/papers/api/<int:contrib_id>/review/<any(content,layout):review_type>', 'api_create_review',
+                 api.RHCreateReview, methods=('POST',))
+_bp.add_url_rule('/papers/api/<int:contrib_id>/revision/<int:revision_id>/review/<int:review_id>/edit',
+                 'api_update_review', api.RHUpdateReview, methods=('POST',))
 
 # Display pages
 _bp.add_url_rule('/papers/', 'call_for_papers', display.RHCallForPapers)

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -20,10 +11,11 @@ import os
 import pipes
 import subprocess
 import sys
-import tempfile
 
 import click
 from click._compat import should_strip_ansi
+from migra import Migration
+from sqlalchemy import create_engine
 
 
 click.disable_unicode_literals_warning = True
@@ -108,23 +100,11 @@ def _which(program):
     return None
 
 
-def _get_apgdiff_cmd(apgdiff):
-    if not apgdiff:
-        path = _which('apgdiff')
-        if path:
-            return [path]
-    elif '.jar' in apgdiff:
-        return ['java', '-jar', apgdiff]
-    else:
-        return [apgdiff]
-
-
 @click.command()
 @click.argument('dbname', required=False, default='indico')
 @click.option('-v', '--verbose', help='Verbose - show called commands; use -vv to also show all output', count=True)
-@click.option('--apgdiff', help='Path to apgdiff (or its .jar file)', envvar='APGDIFF',
-              type=click.Path(exists=True, dir_okay=False, resolve_path=True))
-def main(dbname, verbose, apgdiff):
+@click.option('-r', '--reverse', help='Reverse - return instead the SQL to go from target to base', is_flag=True)
+def main(dbname, verbose, reverse):
     """
     Compares the structure of the database against what's created from the
     models during `indico db prepare`.
@@ -146,30 +126,46 @@ def main(dbname, verbose, apgdiff):
     Since this script uses the command-line PostgreSQL tools any other
     configuration should be done using the various environment variables like
     PGHOST, PGPORT and PGUSER) and your `.pgpass` file.
-
-    apgdiff needs to be installed. If `apgdiff` is in your PATH it will be
-    used; otherwise you need to use `--apgdiff` or the `APGDIFF` env var to
-    specify the path to `apgdiff` apgdiff or its .jar file.
     """
     temp_dbname = 'indico_dbdiff'
-    apgdiff_cmd = _get_apgdiff_cmd(apgdiff)
-    if not apgdiff_cmd:
-        raise click.exceptions.UsageError('Could not find apgdiff in PATH; specify the path to a script or the .jar '
-                                          'file manually.')
+    base_conn = None
+    target_conn = None
+
     # create database and dump current/new structures
     _checked_call(verbose, ['createdb', '-T', 'indico_template', temp_dbname])
     try:
         env_override = {'INDICO_CONF_OVERRIDE': repr({'SQLALCHEMY_DATABASE_URI': _build_conn_string(temp_dbname)})}
         _checked_call(verbose, ['indico', 'db', 'prepare'], env=env_override)
-        dump_current = tempfile.NamedTemporaryFile(suffix='.sql', prefix='dbdiff-current-')
-        dump_fresh = tempfile.NamedTemporaryFile(suffix='.sql', prefix='dbdiff-fresh-')
-        _checked_call(verbose, ['pg_dump', '-s', '-f', dump_current.name, dbname])
-        _checked_call(verbose, ['pg_dump', '-s', '-f', dump_fresh.name, temp_dbname])
+
+        # create SQLAlchemy engines/connections for base and target db
+        base_eng = create_engine(_build_conn_string(temp_dbname))
+        target_eng = create_engine(_build_conn_string(dbname))
+        base_conn = base_eng.connect()
+        target_conn = target_eng.connect()
+
+        version = base_conn.execute("SELECT current_setting('server_version_num')::int").scalar()
+        if version < 100000:
+            click.echo(click.style('!! This utility requires at least Postgres 10', fg='red', bold=True), err=True)
+            sys.exit(1)
+
+        if verbose:
+            click.echo(click.style('** Calculating differences', fg='cyan'), err=True)
+        # use migra to figure out the SQL diff
+        m = Migration(base_conn, target_conn) if reverse else Migration(target_conn, base_conn)
+        m.set_safety(False)
+        m.add_all_changes()
+        diff = m.sql
     finally:
+        # clean up connections and engines, so that no open connection remains
+        # (otherwise the DROPDB operation won't work)
+        if base_conn:
+            base_conn.close()
+            base_eng.dispose()
+        if target_conn:
+            target_conn.close()
+            target_eng.dispose()
         _checked_call(verbose, ['dropdb', temp_dbname])
-    # compare them
-    diff = _checked_call(verbose, apgdiff_cmd + [dump_current.name, dump_fresh.name],
-                         return_output=True).strip()
+
     if not diff:
         click.echo(click.style('No changes found :)', fg='green', bold=True), err=True)
         return

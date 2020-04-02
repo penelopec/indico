@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -87,6 +78,7 @@ class ContributionCloner(EventCloner):
     name = 'contributions'
     friendly_name = _('Contributions')
     requires = {'event_persons', 'sessions', 'contribution_types', 'contribution_fields'}
+    uses = {'event_roles'}
     is_internal = True
 
     # We do not override `is_available` as we have cloners depending
@@ -103,6 +95,7 @@ class ContributionCloner(EventCloner):
         """
         event = contribution.event
         cloner = cls(event)
+        cloner._event_role_map = dict(zip(event.roles, event.roles))
         cloner._person_map = dict(zip(event.persons, event.persons))
         cloner._session_map = {contribution.session: contribution.session}
         cloner._session_block_map = {contribution.session_block: contribution.session_block}
@@ -121,6 +114,7 @@ class ContributionCloner(EventCloner):
         return new_contribution
 
     def run(self, new_event, cloners, shared_data):
+        self._event_role_map = shared_data['event_roles']['event_role_map'] if 'event_roles' in cloners else None
         self._person_map = shared_data['event_persons']['person_map']
         self._session_map = shared_data['sessions']['session_map']
         self._session_block_map = shared_data['sessions']['session_block_map']
@@ -141,7 +135,7 @@ class ContributionCloner(EventCloner):
         new_contrib = Contribution()
         new_contrib.populate_from_attrs(old_contrib, attrs)
         new_contrib.subcontributions = list(self._clone_subcontribs(old_contrib.subcontributions))
-        new_contrib.acl_entries = clone_principals(ContributionPrincipal, old_contrib.acl_entries)
+        new_contrib.acl_entries = clone_principals(ContributionPrincipal, old_contrib.acl_entries, self._event_role_map)
         new_contrib.references = list(self._clone_references(ContributionReference, old_contrib.references))
         new_contrib.person_links = list(self._clone_person_links(ContributionPersonLink, old_contrib.person_links))
         new_contrib.field_values = list(self._clone_fields(old_contrib.field_values))

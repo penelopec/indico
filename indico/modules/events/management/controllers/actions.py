@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -20,7 +11,6 @@ from flask import flash, request, session
 from werkzeug.exceptions import Forbidden
 
 from indico.modules.categories.models.categories import Category
-from indico.modules.events import EventLogKind, EventLogRealm
 from indico.modules.events.management.controllers.base import RHManageEventBase
 from indico.modules.events.models.events import EventType
 from indico.modules.events.operations import lock_event, unlock_event, update_event_type
@@ -98,12 +88,7 @@ class RHMoveEvent(RHManageEventBase):
             raise Forbidden(_("You may only move events to categories where you are allowed to create events."))
 
     def _process(self):
-        sep = ' \N{RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK} '
-        old_path = sep.join(self.event.category.chain_titles)
-        new_path = sep.join(self.target_category.chain_titles)
         self.event.move(self.target_category)
-        self.event.log(EventLogRealm.management, EventLogKind.change, 'Category', 'Event moved', session.user,
-                       data={'From': old_path, 'To': new_path})
         flash(_('Event "{}" has been moved to category "{}"').format(self.event.title, self.target_category.title),
               'success')
         return jsonify_data(flash=False)

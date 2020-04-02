@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import absolute_import
 
@@ -20,6 +11,7 @@ import sys
 from contextlib import contextmanager
 from functools import partial
 
+from flask import g
 from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.model import BindMetaMixin
 from sqlalchemy.event import listen
@@ -63,13 +55,24 @@ def handle_sqlalchemy_database_error():
         msg += ': {}'.format(exc.orig.diag.message_detail)
     if exc.orig.diag.message_hint:
         msg += ' ({})'.format(exc.orig.diag.message_hint)
-    raise ConstraintViolated, (msg, exc.orig), tb  # raise with original traceback
+    raise ConstraintViolated(msg, exc.orig), None, tb  # raise with original traceback
+
+
+def _after_commit(*args, **kwargs):
+    signals.after_commit.send()
+    if hasattr(g, 'memoize_cache'):
+        del g.memoize_cache
 
 
 class IndicoSQLAlchemy(SQLAlchemy):
     def __init__(self, *args, **kwargs):
         super(IndicoSQLAlchemy, self).__init__(*args, **kwargs)
         self.m = type(b'_Models', (object,), {})
+
+    def create_session(self, *args, **kwargs):
+        session = super(IndicoSQLAlchemy, self).create_session(*args, **kwargs)
+        listen(session, 'after_commit', _after_commit)
+        return session
 
     def enforce_constraints(self):
         """Enables immedaite enforcing of deferred constraints.
@@ -104,7 +107,7 @@ class IndicoSQLAlchemy(SQLAlchemy):
         session = db.create_session({'query_cls': IndicoBaseQuery})()
         try:
             yield session
-        except:
+        except Exception:
             session.rollback()
             raise
         finally:
@@ -116,11 +119,6 @@ class NoNameGenMeta(BindMetaMixin, DeclarativeMeta):
     # generating table names (i.e. a model without an explicit table
     # name will fail instead of getting a name set implicitly)
     pass
-
-
-def on_models_committed(sender, changes):
-    for obj, change in changes:
-        obj.__committed__(change)
 
 
 def _schema_exists(connection, name):

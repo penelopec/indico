@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -46,10 +37,16 @@ _bp.add_url_rule('/manage/contributions/contributions.xlsx', 'contributions_exce
                  management.RHContributionsExportExcel, methods=('POST',))
 _bp.add_url_rule('/manage/contributions/contributions.pdf', 'contributions_pdf_export',
                  management.RHContributionsExportPDF, methods=('POST',))
-_bp.add_url_rule('/manage/contributions/book.pdf', 'contributions_pdf_export_book',
-                 management.RHContributionsExportPDFBook, methods=('POST',))
-_bp.add_url_rule('/manage/contributions/book-sorted.pdf', 'contributions_pdf_export_book_sorted',
-                 management.RHContributionsExportPDFBookSorted, methods=('POST',))
+_bp.add_url_rule('/manage/contributions/contributions.zip', 'contributions_tex_export',
+                 management.RHContributionsExportTeX, methods=('POST',))
+
+# LaTeX-based exports
+_bp.add_url_rule('/manage/contributions/tex-export/<uuid>', 'contributions_tex_export_book',
+                 management.RHContributionsExportTeXBook)
+_bp.add_url_rule('/manage/contributions/tex-export-dialog', 'contributions_tex_export_dialog',
+                 management.RHContributionExportTexConfig, methods=('POST',))
+
+# Import
 _bp.add_url_rule('/manage/contributions/import', 'contributions_import',
                  management.RHContributionsImportCSV, methods=('GET', 'POST'))
 
@@ -106,6 +103,10 @@ _bp.add_url_rule('/manage/contributions/types/<int:contrib_type_id>/delete', 'de
 # Default contribution duration
 _bp.add_url_rule('/manage/contributions/duration', 'manage_default_duration',
                  management.RHManageDefaultContributionDuration, methods=('GET', 'POST'))
+
+# Publish contribution
+_bp.add_url_rule('/manage/contributions/published', 'manage_publication',
+                 management.RHManageContributionPublicationREST, methods=('GET', 'PUT', 'DELETE'))
 
 # Custom contribution fields
 _bp.add_url_rule('/manage/contributions/fields/', 'manage_fields', management.RHManageContributionFields)

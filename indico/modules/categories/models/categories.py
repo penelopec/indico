@@ -1,24 +1,15 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 import pytz
 from sqlalchemy import DDL, orm
-from sqlalchemy.dialects.postgresql import ARRAY, JSON, array
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, array
 from sqlalchemy.event import listens_for
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -118,7 +109,7 @@ class Category(SearchableTitleMixin, DescriptionMixin, ProtectionManagersMixin, 
         default=None
     )
     icon_metadata = db.Column(
-        JSON,
+        JSONB,
         nullable=False,
         default=lambda: None
     )
@@ -127,7 +118,7 @@ class Category(SearchableTitleMixin, DescriptionMixin, ProtectionManagersMixin, 
         nullable=True
     ))
     logo_metadata = db.Column(
-        JSON,
+        JSONB,
         nullable=False,
         default=lambda: None
     )
@@ -141,7 +132,7 @@ class Category(SearchableTitleMixin, DescriptionMixin, ProtectionManagersMixin, 
         default=lambda: config.DEFAULT_TIMEZONE
     )
     default_event_themes = db.Column(
-        JSON,
+        JSONB,
         nullable=False,
         default=_get_default_event_themes
     )
@@ -216,6 +207,7 @@ class Category(SearchableTitleMixin, DescriptionMixin, ProtectionManagersMixin, 
     # - favorite_of (User.favorite_categories)
     # - legacy_mapping (LegacyCategoryMapping.category)
     # - parent (Category.children)
+    # - roles (CategoryRole.category)
     # - settings (CategorySetting.category)
     # - suggestions (SuggestedCategory.category)
 
@@ -367,9 +359,9 @@ class Category(SearchableTitleMixin, DescriptionMixin, ProtectionManagersMixin, 
                      .cte(recursive=True))
         rec_query = (select([cat_alias.id,
                              db.case({'null': cte_query.c.source_id}, else_=cat_alias.id,
-                                     value=db.func.json_typeof(cat_alias.icon_metadata)),
+                                     value=db.func.jsonb_typeof(cat_alias.icon_metadata)),
                              db.case({'null': cte_query.c.icon_metadata}, else_=cat_alias.icon_metadata,
-                                     value=db.func.json_typeof(cat_alias.icon_metadata))])
+                                     value=db.func.jsonb_typeof(cat_alias.icon_metadata))])
                      .where(cat_alias.parent_id == cte_query.c.id))
         return cte_query.union_all(rec_query)
 
@@ -470,15 +462,15 @@ class Category(SearchableTitleMixin, DescriptionMixin, ProtectionManagersMixin, 
             return None  # Category is invisible
         return Category.get(horizon_id)
 
-    @property
-    def visible_categories_cte(self):
+    @staticmethod
+    def get_visible_categories_cte(category_id):
         """
         Get a sqlalchemy select for the visible categories within
-        this category, including the category itself.
+        the given category, including the category itself.
         """
         cte_query = (select([Category.id, literal(0).label('level')])
-                     .where((Category.id == self.id) & (Category.visibility.is_(None) | (Category.visibility > 0)))
-                     .cte('visibility_chain', recursive=True))
+                     .where((Category.id == category_id) & (Category.visibility.is_(None) | (Category.visibility > 0)))
+                     .cte(recursive=True))
         parent_query = (select([Category.id, cte_query.c.level + 1])
                         .where(db.and_(Category.parent_id == cte_query.c.id,
                                        db.or_(Category.visibility.is_(None),
@@ -491,7 +483,7 @@ class Category(SearchableTitleMixin, DescriptionMixin, ProtectionManagersMixin, 
         Get a query object for the visible categories within
         this category, including the category itself.
         """
-        cte_query = self.visible_categories_cte
+        cte_query = Category.get_visible_categories_cte(self.id)
         return Category.query.join(cte_query, Category.id == cte_query.c.id)
 
     @property

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -204,8 +195,6 @@ class RHRegistrationEmailRegistrantsPreview(RHRegistrationsActionBase):
 class RHRegistrationEmailRegistrants(RHRegistrationsActionBase):
     """Send email to selected registrants"""
 
-    NOT_SANITIZED_FIELDS = {'from_address'}
-
     def _send_emails(self, form):
         for registration in self.registrations:
             email_body = replace_placeholders('registration-email', form.body.data, regform=self.regform,
@@ -215,9 +204,8 @@ class RHRegistrationEmailRegistrants(RHRegistrationsActionBase):
             template = get_template_module('events/registration/emails/custom_email.html',
                                            email_subject=email_subject, email_body=email_body)
             bcc = [session.user.email] if form.copy_for_sender.data else []
-            attachments = (get_ticket_attachments(registration)
-                           if 'attach_ticket' in form and form.attach_ticket.data
-                           else None)
+            attach_ticket = 'attach_ticket' in form and form.attach_ticket.data and not registration.is_ticket_blocked
+            attachments = get_ticket_attachments(registration) if attach_ticket else None
             email = make_email(to_list=registration.email, cc_list=form.cc_addresses.data, bcc_list=bcc,
                                from_address=form.from_address.data, template=template, html=True,
                                attachments=attachments)
@@ -237,7 +225,11 @@ class RHRegistrationEmailRegistrants(RHRegistrationsActionBase):
             flash(ngettext("The email was sent.",
                            "{num} emails were sent.", num_emails_sent).format(num=num_emails_sent), 'success')
             return jsonify_data()
-        return jsonify_template('events/registration/management/email.html', form=form, regform=self.regform)
+
+        registrations_without_ticket = [r for r in self.registrations if r.is_ticket_blocked]
+        return jsonify_template('events/registration/management/email.html', form=form, regform=self.regform,
+                                all_registrations_count=len(self.registrations),
+                                registrations_without_ticket_count=len(registrations_without_ticket))
 
 
 class RHRegistrationDelete(RHRegistrationsActionBase):
@@ -422,7 +414,9 @@ class RHRegistrationsPrintBadges(RHRegistrationsActionBase):
         else:
             pdf_class = RegistrantsListToBadgesPDF
         registration_ids = config_params.pop('registration_ids')
-        signals.event.designer.print_badge_template.send(self.template, regform=self.regform)
+        registrations = Registration.query.filter(Registration.id.in_(registration_ids)).all()
+        signals.event.designer.print_badge_template.send(self.template, regform=self.regform,
+                                                         registrations=registrations)
         pdf = pdf_class(self.template, config_params, self.event, registration_ids)
         return send_file('Badges-{}.pdf'.format(self.event.id), pdf.get_pdf(), 'application/pdf')
 
@@ -461,8 +455,8 @@ class RHRegistrationsConfigBadges(RHRegistrationsActionBase):
         from indico.modules.designer.pdf import PIXELS_CM
         format_map = self.format_map_landscape if tpl.data['width'] > tpl.data['height'] else self.format_map_portrait
         return next((frm for frm, frm_size in format_map.iteritems()
-                     if (frm_size[0] == float(tpl.data['width']) / PIXELS_CM) and
-                         frm_size[1] == float(tpl.data['height']) / PIXELS_CM), 'custom')
+                     if (frm_size[0] == float(tpl.data['width']) / PIXELS_CM and
+                         frm_size[1] == float(tpl.data['height']) / PIXELS_CM)), 'custom')
 
     @property
     def _default_template_id(self):

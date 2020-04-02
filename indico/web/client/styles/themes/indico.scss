@@ -1,19 +1,9 @@
-/* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
- *
- * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
- */
+// This file is part of Indico.
+// Copyright (C) 2002 - 2020 CERN
+//
+// Indico is free software; you can redistribute it and/or
+// modify it under the terms of the MIT License; see the
+// LICENSE file for more details.
 
 @import 'base';
 
@@ -217,6 +207,11 @@ div.event-header {
 
 .event-header {
     @extend %font-family-title-light;
+
+    .event-label {
+        margin-left: 1em !important;
+        text-transform: uppercase;
+    }
 }
 
 .meeting-timetable, .meeting-sub-timetable {
@@ -381,6 +376,10 @@ ul.day-list {
         border-left: 2px dotted $gray;
         padding-left: 1em;
 
+        .timetable-title {
+            font-weight: normal;
+        }
+
         .speaker-list {
             padding-top: 0.5em;
         }
@@ -406,11 +405,11 @@ ul.day-list {
 
     &.nested {
         @include transition(border-color .5s linear);
-
         margin-right: 0.5em;
         border-right: 3px solid $tt-nested-time-color;
 
         .start-time {
+            padding: 0 5px 0 10px;
             background-color: $tt-nested-time-color;
         }
     }
@@ -572,7 +571,7 @@ div.event-details {
 
     .event-details-row {
         display: flex;
-        align-items: baseline;
+        align-items: flex-start;
         margin-bottom: 0.5em;
     }
 
@@ -594,4 +593,8 @@ div.event-details {
 
 .attachments-display-container {
     flex-wrap: wrap;
+
+    // needed to nullify the margin of the items in this flexbox
+    // for the very first items of each row
+    margin-left: -0.2em;
 }

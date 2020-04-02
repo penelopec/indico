@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -121,12 +112,13 @@ def rewrite_css_urls(event, css):
                 return "url('../../../{}')".format(rewritten_url)
 
     indico_path = url_parse(config.BASE_URL).path
-    return re.sub(_css_url_pattern.format(indico_path), _replace_url, css, flags=re.MULTILINE), used_urls, used_images
+    new_css = re.sub(_css_url_pattern.format(indico_path), _replace_url, css.decode('utf-8'), flags=re.MULTILINE)
+    return new_css.encode('utf-8'), used_urls, used_images
 
 
 def url_to_static_filename(endpoint, url):
     """Handle special endpoint/URLs so that they link to offline content."""
-    if re.match('(events)?\.display(_overview)?$', endpoint):
+    if re.match(r'(events)?\.display(_overview)?$', endpoint):
         return 'index.html'
     elif endpoint == 'event_layout.css_display':
         return 'custom.css'

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -52,7 +43,7 @@ def _prepare_header(header, as_unicode=True):
 _prepare_header_utf8 = partial(_prepare_header, as_unicode=False)
 
 
-def _prepare_csv_data(data, _linebreak_re=re.compile(ur'(\r?\n)+')):
+def _prepare_csv_data(data, _linebreak_re=re.compile(r'(\r?\n)+'), _dangerous_chars_re=re.compile(r'^[=+@-]+')):
     if isinstance(data, (list, tuple)):
         data = '; '.join(data)
     elif isinstance(data, set):
@@ -61,7 +52,12 @@ def _prepare_csv_data(data, _linebreak_re=re.compile(ur'(\r?\n)+')):
         data = 'Yes' if data else 'No'
     elif data is None:
         data = ''
-    return _linebreak_re.sub('    ', unicode(data)).encode('utf-8')
+    data = _linebreak_re.sub('    ', unicode(data))
+    # https://www.owasp.org/index.php/CSV_Injection
+    # quoting the cell's value does NOT mitigate this, so we need to strip
+    # those characters from the beginning...
+    data = _dangerous_chars_re.sub('', data)
+    return data.encode('utf-8')
 
 
 def generate_csv(headers, rows):

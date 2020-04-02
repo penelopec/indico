@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -23,12 +14,13 @@ from indico.web.flask.util import url_for
 
 
 __all__ = ('EventTitlePlaceholder', 'EventURLPlaceholder', 'AbstractIDPlaceholder', 'AbstractTitlePlaceholder',
-           'AbstractURLPlaceholder', 'AbstractTrackPlaceholder', 'AbstractSessionPlaceholder',
-           'PrimaryAuthorsPlaceholder', 'CoAuthorsPlaceholder', 'SubmitterNamePlaceholder',
-           'SubmitterFirstNamePlaceholder', 'SubmitterLastNamePlaceholder', 'SubmitterTitlePlaceholder',
-           'TargetAbstractIDPlaceholder', 'TargetAbstractTitlePlaceholder', 'TargetSubmitterNamePlaceholder',
-           'TargetSubmitterFirstNamePlaceholder', 'TargetSubmitterLastNamePlaceholder', 'JudgmentCommentPlaceholder',
-           'ContributionTypePlaceholder', 'ContributionURLPlaceholder')
+           'AbstractURLPlaceholder', 'AbstractInvitationURLPlaceholder', 'AbstractTrackPlaceholder',
+           'AbstractSessionPlaceholder', 'PrimaryAuthorsPlaceholder', 'CoAuthorsPlaceholder',
+           'SubmitterNamePlaceholder', 'SubmitterFirstNamePlaceholder', 'SubmitterLastNamePlaceholder',
+           'SubmitterTitlePlaceholder', 'TargetAbstractIDPlaceholder', 'TargetAbstractTitlePlaceholder',
+           'TargetSubmitterNamePlaceholder', 'TargetSubmitterFirstNamePlaceholder',
+           'TargetSubmitterLastNamePlaceholder', 'JudgmentCommentPlaceholder', 'ContributionTypePlaceholder',
+           'ContributionURLPlaceholder')
 
 
 class EventTitlePlaceholder(Placeholder):
@@ -75,6 +67,15 @@ class AbstractURLPlaceholder(Placeholder):
     @classmethod
     def render(cls, abstract):
         return url_for('abstracts.display_abstract', abstract, management=False, _external=True)
+
+
+class AbstractInvitationURLPlaceholder(Placeholder):
+    name = 'invitation_url'
+    description = _("The link to submit an invited abstract")
+
+    @classmethod
+    def render(cls, abstract):
+        return url_for('abstracts.submit_invited_abstract', abstract.locator.token, _external=True)
 
 
 class AbstractTrackPlaceholder(Placeholder):

@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -22,7 +13,7 @@ from pytz import common_timezones, common_timezones_set
 from wtforms.fields.core import BooleanField, SelectField, StringField
 from wtforms.fields.html5 import EmailField
 from wtforms.fields.simple import TextAreaField
-from wtforms.validators import DataRequired, ValidationError
+from wtforms.validators import DataRequired, Email, ValidationError
 
 from indico.core.config import config
 from indico.modules.auth.forms import LocalRegistrationForm, _check_existing_email
@@ -75,14 +66,17 @@ class UserPreferencesForm(IndicoForm):
 
     def __init__(self, *args, **kwargs):
         super(UserPreferencesForm, self).__init__(*args, **kwargs)
-        self.lang.choices = sorted(get_all_locales().items(), key=itemgetter(1))
+
+        locales = [(code, '{} ({})'.format(name, territory) if territory else name)
+                   for code, (name, territory) in get_all_locales().iteritems()]
+        self.lang.choices = sorted(locales, key=itemgetter(1))
         self.timezone.choices = zip(common_timezones, common_timezones)
         if self.timezone.object_data and self.timezone.object_data not in common_timezones_set:
             self.timezone.choices.append((self.timezone.object_data, self.timezone.object_data))
 
 
 class UserEmailsForm(IndicoForm):
-    email = EmailField(_('Add new email address'), [DataRequired()], filters=[lambda x: x.lower() if x else x])
+    email = EmailField(_('Add new email address'), [DataRequired(), Email()], filters=[lambda x: x.lower() if x else x])
 
     def validate_email(self, field):
         if UserEmail.find(~User.is_pending, is_user_deleted=False, email=field.data, _join=User).count():
@@ -114,7 +108,8 @@ class AdminUserSettingsForm(IndicoForm):
 
 
 class AdminAccountRegistrationForm(LocalRegistrationForm):
-    email = EmailField(_('Email address'), [DataRequired(), _check_existing_email])
+    email = EmailField(_('Email address'), [DataRequired(), Email(), _check_existing_email],
+                       filters=[lambda s: s.lower() if s else s])
     create_identity = BooleanField(_("Set login details"), widget=SwitchWidget(), default=True)
 
     def __init__(self, *args, **kwargs):

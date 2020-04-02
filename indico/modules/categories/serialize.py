@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -20,10 +11,10 @@ from io import BytesIO
 from itertools import ifilter
 
 import icalendar as ical
+from feedgen.feed import FeedGenerator
 from flask import session
 from lxml import html
 from lxml.etree import ParserError
-from pyatom import AtomFeed
 from sqlalchemy.orm import joinedload, load_only, subqueryload, undefer
 from werkzeug.urls import url_parse
 
@@ -31,6 +22,7 @@ from indico.core.config import config
 from indico.modules.categories import Category
 from indico.modules.events import Event
 from indico.util.date_time import now_utc
+from indico.util.string import sanitize_html
 
 
 def serialize_categories_ical(category_ids, user, event_filter=True, event_filter_fn=None, update_query=None):
@@ -46,7 +38,7 @@ def serialize_categories_ical(category_ids, user, event_filter=True, event_filte
                          Must return the updated query object.
     """
     own_room_strategy = joinedload('own_room')
-    own_room_strategy.load_only('building', 'floor', 'number', 'name')
+    own_room_strategy.load_only('building', 'floor', 'number', 'verbose_name')
     own_room_strategy.lazyload('owner')
     own_venue_strategy = joinedload('own_venue').load_only('name')
     query = (Event.query
@@ -68,7 +60,7 @@ def serialize_categories_ical(category_ids, user, event_filter=True, event_filte
     events = list(it)
     # make sure the parent categories are in sqlalchemy's identity cache.
     # this avoids query spam from `protection_parent` lookups
-    _parent_categs = (Category._get_chain_query(Category.id.in_({e.category_id for e in events}))
+    _parent_categs = (Category._get_chain_query(Category.id.in_({e.category_id for e in events}))  # noqa: F841
                       .options(load_only('id', 'parent_id', 'protection_mode'),
                                joinedload('acl_entries'))
                       .all())
@@ -130,13 +122,19 @@ def serialize_category_atom(category, url, user, event_filter):
              .order_by(Event.start_dt))
     events = [e for e in query if e.can_access(user)]
 
-    feed = AtomFeed(feed_url=url, title='Indico Feed [{}]'.format(category.title))
+    feed = FeedGenerator()
+    feed.id(url)
+    feed.title('Indico Feed [{}]'.format(category.title))
+    feed.link(href=url, rel='self')
+
     for event in events:
-        feed.add(title=event.title,
-                 summary=unicode(event.description),  # get rid of RichMarkup
-                 url=event.external_url,
-                 updated=event.start_dt)
-    return BytesIO(feed.to_string().encode('utf-8'))
+        entry = feed.add_entry(order='append')
+        entry.id(event.external_url)
+        entry.title(event.title)
+        entry.summary(sanitize_html(unicode(event.description)) or None, type='html')
+        entry.link(href=event.external_url)
+        entry.updated(event.start_dt)
+    return BytesIO(feed.atom_str(pretty=True))
 
 
 def serialize_category(category, with_favorite=False, with_path=False, parent_path=None, child_path=None):

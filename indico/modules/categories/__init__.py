@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -23,7 +14,6 @@ from indico.core.logger import Logger
 from indico.core.permissions import ManagementPermission, check_permissions
 from indico.core.settings import SettingsProxy
 from indico.modules.categories.models.categories import Category
-from indico.modules.categories.models.legacy_mapping import LegacyCategoryMapping
 from indico.util.i18n import _
 from indico.web.flask.util import url_for
 from indico.web.menu import SideMenuItem
@@ -39,7 +29,7 @@ upcoming_events_settings = SettingsProxy('upcoming_events', {
 
 @signals.import_tasks.connect
 def _import_tasks(sender, **kwargs):
-    import indico.modules.categories.tasks
+    import indico.modules.categories.tasks  # noqa: F401
 
 
 @signals.users.merged.connect
@@ -56,10 +46,12 @@ def _sidemenu_items(sender, category, **kwargs):
                        90, icon='settings')
     yield SideMenuItem('protection', _('Protection'), url_for('categories.manage_protection', category),
                        70, icon='shield')
+    yield SideMenuItem('roles', _('Roles'), url_for('categories.manage_roles', category),
+                       50, icon='users')
 
 
 @signals.menu.items.connect_via('admin-sidemenu')
-def _sidemenu_items(sender, **kwargs):
+def _extend_admin_menu(sender, **kwargs):
     if session.user.is_admin:
         yield SideMenuItem('upcoming_events', _('Upcoming events'), url_for('categories.manage_upcoming'),
                            section='homepage')
@@ -79,3 +71,4 @@ class CreatorPermission(ManagementPermission):
     name = 'create'
     friendly_name = _('Event creation')
     description = _('Allows creating events in the category')
+    user_selectable = True

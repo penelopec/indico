@@ -1,25 +1,14 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from flask import g, session
 from werkzeug.exceptions import Forbidden
 
 from indico.core.logger import sentry_set_tags
-from indico.legacy.common.security import Sanitization
-from indico.util.string import unicode_struct_to_utf8
 
 
 class ServiceBase(object):
@@ -27,12 +16,7 @@ class ServiceBase(object):
     The ServiceBase class is the basic class for services.
     """
 
-    UNICODE_PARAMS = False
-    CHECK_HTML = True
-
     def __init__(self, params):
-        if not self.UNICODE_PARAMS:
-            params = unicode_struct_to_utf8(params)
         self._params = params
 
     def _process_args(self):
@@ -52,9 +36,6 @@ class ServiceBase(object):
 
         self._process_args()
         self._check_access()
-
-        if self.CHECK_HTML:
-            Sanitization.sanitizationCheck(self._params)
         return self._getAnswer()
 
     def _getAnswer(self):

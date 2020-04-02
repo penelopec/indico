@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -20,10 +11,12 @@ from flask import flash, request
 
 from indico.core.db import db
 from indico.modules.admin import RHAdminBase
-from indico.modules.events.forms import ReferenceTypeForm
+from indico.modules.events.forms import EventLabelForm, ReferenceTypeForm
+from indico.modules.events.models.labels import EventLabel
 from indico.modules.events.models.references import ReferenceType
-from indico.modules.events.operations import create_reference_type, delete_reference_type, update_reference_type
-from indico.modules.events.views import WPReferenceTypes
+from indico.modules.events.operations import (create_event_label, create_reference_type, delete_event_label,
+                                              delete_reference_type, update_event_label, update_reference_type)
+from indico.modules.events.views import WPEventAdmin
 from indico.util.i18n import _
 from indico.web.flask.templating import get_template_module
 from indico.web.forms.base import FormDefaults
@@ -52,7 +45,7 @@ class RHReferenceTypes(RHAdminBase):
 
     def _process(self):
         types = _get_all_reference_types()
-        return WPReferenceTypes.render_template('admin/reference_types.html', 'reference_types', reference_types=types)
+        return WPEventAdmin.render_template('admin/reference_types.html', 'reference_types', reference_types=types)
 
 
 class RHCreateReferenceType(RHAdminBase):
@@ -86,3 +79,61 @@ class RHDeleteReferenceType(RHManageReferenceTypeBase):
         delete_reference_type(self.reference_type)
         flash(_("External ID type '{}' successfully deleted").format(self.reference_type.name), 'success')
         return jsonify_data(html=_render_reference_type_list())
+
+
+def _get_all_event_labels():
+    return EventLabel.query.order_by(db.func.lower(EventLabel.title)).all()
+
+
+def _render_event_label_list():
+    tpl = get_template_module('events/admin/_event_label_list.html')
+    return tpl.render_event_label_list(_get_all_event_labels())
+
+
+class RHManageEventLabelBase(RHAdminBase):
+    """Base class for a specific event label"""
+
+    def _process_args(self):
+        RHAdminBase._process_args(self)
+        self.event_label = EventLabel.get_one(request.view_args['event_label_id'])
+
+
+class RHEventLabels(RHAdminBase):
+    """Manage event labels in server admin area"""
+
+    def _process(self):
+        labels = _get_all_event_labels()
+        return WPEventAdmin.render_template('admin/event_labels.html', 'event_labels', labels=labels)
+
+
+class RHCreateEventLabel(RHAdminBase):
+    """Create a new event label"""
+
+    def _process(self):
+        form = EventLabelForm()
+        if form.validate_on_submit():
+            event_label = create_event_label(form.data)
+            flash(_("Event label '{}' created successfully").format(event_label.title), 'success')
+            return jsonify_data(html=_render_event_label_list())
+        return jsonify_form(form)
+
+
+class RHEditEventLabel(RHManageEventLabelBase):
+    """Edit an existing event label"""
+
+    def _process(self):
+        form = EventLabelForm(obj=FormDefaults(self.event_label), event_label=self.event_label)
+        if form.validate_on_submit():
+            update_event_label(self.event_label, form.data)
+            flash(_("Event label '{}' successfully updated").format(self.event_label.title), 'success')
+            return jsonify_data(html=_render_event_label_list())
+        return jsonify_form(form)
+
+
+class RHDeleteEventLabel(RHManageEventLabelBase):
+    """Delete an existing event label"""
+
+    def _process_DELETE(self):
+        delete_event_label(self.event_label)
+        flash(_("Event label '{}' successfully deleted").format(self.event_label.title), 'success')
+        return jsonify_data(html=_render_event_label_list())

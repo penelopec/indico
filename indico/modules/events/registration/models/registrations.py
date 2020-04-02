@@ -1,18 +1,9 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
@@ -132,13 +123,13 @@ class Registration(db.Model):
     )
     #: The base registration fee (that is not specific to form items)
     base_price = db.Column(
-        db.Numeric(8, 2),  # max. 999999.99
+        db.Numeric(11, 2),  # max. 999999999.99
         nullable=False,
         default=0
     )
     #: The price modifier applied to the final calculated price
     price_adjustment = db.Column(
-        db.Numeric(8, 2),  # max. 999999.99
+        db.Numeric(11, 2),  # max. 999999999.99
         nullable=False,
         default=0
     )
@@ -252,6 +243,14 @@ class Registration(db.Model):
     @is_active.expression
     def is_active(cls):
         return ~cls.is_cancelled & ~cls.is_deleted
+
+    @hybrid_property
+    def is_publishable(self):
+        return self.is_active and self.state in (RegistrationState.complete, RegistrationState.unpaid)
+
+    @is_publishable.expression
+    def is_publishable(cls):
+        return cls.is_active & (cls.state.in_((RegistrationState.complete, RegistrationState.unpaid)))
 
     @hybrid_property
     def is_cancelled(self):

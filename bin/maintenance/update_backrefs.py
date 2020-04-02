@@ -1,20 +1,11 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 
 import sys
 from collections import defaultdict
@@ -26,6 +17,7 @@ from sqlalchemy import inspect
 from indico.core.db import db
 from indico.core.db.sqlalchemy.util.models import import_all_models
 from indico.util.console import cformat
+
 
 click.disable_unicode_literals_warning = True
 
@@ -90,10 +82,10 @@ def main(ci):
         if in_backrefs and not backrefs_written:
             _write_backrefs(rels, new_source)
         if not backrefs_written:
-            print cformat('%{yellow}Class {} has no comment for backref information').format(cls.__name__)
+            print(cformat('%{yellow}Class {} has no comment for backref information').format(cls.__name__))
             has_missing = True
         if source != new_source:
-            print cformat('%{green!}Updating backref info for {} in {}').format(cls.__name__, path)
+            print(cformat('%{green!}Updating backref info for {} in {}').format(cls.__name__, path))
             has_updates = True
             with open(path, 'w') as f:
                 f.writelines(line + '\n' for line in new_source)

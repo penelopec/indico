@@ -40,21 +40,21 @@
 {% macro render_registration_info() %}
     for the event <strong>{{ event.title }}</strong>
     {% if event.start_dt_local.date() == event.end_dt_local.date() %}
-        ({{ event.start_dt|format_datetime(timezone=event.tzinfo) }}
+        ({{ event.start_dt|format_datetime(timezone=event.tzinfo, locale='en_GB') }}
         -
-        {{ event.end_dt|format_time(timezone=event.tzinfo) }})
+        {{ event.end_dt|format_time(timezone=event.tzinfo, locale='en_GB') }})
     {% else %}
-        ({{ event.start_dt|format_datetime(timezone=event.tzinfo) }}
+        ({{ event.start_dt|format_datetime(timezone=event.tzinfo, locale='en_GB') }}
         -
-        {{ event.end_dt|format_datetime(timezone=event.tzinfo) }})
+        {{ event.end_dt|format_datetime(timezone=event.tzinfo, locale='en_GB') }})
     {% endif %}
 {% endmacro %}
 
 
 {% macro render_text_pending() %}
     {% if registration.state.name == 'pending' %}
-        Please notice it's not complete yet since it's awaiting manual approval by a manager.
-        You will be notified when that happens.
+        Please note that this event requires manual approval.
+        You will be notified when the registration process is complete.
     {% endif %}
 {% endmacro %}
 

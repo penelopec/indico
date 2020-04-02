@@ -1,24 +1,14 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
 import os
 from collections import OrderedDict
-from datetime import timedelta
 
 from flask import flash, session
 from markupsafe import escape
@@ -117,7 +107,7 @@ class AttachmentPackageGeneratorMixin(ZipGeneratorMixin):
                 continue
             if (isinstance(linked_obj, SubContribution) and not linked_obj.contribution.is_deleted and
                     linked_obj.contribution_id in contribution_ids):
-                    objs.append(attachment)
+                objs.append(attachment)
             elif isinstance(linked_obj, Contribution) and linked_obj.id in contribution_ids:
                 objs.append(attachment)
 
@@ -170,7 +160,7 @@ class AttachmentPackageGeneratorMixin(ZipGeneratorMixin):
                     paths.append(secure_filename('{}_{}'.format(to_unicode(time), obj.title), ''))
             else:
                 if isinstance(obj, SubContribution):
-                    paths.append(secure_filename('{}){}'.format(obj.position, obj.title), unicode(obj.id)))
+                    paths.append(secure_filename('{}_{}'.format(obj.position, obj.title), unicode(obj.id)))
                 else:
                     paths.append(secure_filename(obj.title, unicode(obj.id)))
             obj = _get_obj_parent(obj)

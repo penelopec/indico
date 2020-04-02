@@ -11,7 +11,7 @@
                 {%- endfor -%}
             {% else %}
                 <a class="i-button arrow" data-toggle="dropdown"></a>
-                <ul class="dropdown">
+                <ul class="i-dropdown">
                     {%- for attachment in folder.attachments -%}
                         {% set previewable = (attachment.file and attachment.file.is_previewable and not g.static_site) or false %}
                         <li>
@@ -37,12 +37,12 @@
     {% set folders = item.attached_items.folders if item else folders %}
 
     <div class="attachments-display-container toolbar">
-        <div class="folder folder-root">
-            {% for attachment in files %}
+        {% for attachment in files %}
+            <div class="folder">
                 {{ render_attachment(attachment, classes='i-button') }}
                 {{ template_hook('event-display-after-attachment', attachment=attachment, top_level=true, has_label=false) }}
-            {% endfor %}
-        </div>
+            </div>
+        {% endfor %}
 
         {%- for folder in folders -%}
             {{ render_folder(folder) }}

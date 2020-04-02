@@ -1,19 +1,9 @@
-/* This file is part of Indico.
- * Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
- *
- * Indico is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * Indico is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with Indico; if not, see <http://www.gnu.org/licenses/>.
- */
+// This file is part of Indico.
+// Copyright (C) 2002 - 2020 CERN
+//
+// Indico is free software; you can redistribute it and/or
+// modify it under the terms of the MIT License; see the
+// LICENSE file for more details.
 
 .action-menu {
     flex-shrink: 0;
@@ -449,6 +439,16 @@ th.i-table {
         }
     }
 
+    .registration-column {
+        .icon-ticket {
+            color: $pastel-gray;
+
+            &.exists {
+                color: $light-black;
+            }
+        }
+    }
+
     .form-group-mail {
         display: block;
     }
@@ -590,6 +590,10 @@ th.i-table {
                 color: $gray;
                 font-style: italic;
             }
+
+            .event-label {
+                text-transform: uppercase;
+            }
         }
     }
 }
@@ -638,5 +642,49 @@ form.horizontal .clone-event-dialog-footer .form-field {
 .event-locked {
     .hide-if-locked {
         display: none !important;
+    }
+}
+
+.program-code-assignment-form {
+    .scroll-container {
+        max-height: 50em;
+        overflow: auto;
+    }
+
+    .title-column {
+        max-width: 30em;
+        min-width: 30em;
+    }
+
+    .date-column {
+        max-width: 10em;
+    }
+
+    .actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1em;
+    }
+
+    .speaker-list {
+        color: $dark-gray;
+
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+            display: inline;
+            float: left;
+        }
+
+        li::after {
+            content: ', ';
+            white-space: pre;
+        }
+
+        li:last-child::after {
+            content: '';
+        }
     }
 }

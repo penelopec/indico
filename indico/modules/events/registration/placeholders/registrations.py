@@ -1,22 +1,13 @@
 # This file is part of Indico.
-# Copyright (C) 2002 - 2018 European Organization for Nuclear Research (CERN).
+# Copyright (C) 2002 - 2020 CERN
 #
 # Indico is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-#
-# Indico is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Indico; if not, see <http://www.gnu.org/licenses/>.
+# modify it under the terms of the MIT License; see the
+# LICENSE file for more details.
 
 from __future__ import unicode_literals
 
-from markupsafe import Markup, escape
+from markupsafe import Markup
 
 from indico.modules.events.registration.models.items import PersonalDataType
 from indico.util.i18n import _
@@ -58,8 +49,8 @@ class EventLinkPlaceholder(Placeholder):
     @classmethod
     def render(cls, regform, registration):
         regform = registration.registration_form
-        return Markup('<a href="{url}" title="{title}">{url}</a>'.format(url=regform.event.short_external_url,
-                                                                         title=escape(regform.event.title)))
+        return Markup('<a href="{url}" title="{title}">{url}</a>').format(url=regform.event.short_external_url,
+                                                                          title=regform.event.title)
 
 
 class IDPlaceholder(Placeholder):
@@ -78,7 +69,7 @@ class LinkPlaceholder(Placeholder):
     @classmethod
     def render(cls, regform, registration):
         url = url_for('.display_regform', registration.registration_form, token=registration.uuid, _external=True)
-        return Markup('<a href="{url}">{url}</a>'.format(url=url))
+        return Markup('<a href="{url}">{url}</a>').format(url=url)
 
 
 class FieldPlaceholder(ParametrizedPlaceholder):
